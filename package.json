@@ -1,0 +1,30 @@
+{
+  "name": "sistem-rubricas",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de rúbricas para evaluación académica para el IUJO Barquisimeto.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "keywords": [
+    "rúbricas",
+    "evaluación",
+    "académica",
+    "IUJO",
+    "Barquisimeto"
+  ],
+  "author": "Eduar Suárez, Heracles Sanchez, Luis Nuñez, Franchesca Izquierdo",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.1",
+    "nodemon": "^3.1.10"
+  }
+}
