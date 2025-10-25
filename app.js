@@ -22,6 +22,10 @@ app.use(session({
 }));
 
 // RUTAS PRINCIPALES
+app.use(require('./routers/login'));
+
+//RUTAS ADMIN
+app.use(require('./routers/admin'));
 
 
 // MANEJO DE ERROR 404 
