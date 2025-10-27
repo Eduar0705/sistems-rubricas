@@ -23,6 +23,7 @@ app.use(session({
 
 // RUTAS PRINCIPALES
 app.use(require('./routers/login'));
+app.use(require('./controllers/login'));
 
 //RUTAS ADMIN
 app.use(require('./routers/admin'));

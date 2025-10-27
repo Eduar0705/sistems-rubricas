@@ -47,18 +47,17 @@
                 <span>Reportes</span>
             </a>
         </nav>
-
         <div class="sidebar-footer">
             <div class="user-profile">
                 <div class="user-avatar">
                     <i class="fas fa-user"></i>
                 </div>
                 <div class="user-info">
-                    <div class="user-name">Prof. García</div>
-                    <div class="user-role">Docente</div>
+                    <div class="user-name"><%= datos.username %></div>
+                    <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
                 </div>
             </div>
-            <button class="btn-logout">
+            <button class="header-btn" onclick="Exit()">
                 <i class="fas fa-sign-out-alt"></i>
             </button>
         </div>
@@ -77,9 +76,6 @@
             <div class="header-right">
                 <button class="header-btn">
                     <i class="fas fa-cog"></i>
-                </button>
-                <button class="header-btn" onclick="window.location.href='/login'">
-                    <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </header>
@@ -112,15 +108,6 @@
                     <div class="stat-content">
                         <div class="stat-value">342</div>
                         <div class="stat-label">Estudiantes</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon info">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-value">8.4</div>
-                        <div class="stat-label">Promedio General</div>
                     </div>
                 </div>
             </div>
@@ -701,5 +688,25 @@
     </main>
 
     <script src="./js/home.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Funcion para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/login'
+                }
+            });
+        }
+    </script>
 </body>
 </html>

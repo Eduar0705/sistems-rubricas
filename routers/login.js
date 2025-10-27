@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 router.get("/login", function(req, res) {
-    res.render("auth/login", { title: "Iniciar Sesión" });
+    const mensaje = req.query.mensaje;
+    res.render("auth/login", { title: "Iniciar Sesión", mensaje });
 });
 
 module.exports = router;
