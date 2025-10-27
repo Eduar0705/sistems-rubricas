@@ -28,6 +28,12 @@ app.use(require('./controllers/login'));
 //RUTAS ADMIN
 app.use(require('./routers/admin'));
 
+//RUTAS TEACHER
+app.use(require('./routers/teacher'));
+
+//RUTAS STUDENT
+app.use(require('./routers/student'));
+
 
 // MANEJO DE ERROR 404 
 app.use((req, res, next) => {

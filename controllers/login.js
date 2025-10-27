@@ -36,6 +36,13 @@ routers.post('/verifLogin', (req, res)=>{
 
         if(user.id_rol === 1){
             res.redirect('/home');
+        }else if(user.id_rol === 2){
+            res.redirect('/teacher');
+        }else if(user.id_rol === 3){
+            res.redirect('/student');
+        }else{
+            mensaje = 'Rol de usuario no reconocido.';
+            return res.render('auth/login', { mensaje });
         }
     });
 })

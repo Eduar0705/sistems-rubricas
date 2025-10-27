@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Estudiante - Sistema de Gestión de Rúbricas</title>
+    <link rel="shortcut icon" href="./img/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./css/students.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-container">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>SGR Estudiante</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-menu">
+                    <img src="https://ui-avatars.com/api/?name=<%= datos.username %>&background=1e40af&color=fff" alt="Usuario" class="user-avatar">
+                    <div class="user-info">
+                        <span class="user-name"><%= datos.username %></span>
+                        <span class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Estudiante' %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="#rubricas" class="nav-item" data-section="rubricas">
+                <i class="fas fa-file-alt"></i>
+                <span>Mis Rúbricas</span>
+            </a>
+            <a href="#evaluaciones" class="nav-item" data-section="evaluaciones">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Evaluaciones</span>
+            </a>
+            <a href="#calificaciones" class="nav-item" data-section="calificaciones">
+                <i class="fas fa-chart-line"></i>
+                <span>Calificaciones</span>
+            </a>
+            <a href="#materias" class="nav-item" data-section="materias">
+                <i class="fas fa-book"></i>
+                <span>Mis Materias</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a onclick="Exit()" class="nav-item logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="content-section active">
+            <div class="page-header">
+                <h1>Bienvenido, Juan</h1>
+                <p>Aquí puedes ver tus rúbricas, evaluaciones y calificaciones</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>8</h3>
+                        <p>Rúbricas Activas</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>12</h3>
+                        <p>Evaluaciones</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>3</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>8.5</h3>
+                        <p>Promedio General</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-tasks"></i> Evaluaciones Recientes</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="evaluation-item">
+                            <div class="evaluation-info">
+                                <h4>Proyecto Final - Programación Web</h4>
+                                <p><i class="fas fa-calendar"></i> 15 Ene 2025</p>
+                            </div>
+                            <div class="evaluation-score excellent">9.2</div>
+                        </div>
+                        <div class="evaluation-item">
+                            <div class="evaluation-info">
+                                <h4>Ensayo - Literatura Contemporánea</h4>
+                                <p><i class="fas fa-calendar"></i> 12 Ene 2025</p>
+                            </div>
+                            <div class="evaluation-score good">8.5</div>
+                        </div>
+                        <div class="evaluation-item">
+                            <div class="evaluation-info">
+                                <h4>Presentación - Marketing Digital</h4>
+                                <p><i class="fas fa-calendar"></i> 10 Ene 2025</p>
+                            </div>
+                            <div class="evaluation-score excellent">9.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-exclamation-circle"></i> Próximas Entregas</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="deadline-item urgent">
+                            <div class="deadline-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="deadline-info">
+                                <h4>Trabajo de Investigación</h4>
+                                <p>Metodología de la Investigación</p>
+                                <span class="deadline-date"><i class="fas fa-clock"></i> Vence en 2 días</span>
+                            </div>
+                        </div>
+                        <div class="deadline-item warning">
+                            <div class="deadline-icon">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div class="deadline-info">
+                                <h4>Práctica de Laboratorio</h4>
+                                <p>Bases de Datos</p>
+                                <span class="deadline-date"><i class="fas fa-clock"></i> Vence en 5 días</span>
+                            </div>
+                        </div>
+                        <div class="deadline-item normal">
+                            <div class="deadline-icon">
+                                <i class="fas fa-presentation"></i>
+                            </div>
+                            <div class="deadline-info">
+                                <h4>Exposición Grupal</h4>
+                                <p>Gestión de Proyectos</p>
+                                <span class="deadline-date"><i class="fas fa-clock"></i> Vence en 1 semana</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Rubricas Section -->
+        <section id="rubricas" class="content-section">
+            <div class="page-header">
+                <h1>Mis Rúbricas</h1>
+                <p>Consulta las rúbricas de evaluación de tus materias</p>
+            </div>
+
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchRubricas" placeholder="Buscar rúbricas...">
+                </div>
+                <select class="filter-select" id="filterMateria">
+                    <option value="">Todas las materias</option>
+                    <option value="programacion">Programación Web</option>
+                    <option value="literatura">Literatura Contemporánea</option>
+                    <option value="marketing">Marketing Digital</option>
+                    <option value="metodologia">Metodología de la Investigación</option>
+                </select>
+            </div>
+
+            <div class="rubricas-grid" id="rubricasGrid">
+                <div class="rubrica-card" data-materia="programacion">
+                    <div class="rubrica-header">
+                        <div class="rubrica-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <span class="rubrica-badge active">Activa</span>
+                    </div>
+                    <h3>Proyecto Final - Desarrollo Web</h3>
+                    <p class="rubrica-materia">Programación Web</p>
+                    <div class="rubrica-meta">
+                        <span><i class="fas fa-list"></i> 5 Criterios</span>
+                        <span><i class="fas fa-percentage"></i> 30% del curso</span>
+                    </div>
+                    <button class="btn-primary" onclick="verRubrica(1)">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </button>
+                </div>
+
+                <div class="rubrica-card" data-materia="literatura">
+                    <div class="rubrica-header">
+                        <div class="rubrica-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <span class="rubrica-badge active">Activa</span>
+                    </div>
+                    <h3>Análisis Literario</h3>
+                    <p class="rubrica-materia">Literatura Contemporánea</p>
+                    <div class="rubrica-meta">
+                        <span><i class="fas fa-list"></i> 4 Criterios</span>
+                        <span><i class="fas fa-percentage"></i> 25% del curso</span>
+                    </div>
+                    <button class="btn-primary" onclick="verRubrica(2)">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </button>
+                </div>
+
+                <div class="rubrica-card" data-materia="marketing">
+                    <div class="rubrica-header">
+                        <div class="rubrica-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="rubrica-badge active">Activa</span>
+                    </div>
+                    <h3>Campaña Digital</h3>
+                    <p class="rubrica-materia">Marketing Digital</p>
+                    <div class="rubrica-meta">
+                        <span><i class="fas fa-list"></i> 6 Criterios</span>
+                        <span><i class="fas fa-percentage"></i> 35% del curso</span>
+                    </div>
+                    <button class="btn-primary" onclick="verRubrica(3)">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </button>
+                </div>
+
+                <div class="rubrica-card" data-materia="metodologia">
+                    <div class="rubrica-header">
+                        <div class="rubrica-icon">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <span class="rubrica-badge pending">Próxima</span>
+                    </div>
+                    <h3>Trabajo de Investigación</h3>
+                    <p class="rubrica-materia">Metodología de la Investigación</p>
+                    <div class="rubrica-meta">
+                        <span><i class="fas fa-list"></i> 7 Criterios</span>
+                        <span><i class="fas fa-percentage"></i> 40% del curso</span>
+                    </div>
+                    <button class="btn-primary" onclick="verRubrica(4)">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Evaluaciones Section -->
+        <section id="evaluaciones" class="content-section">
+            <div class="page-header">
+                <h1>Mis Evaluaciones</h1>
+                <p>Revisa el detalle de tus evaluaciones y retroalimentación</p>
+            </div>
+
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchEvaluaciones" placeholder="Buscar evaluaciones...">
+                </div>
+                <select class="filter-select" id="filterEstado">
+                    <option value="">Todos los estados</option>
+                    <option value="completada">Completadas</option>
+                    <option value="pendiente">Pendientes</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Evaluación</th>
+                            <th>Materia</th>
+                            <th>Fecha</th>
+                            <th>Calificación</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluacionesTable">
+                        <tr>
+                            <td>
+                                <div class="table-cell-content">
+                                    <i class="fas fa-code"></i>
+                                    <span>Proyecto Final</span>
+                                </div>
+                            </td>
+                            <td>Programación Web</td>
+                            <td>15 Ene 2025</td>
+                            <td><span class="score-badge excellent">9.2</span></td>
+                            <td><span class="status-badge completed">Completada</span></td>
+                            <td>
+                                <button class="btn-icon" onclick="verEvaluacion(1)" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-icon" onclick="descargarEvaluacion(1)" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="table-cell-content">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>Ensayo Literario</span>
+                                </div>
+                            </td>
+                            <td>Literatura Contemporánea</td>
+                            <td>12 Ene 2025</td>
+                            <td><span class="score-badge good">8.5</span></td>
+                            <td><span class="status-badge completed">Completada</span></td>
+                            <td>
+                                <button class="btn-icon" onclick="verEvaluacion(2)" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-icon" onclick="descargarEvaluacion(2)" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="table-cell-content">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Presentación Campaña</span>
+                                </div>
+                            </td>
+                            <td>Marketing Digital</td>
+                            <td>10 Ene 2025</td>
+                            <td><span class="score-badge excellent">9.0</span></td>
+                            <td><span class="status-badge completed">Completada</span></td>
+                            <td>
+                                <button class="btn-icon" onclick="verEvaluacion(3)" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-icon" onclick="descargarEvaluacion(3)" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="table-cell-content">
+                                    <i class="fas fa-microscope"></i>
+                                    <span>Trabajo de Investigación</span>
+                                </div>
+                            </td>
+                            <td>Metodología</td>
+                            <td>-</td>
+                            <td><span class="score-badge pending">Pendiente</span></td>
+                            <td><span class="status-badge pending">Pendiente</span></td>
+                            <td>
+                                <button class="btn-icon" disabled title="No disponible">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Calificaciones Section -->
+        <section id="calificaciones" class="content-section">
+            <div class="page-header">
+                <h1>Mis Calificaciones</h1>
+                <p>Consulta tu historial de calificaciones y progreso académico</p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card-large">
+                    <h3>Promedio General</h3>
+                    <div class="large-score">8.5</div>
+                    <p class="score-label">Excelente desempeño</p>
+                </div>
+                <div class="stat-card-large">
+                    <h3>Materias Aprobadas</h3>
+                    <div class="large-score">12/14</div>
+                    <p class="score-label">85.7% completado</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> Calificaciones por Materia</h2>
+                </div>
+                <div class="card-body">
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Programación Web</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score excellent">9.2</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Marketing Digital</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score excellent">9.0</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Literatura Contemporánea</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score good">8.5</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Bases de Datos</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 82%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score good">8.2</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Metodología de la Investigación</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score average">7.8</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Materias Section -->
+        <section id="materias" class="content-section">
+            <div class="page-header">
+                <h1>Mis Materias</h1>
+                <p>Materias inscritas en el semestre actual</p>
+            </div>
+
+            <div class="materias-grid">
+                <div class="materia-card">
+                    <div class="materia-header blue">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="materia-body">
+                        <h3>Programación Web</h3>
+                        <p class="materia-profesor"><i class="fas fa-user"></i> Dr. Carlos Martínez</p>
+                        <div class="materia-info">
+                            <span><i class="fas fa-clock"></i> Lun, Mié 10:00-12:00</span>
+                            <span><i class="fas fa-door-open"></i> Aula 301</span>
+                        </div>
+                        <div class="materia-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">9.2</span>
+                                <span class="stat-label">Promedio</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">95%</span>
+                                <span class="stat-label">Asistencia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="materia-card">
+                    <div class="materia-header green">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="materia-body">
+                        <h3>Marketing Digital</h3>
+                        <p class="materia-profesor"><i class="fas fa-user"></i> Lic. Ana García</p>
+                        <div class="materia-info">
+                            <span><i class="fas fa-clock"></i> Mar, Jue 14:00-16:00</span>
+                            <span><i class="fas fa-door-open"></i> Aula 205</span>
+                        </div>
+                        <div class="materia-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">9.0</span>
+                                <span class="stat-label">Promedio</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">92%</span>
+                                <span class="stat-label">Asistencia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="materia-card">
+                    <div class="materia-header orange">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="materia-body">
+                        <h3>Literatura Contemporánea</h3>
+                        <p class="materia-profesor"><i class="fas fa-user"></i> Dra. María López</p>
+                        <div class="materia-info">
+                            <span><i class="fas fa-clock"></i> Vie 08:00-12:00</span>
+                            <span><i class="fas fa-door-open"></i> Aula 102</span>
+                        </div>
+                        <div class="materia-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">8.5</span>
+                                <span class="stat-label">Promedio</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">88%</span>
+                                <span class="stat-label">Asistencia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="materia-card">
+                    <div class="materia-header purple">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="materia-body">
+                        <h3>Bases de Datos</h3>
+                        <p class="materia-profesor"><i class="fas fa-user"></i> Ing. Roberto Sánchez</p>
+                        <div class="materia-info">
+                            <span><i class="fas fa-clock"></i> Mar, Jue 08:00-10:00</span>
+                            <span><i class="fas fa-door-open"></i> Lab 401</span>
+                        </div>
+                        <div class="materia-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">8.2</span>
+                                <span class="stat-label">Promedio</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">90%</span>
+                                <span class="stat-label">Asistencia</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Ver Rubrica -->
+    <div id="rubricaModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-alt"></i> Detalles de la Rúbrica</h2>
+                <button class="modal-close" onclick="cerrarModal('rubricaModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="rubrica-detail-header">
+                    <h3 id="rubricaTitulo">Proyecto Final - Desarrollo Web</h3>
+                    <p id="rubricaMateria">Programación Web</p>
+                    <div class="rubrica-meta-detail">
+                        <span><i class="fas fa-percentage"></i> Valor: 30% del curso</span>
+                        <span><i class="fas fa-calendar"></i> Fecha límite: 20 Ene 2025</span>
+                    </div>
+                </div>
+
+                <div class="criterios-container">
+                    <h4><i class="fas fa-list-check"></i> Criterios de Evaluación</h4>
+                    <div class="criterio-item">
+                        <div class="criterio-header">
+                            <h5>1. Funcionalidad (25 puntos)</h5>
+                            <span class="criterio-peso">25%</span>
+                        </div>
+                        <p class="criterio-descripcion">El proyecto cumple con todos los requisitos funcionales especificados</p>
+                        <div class="niveles-grid">
+                            <div class="nivel-item">
+                                <strong>Excelente (23-25)</strong>
+                                <p>Todas las funcionalidades implementadas correctamente</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Bueno (20-22)</strong>
+                                <p>La mayoría de funcionalidades correctas</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Regular (15-19)</strong>
+                                <p>Funcionalidades básicas implementadas</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Insuficiente (0-14)</strong>
+                                <p>Funcionalidades incompletas o incorrectas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="criterio-item">
+                        <div class="criterio-header">
+                            <h5>2. Diseño y UX (20 puntos)</h5>
+                            <span class="criterio-peso">20%</span>
+                        </div>
+                        <p class="criterio-descripcion">Interfaz atractiva, intuitiva y responsive</p>
+                        <div class="niveles-grid">
+                            <div class="nivel-item">
+                                <strong>Excelente (18-20)</strong>
+                                <p>Diseño profesional y excelente UX</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Bueno (15-17)</strong>
+                                <p>Diseño atractivo y funcional</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Regular (10-14)</strong>
+                                <p>Diseño básico pero funcional</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Insuficiente (0-9)</strong>
+                                <p>Diseño deficiente o no responsive</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="criterio-item">
+                        <div class="criterio-header">
+                            <h5>3. Código (25 puntos)</h5>
+                            <span class="criterio-peso">25%</span>
+                        </div>
+                        <p class="criterio-descripcion">Código limpio, organizado y bien documentado</p>
+                        <div class="niveles-grid">
+                            <div class="nivel-item">
+                                <strong>Excelente (23-25)</strong>
+                                <p>Código ejemplar y bien estructurado</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Bueno (20-22)</strong>
+                                <p>Código organizado y legible</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Regular (15-19)</strong>
+                                <p>Código funcional pero mejorable</p>
+                            </div>
+                            <div class="nivel-item">
+                                <strong>Insuficiente (0-14)</strong>
+                                <p>Código desorganizado o mal documentado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModal('rubricaModal')">Cerrar</button>
+                <button class="btn-primary" onclick="descargarRubrica()">
+                    <i class="fas fa-download"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Evaluacion -->
+    <div id="evaluacionModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-clipboard-check"></i> Detalle de Evaluación</h2>
+                <button class="modal-close" onclick="cerrarModal('evaluacionModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="evaluacion-summary">
+                    <h3>Proyecto Final - Desarrollo Web</h3>
+                    <div class="evaluacion-meta">
+                        <span><i class="fas fa-calendar"></i> Evaluado: 15 Ene 2025</span>
+                        <span><i class="fas fa-user"></i> Profesor: Dr. Carlos Martínez</span>
+                    </div>
+                    <div class="evaluacion-score-large">
+                        <span class="score-label">Calificación Final</span>
+                        <span class="score-value">9.2</span>
+                        <span class="score-max">/ 10.0</span>
+                    </div>
+                </div>
+
+                <div class="evaluacion-criterios">
+                    <h4><i class="fas fa-star"></i> Evaluación por Criterios</h4>
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Funcionalidad</h5>
+                            <span class="criterio-score">24/25</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 96%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Excelente implementación de todas las funcionalidades. El sistema funciona de manera fluida y sin errores.</p>
+                    </div>
+
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Diseño y UX</h5>
+                            <span class="criterio-score">18/20</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 90%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Diseño atractivo y profesional. La experiencia de usuario es muy buena. Sugerencia: mejorar el contraste en algunos elementos.</p>
+                    </div>
+
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Código</h5>
+                            <span class="criterio-score">23/25</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 92%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Código muy bien estructurado y documentado. Buenas prácticas aplicadas consistentemente.</p>
+                    </div>
+                </div>
+
+                <div class="comentarios-generales">
+                    <h4><i class="fas fa-comment"></i> Comentarios Generales</h4>
+                    <p>Excelente trabajo en general. El proyecto demuestra un dominio sólido de los conceptos vistos en clase. La implementación es profesional y cumple con todos los requisitos. Sigue así!</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModal('evaluacionModal')">Cerrar</button>
+                <button class="btn-primary" onclick="descargarEvaluacion()">
+                    <i class="fas fa-download"></i> Descargar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/students.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Funcion para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/login'
+                }
+            });
+        }
+    </script>
+</body>
+</html>
