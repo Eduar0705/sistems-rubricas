@@ -27,6 +27,12 @@ app.use(require('./controllers/login'));
 
 //RUTAS ADMIN
 app.use(require('./routers/admin'));
+app.use(require('./routers/rubricasAdmin'));
+app.use(require('./routers/crearRubricaAdmin'));
+app.use(require('./routers/estudianteAdmin'));
+app.use(require('./routers/evaluacionAdmin'));
+app.use(require('./routers/profeAdmin'));
+app.use(require('./routers/reportesAdmin'));
 
 //RUTAS TEACHER
 app.use(require('./routers/teacher'));

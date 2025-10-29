@@ -8,12 +8,15 @@ const sidebar = document.getElementById("sidebar")
 // Handle navigation
 navItems.forEach((item) => {
     item.addEventListener("click", (e) => {
+        // Si es un enlace externo, permitir la navegación normal
+        if (item.getAttribute("data-external") === "true") {
+            return // Permitir que el navegador maneje la redirección
+        }
+        
         e.preventDefault()
 
-        // Remove active class from all nav items
         navItems.forEach((nav) => nav.classList.remove("active"))
 
-        // Add active class to clicked item
         item.classList.add("active")
 
         // Get view name
@@ -48,7 +51,7 @@ mobileMenuToggle.addEventListener("click", () => {
 document.addEventListener("click", (e) => {
     if (window.innerWidth <= 1024) {
         if (!sidebar.contains(e.target) && !mobileMenuToggle.contains(e.target)) {
-        sidebar.classList.remove("active")
+            sidebar.classList.remove("active")
         }
     }
 })
@@ -59,9 +62,9 @@ const criteriosList = document.getElementById("criteriosList")
 
 if (addCriterioBtn) {
     addCriterioBtn.addEventListener("click", () => {
-    const newCriterio = document.createElement("div")
-    newCriterio.className = "criterio-card"
-    newCriterio.innerHTML = `
+        const newCriterio = document.createElement("div")
+        newCriterio.className = "criterio-card"
+        newCriterio.innerHTML = `
             <div class="criterio-header">
                 <input type="text" class="form-input" placeholder="Nombre del criterio">
                 <button type="button" class="btn-icon delete-criterio" title="Eliminar">
@@ -86,11 +89,11 @@ if (addCriterioBtn) {
             </div>
         `
 
-    criteriosList.appendChild(newCriterio)
+        criteriosList.appendChild(newCriterio)
 
-    // Add delete functionality to new criterio
-    const deleteBtn = newCriterio.querySelector(".delete-criterio")
-    deleteBtn.addEventListener("click", () => {
+        // Add delete functionality to new criterio
+        const deleteBtn = newCriterio.querySelector(".delete-criterio")
+        deleteBtn.addEventListener("click", () => {
             newCriterio.remove()
         })
     })
@@ -101,7 +104,7 @@ document.querySelectorAll(".delete-criterio").forEach((btn) => {
     btn.addEventListener("click", (e) => {
         const criterioCard = e.target.closest(".criterio-card")
         if (criterioCard) {
-        criterioCard.remove()
+            criterioCard.remove()
         }
     })
 })
@@ -110,40 +113,40 @@ document.querySelectorAll(".delete-criterio").forEach((btn) => {
 const rubricaForm = document.getElementById("rubricaForm")
 if (rubricaForm) {
     rubricaForm.addEventListener("submit", (e) => {
-    e.preventDefault()
+        e.preventDefault()
 
-    console.log("[v0] Form submitted")
+        console.log("[v0] Form submitted")
 
-    // Get form data
-    const formData = {
-        nombre: document.getElementById("nombreRubrica").value,
-        asignatura: document.getElementById("asignatura").value,
-        periodo: document.getElementById("periodo").value,
-        descripcion: document.getElementById("descripcion").value,
-        criterios: [],
-    }
-
-    // Get criterios
-    const criterioCards = document.querySelectorAll(".criterio-card")
-    criterioCards.forEach((card) => {
-        const criterio = {
-            nombre: card.querySelector(".criterio-header input").value,
-            descripcion: card.querySelector(".criterio-body textarea").value,
-            peso: card.querySelectorAll(".form-row input")[0].value,
-            puntuacionMaxima: card.querySelectorAll(".form-row input")[1].value,
+        // Get form data
+        const formData = {
+            nombre: document.getElementById("nombreRubrica").value,
+            asignatura: document.getElementById("asignatura").value,
+            periodo: document.getElementById("periodo").value,
+            descripcion: document.getElementById("descripcion").value,
+            criterios: [],
         }
-        formData.criterios.push(criterio)
-    })
 
-    console.log("[v0] Form data:", formData)
+        // Get criterios
+        const criterioCards = document.querySelectorAll(".criterio-card")
+        criterioCards.forEach((card) => {
+            const criterio = {
+                nombre: card.querySelector(".criterio-header input").value,
+                descripcion: card.querySelector(".criterio-body textarea").value,
+                peso: card.querySelectorAll(".form-row input")[0].value,
+                puntuacionMaxima: card.querySelectorAll(".form-row input")[1].value,
+            }
+            formData.criterios.push(criterio)
+        })
 
-    // Show success message
-    alert("Rúbrica creada exitosamente")
+        console.log("[v0] Form data:", formData)
 
-    // Navigate to rubricas view
-    const rubricasNav = document.querySelector('[data-view="rubricas"]')
-    if (rubricasNav) {
-        rubricasNav.click()
+        // Show success message
+        alert("Rúbrica creada exitosamente")
+
+        // Navigate to rubricas view
+        const rubricasNav = document.querySelector('[data-view="rubricas"]')
+        if (rubricasNav) {
+            rubricasNav.click()
         }
     })
 }
@@ -154,7 +157,7 @@ window.addEventListener("resize", () => {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(() => {
         if (window.innerWidth > 1024) {
-        sidebar.classList.remove("active")
+            sidebar.classList.remove("active")
         }
     }, 250)
 })

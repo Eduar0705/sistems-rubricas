@@ -257,7 +257,6 @@ body {
 
 /* Views */
 .view {
-    display: none;
     padding: var(--spacing-xl);
 }
 

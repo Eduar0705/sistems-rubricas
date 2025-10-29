@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Rubricas' %></title>
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="shortcut icon" href="../img/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Sistema de Rúbricas</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/home" class="nav-item" data-view="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Panel Principal</span>
+            </a>
+            <a href="/admin/rubricas" class="nav-item" data-external="true">
+                <i class="fas fa-table"></i>
+                <span>Mis Rúbricas</span>
+            </a>
+            <a href="/admin/createrubricas" class="nav-item active" data-external="true">
+                <i class="fas fa-plus-circle"></i>
+                <span>Crear Rúbrica</span>
+            </a>
+            <a href="/admin/evaluaciones" class="nav-item" data-external="true">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Evaluaciones</span>
+            </a>
+            <a href="/admin/estudiantes" class="nav-item" data-external="true">
+                <i class="fas fa-users"></i>
+                <span>Estudiantes</span>
+            </a>
+            <a href="/admin/profesores" class="nav-item" data-external="true">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Profesores</span>
+            </a>
+            <a href="/admin/reportes" class="nav-item" data-external="true">
+                <i class="fas fa-file-alt"></i>
+                <span>Reportes</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name"><%= datos.username %></div>
+                    <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
+                </div>
+            </div>
+            <button class="header-btn" onclick="Exit()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="pageTitle">Panel Principal</h1>
+            </div>
+            <div class="header-right">
+                <button class="header-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Crear Rubrica View -->
+        <div style="padding: 20px;" id="crear">
+            <div class="form-container">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Crear Nueva Rúbrica</h2>
+                    </div>
+                    <div class="card-content">
+                        <form id="rubricaForm">
+                            <div class="form-group">
+                                <label for="nombreRubrica">Nombre de la Rúbrica</label>
+                                <input type="text" id="nombreRubrica" class="form-input" placeholder="Ej: Proyecto Final - Ingeniería de Software">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="asignatura">Asignatura</label>
+                                    <select id="asignatura" class="form-select">
+                                        <option value="">Seleccionar asignatura</option>
+                                        <option value="ing-software">Ingeniería de Software II</option>
+                                        <option value="metodologia">Metodología de la Investigación</option>
+                                        <option value="investigacion">Investigación Aplicada</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="periodo">Período Académico</label>
+                                    <select id="periodo" class="form-select">
+                                        <option value="">Seleccionar período</option>
+                                        <option value="2025-1">2025-1</option>
+                                        <option value="2025-2">2025-2</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="descripcion">Descripción</label>
+                                <textarea id="descripcion" class="form-textarea" rows="3" placeholder="Descripción de la rúbrica y su propósito..."></textarea>
+                            </div>
+
+                            <div class="criterios-section">
+                                <div class="section-header">
+                                    <h3>Criterios de Evaluación</h3>
+                                    <button type="button" class="btn-secondary" id="addCriterio">
+                                        <i class="fas fa-plus"></i>
+                                        Agregar Criterio
+                                    </button>
+                                </div>
+
+                                <div id="criteriosList">
+                                    <div class="criterio-card">
+                                        <div class="criterio-header">
+                                            <input type="text" class="form-input" placeholder="Nombre del criterio" value="Calidad del Contenido">
+                                            <button type="button" class="btn-icon" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <div class="criterio-body">
+                                            <div class="form-group">
+                                                <label>Descripción</label>
+                                                <textarea class="form-textarea" rows="2" placeholder="Descripción del criterio...">Evalúa la profundidad y relevancia del contenido presentado</textarea>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group">
+                                                    <label>Peso (%)</label>
+                                                    <input type="number" class="form-input" value="30" min="0" max="100">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Puntuación Máxima</label>
+                                                    <input type="number" class="form-input" value="10" min="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn-secondary">Cancelar</button>
+                                <button type="button" class="btn-secondary">Guardar como Borrador</button>
+                                <button type="submit" class="btn-primary">Crear Rúbrica</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="./js/home.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Funcion para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/login'
+                }
+            });
+        }
+    </script>
+</body>
+</html>

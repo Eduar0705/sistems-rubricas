@@ -22,27 +22,31 @@
         </div>
         
         <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-view="dashboard">
+            <a href="/home" class="nav-item active" data-view="dashboard">
                 <i class="fas fa-chart-line"></i>
                 <span>Panel Principal</span>
             </a>
-            <a href="#" class="nav-item" data-view="rubricas">
+            <a href="/admin/rubricas" class="nav-item" data-external="true">
                 <i class="fas fa-table"></i>
                 <span>Mis Rúbricas</span>
             </a>
-            <a href="#" class="nav-item" data-view="crear">
+            <a href="/admin/createrubricas" class="nav-item" data-external="true">
                 <i class="fas fa-plus-circle"></i>
                 <span>Crear Rúbrica</span>
             </a>
-            <a href="#" class="nav-item" data-view="evaluaciones">
+            <a href="/admin/evaluaciones" class="nav-item" data-external="true">
                 <i class="fas fa-clipboard-check"></i>
                 <span>Evaluaciones</span>
             </a>
-            <a href="#" class="nav-item" data-view="estudiantes">
+            <a href="/admin/estudiantes" class="nav-item" data-external="true">
                 <i class="fas fa-users"></i>
                 <span>Estudiantes</span>
             </a>
-            <a href="#" class="nav-item" data-view="reportes">
+            <a href="/admin/profesores" class="nav-item" data-external="true">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Profesores</span>
+            </a>
+            <a href="/admin/reportes" class="nav-item" data-external="true">
                 <i class="fas fa-file-alt"></i>
                 <span>Reportes</span>
             </a>
@@ -205,208 +209,6 @@
                                 <div class="activity-time">Hace 1 día</div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rubricas View -->
-        <div class="view" id="rubricas">
-            <div class="view-header">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Buscar rúbricas...">
-                </div>
-                <button class="btn-primary">
-                    <i class="fas fa-plus"></i>
-                    Nueva Rúbrica
-                </button>
-            </div>
-
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Asignatura</th>
-                            <th>Criterios</th>
-                            <th>Última Modificación</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Proyecto Final - Ingeniería de Software
-                                </div>
-                            </td>
-                            <td>Ingeniería de Software II</td>
-                            <td>8 criterios</td>
-                            <td>15/10/2025</td>
-                            <td><span class="badge-status active">Activa</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Presentación Oral - Metodología
-                                </div>
-                            </td>
-                            <td>Metodología de la Investigación</td>
-                            <td>6 criterios</td>
-                            <td>12/10/2025</td>
-                            <td><span class="badge-status active">Activa</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Ensayo Académico - Investigación
-                                </div>
-                            </td>
-                            <td>Investigación Aplicada</td>
-                            <td>5 criterios</td>
-                            <td>08/10/2025</td>
-                            <td><span class="badge-status draft">Borrador</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Crear Rubrica View -->
-        <div class="view" id="crear">
-            <div class="form-container">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Crear Nueva Rúbrica</h2>
-                    </div>
-                    <div class="card-content">
-                        <form id="rubricaForm">
-                            <div class="form-group">
-                                <label for="nombreRubrica">Nombre de la Rúbrica</label>
-                                <input type="text" id="nombreRubrica" class="form-input" placeholder="Ej: Proyecto Final - Ingeniería de Software">
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="asignatura">Asignatura</label>
-                                    <select id="asignatura" class="form-select">
-                                        <option value="">Seleccionar asignatura</option>
-                                        <option value="ing-software">Ingeniería de Software II</option>
-                                        <option value="metodologia">Metodología de la Investigación</option>
-                                        <option value="investigacion">Investigación Aplicada</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="periodo">Período Académico</label>
-                                    <select id="periodo" class="form-select">
-                                        <option value="">Seleccionar período</option>
-                                        <option value="2025-1">2025-1</option>
-                                        <option value="2025-2">2025-2</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="descripcion">Descripción</label>
-                                <textarea id="descripcion" class="form-textarea" rows="3" placeholder="Descripción de la rúbrica y su propósito..."></textarea>
-                            </div>
-
-                            <div class="criterios-section">
-                                <div class="section-header">
-                                    <h3>Criterios de Evaluación</h3>
-                                    <button type="button" class="btn-secondary" id="addCriterio">
-                                        <i class="fas fa-plus"></i>
-                                        Agregar Criterio
-                                    </button>
-                                </div>
-
-                                <div id="criteriosList">
-                                    <div class="criterio-card">
-                                        <div class="criterio-header">
-                                            <input type="text" class="form-input" placeholder="Nombre del criterio" value="Calidad del Contenido">
-                                            <button type="button" class="btn-icon" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                        <div class="criterio-body">
-                                            <div class="form-group">
-                                                <label>Descripción</label>
-                                                <textarea class="form-textarea" rows="2" placeholder="Descripción del criterio...">Evalúa la profundidad y relevancia del contenido presentado</textarea>
-                                            </div>
-                                            <div class="form-row">
-                                                <div class="form-group">
-                                                    <label>Peso (%)</label>
-                                                    <input type="number" class="form-input" value="30" min="0" max="100">
-                                                </div>
-                                                <div class="form-group">
-                                                    <label>Puntuación Máxima</label>
-                                                    <input type="number" class="form-input" value="10" min="0">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-actions">
-                                <button type="button" class="btn-secondary">Cancelar</button>
-                                <button type="button" class="btn-secondary">Guardar como Borrador</button>
-                                <button type="submit" class="btn-primary">Crear Rúbrica</button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>

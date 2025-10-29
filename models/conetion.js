@@ -6,7 +6,7 @@ const conexion = mysql.createConnection({
     user: 'sistems',
     password: '31466704',
     database: 'sistems_rubricas',
-    connectTimeout: 60000, // Solo esta opción es válida
+    connectTimeout: 60000
 });
 
 // Usar manejo de errores mejorado
