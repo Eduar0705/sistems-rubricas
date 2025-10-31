@@ -15,8 +15,7 @@ router.post('/envioProfe', (req, res)=>{
 
     conexion.query(insert, valores, (err, result)=>{
         if(err){
-            console.log('ERROR en el envio de los datos: ', err);
-            console.log('Error completo:', err); // Para más detalles
+            console.log('Error completo:', err);
             mensaje = 'Error en el envio del profesor intente mas tarde';
             return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
         }

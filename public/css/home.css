@@ -300,12 +300,39 @@ body {
     background-color: #b91c1c;
 }
 
-.btn-add{
+.btn-view{
     background-color: var(--color-success);
     color: white;
 }
-.btn-add:hover{
+.btn-view:hover{
     background-color: #047857;
+}
+
+.swal-wide {
+    font-family: 'Arial', sans-serif;
+}
+
+.swal-no-padding .swal2-html-container {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Estilos para la tarjeta de profesor */
+.swal-profesor-card {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+.swal-no-padding {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden;
+}
+
+.swal2-confirm {
+    padding: 10px 30px !important;
+    font-weight: 500 !important;
 }
 
 /* Stats Grid */
@@ -601,10 +628,117 @@ body {
 }
 
 /* Table */
+/* Controles de paginación */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    margin-bottom: -1px;
+}
+
+.entries-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+.entries-select {
+    padding: 6px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.entries-select:hover {
+    border-color: var(--color-primary);
+}
+
+.entries-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.pagination-info {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+}
+
+/* Botones de paginación */
+.pagination-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.pagination-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    background-color: white;
+    color: var(--color-text);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    min-width: 40px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.pagination-btn.active {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Badges de estado */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-active {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-inactive {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Tabla existente */
 .table-container {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     overflow: hidden;
 }
 
@@ -646,6 +780,92 @@ body {
 .table-actions {
     display: flex;
     gap: var(--spacing-xs);
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .pagination-controls {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        align-items: flex-start;
+    }
+
+    .pagination-info {
+        width: 100%;
+        text-align: center;
+    }
+
+    .table-container {
+        border: none;
+        border-radius: 0;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table tr {
+        margin-bottom: var(--spacing-md);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        background-color: var(--color-surface);
+    }
+
+    .data-table td {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-top: 1px solid var(--color-border);
+        position: relative;
+        padding-left: 45%;
+        text-align: right;
+    }
+
+    .data-table td:first-child {
+        border-top: none;
+        background-color: var(--color-primary);
+        color: white;
+        font-weight: 600;
+        text-align: center;
+        padding: var(--spacing-md);
+        padding-left: var(--spacing-md);
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: var(--spacing-md);
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    .data-table td:first-child::before {
+        content: none;
+    }
+
+    .table-actions {
+        justify-content: flex-end;
+        padding-top: var(--spacing-xs);
+    }
+
+    .pagination-buttons {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    .pagination-btn {
+        min-width: 35px;
+        padding: 6px 10px;
+    }
 }
 
 /* Badge Status */

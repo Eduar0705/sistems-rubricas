@@ -27,6 +27,8 @@ app.use(require('./routers/login'));
 //RUTAS DE LOS CONTROLLERS
 app.use(require('./controllers/login'));
 app.use(require('./controllers/addProfeControllers'));
+app.use(require('./controllers/deleteProfeControllers'));
+app.use(require('./controllers/updateProfeControllers'));
 
 //RUTAS ADMIN
 app.use(require('./routers/admin'));

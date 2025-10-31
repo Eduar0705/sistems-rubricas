@@ -34,7 +34,7 @@
         }
 
         /* Contenedor del modal */
-        .modal-add {
+        .modal-add, .modal-edit {
             background-color: white;
             border-radius: 12px;
             padding: 32px;
@@ -48,7 +48,7 @@
         }
 
         /* Botón cerrar */
-        .btn-cerrar {
+        .btn-cerrar  {
             position: absolute;
             top: 16px;
             right: 16px;
