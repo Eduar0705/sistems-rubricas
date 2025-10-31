@@ -6,7 +6,7 @@ router.get("/home", function(req, res) {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
-    res.render("home/index", {datos : req.session});
+    res.render("home/index", {datos : req.session,  title: 'Sistema de Gestion de Rubricas'});
 });
 
 module.exports = router;

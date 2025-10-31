@@ -5,7 +5,7 @@ const conexion = require('../models/conetion');
 routers.post('/verifLogin', (req, res)=>{
     const { cedula, password} = req.body;
 
-    const query = 'SELECT * FROM usuarios WHERE cedula = ? AND password = ?';
+    const query = 'SELECT * FROM usuario WHERE cedula = ? AND password = ?';
     conexion.query(query, [cedula, password], (err, results)=>{
         let mensaje;
         if(err){

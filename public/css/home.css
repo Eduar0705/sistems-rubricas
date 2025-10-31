@@ -273,6 +273,41 @@ body {
     flex-wrap: wrap;
 }
 
+.btns{
+    padding: 7px 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-edit{
+    background-color: var(--color-info);
+    color: white;
+}
+.btn-edit:hover{
+    background-color: var(--color-primary-light);
+}
+
+.btn-delete{
+    background-color: var(--color-danger);
+    color: white;
+}
+.btn-delete:hover{
+    background-color: #b91c1c;
+}
+
+.btn-add{
+    background-color: var(--color-success);
+    color: white;
+}
+.btn-add:hover{
+    background-color: #047857;
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;

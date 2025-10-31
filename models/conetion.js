@@ -1,48 +1,43 @@
 const mysql = require('mysql2');
 
-// Configuración para la base de datos en la nube (AlwaysData)
 const conexion = mysql.createConnection({
     host: 'mysql-sistems.alwaysdata.net',
     user: 'sistems',
     password: '31466704',
-    database: 'sistems_rubricas',
-    connectTimeout: 60000
+    database: 'sistems_rb'
 });
 
-// Usar manejo de errores mejorado
 conexion.connect((err) => {
     if (err) {
         console.log('Error de conexión a la base de datos:', err);
-        
-        // Diagnosticar el problema específico
-        if (err.code === 'ECONNREFUSED') {
-            console.log(' No se puede conectar al servidor MySQL. Verifica:');
-            console.log('   - Que el host sea correcto: mysql-sistems.alwaysdata.net');
-            console.log('   - Que el servicio esté activo en AlwaysData');
-            console.log('   - Que las credenciales sean correctas');
-            console.log('   - Que no haya bloqueos de firewall');
-        } 
-        else if (err.code === 'ER_ACCESS_DENIED_ERROR') {
-            console.log('Error de autenticación. Verifica usuario y contraseña');
-        }
-        
         return;
     } else {
-        console.log('Conexión exitosa a la base de datos en AlwaysData');
+        console.log('Conexión exitosa a la base de datos en AlwaysData :D....');
     }
 });
 
-// Manejar errores durante la conexión
+// Mantener conexión viva
+setInterval(() => {
+    conexion.query('SELECT 1', (err) => {
+        if (err) {
+            console.log('Error en ping:', err);
+            // Reconectar automáticamente
+            conexion.connect((connectErr) => {
+                if (!connectErr) console.log('Reconexión automática exitosa');
+            });
+        }
+    });
+}, 300000); // Cada 5 minutos
+
+// Manejar errores de conexión
 conexion.on('error', (err) => {
-    console.log('Error en la conexión MySQL:', err);
-    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('La conexión con la base de datos fue cerrada');
-    } 
-    else if (err.code === 'ER_CON_COUNT_ERROR') {
-        console.log('Demasiadas conexiones a la base de datos');
-    } 
-    else if (err.code === 'ECONNREFUSED') {
-        console.log('Conexión rechazada por el servidor');
+    if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET') {
+        console.log('Conexión perdida, reconectando...');
+        setTimeout(() => {
+            conexion.connect();
+        }, 2000);
+    } else {
+        console.log('Error MySQL:', err);
     }
 });
 

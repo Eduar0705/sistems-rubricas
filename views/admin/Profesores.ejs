@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title || 'Rubricas' %></title>
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/modalProfe.css">
     <link rel="shortcut icon" href="../img/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -22,7 +23,7 @@
         </div>
         
         <nav class="sidebar-nav">
-            <a href="/home" class="nav-item" data-view="dashboard">
+            <a href="/home" class="nav-item" data-external="true">
                 <i class="fas fa-chart-line"></i>
                 <span>Panel Principal</span>
             </a>
@@ -38,9 +39,9 @@
                 <i class="fas fa-clipboard-check"></i>
                 <span>Evaluaciones</span>
             </a>
-            <a href="/admin/estudiantes" class="nav-item" data-external="true">
-                <i class="fas fa-users"></i>
-                <span>Estudiantes</span>
+            <a href="/admin/permisos" class="nav-item" data-external="true">
+                <i class="fas fa-user-plus"></i>
+                <span>Permisos</span>
             </a>
             <a href="/admin/profesores" class="nav-item active" data-external="true">
                 <i class="fas fa-chalkboard-teacher"></i>
@@ -75,7 +76,7 @@
                 <button class="mobile-menu-toggle" id="mobileMenuToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h1 class="page-title" id="pageTitle">Panel Principal</h1>
+                <h1 class="page-title" id="pageTitle"> <%= title || 'Rubricas' %> </h1>
             </div>
             <div class="header-right">
                 <button class="header-btn">
@@ -85,15 +86,15 @@
         </header>
 
         <!-- Estudiantes View -->
-        <div class="view" id="estudiantes">
+        <div class="view" id="Profesor">
             <div class="view-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Buscar estudiantes...">
+                    <input type="text" placeholder="Buscar Profesor...">
                 </div>
-                <button class="btn-primary">
-                    <i class="fas fa-user-plus"></i>
-                    Agregar Estudiante
+                <button class="btn-abrir-modal" id="btnAbrirModal">
+                    <i class="fa fa-user-plus"></i>
+                    Agregar Nuevo Profesor
                 </button>
             </div>
 
@@ -101,85 +102,111 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Estudiante</th>
-                            <th>ID</th>
-                            <th>Asignatura</th>
-                            <th>Evaluaciones</th>
-                            <th>Promedio</th>
+                            <th>Profesor</th>
+                            <th>Cedula</th>
+                            <th>Especialidad</th>
+                            <th>Correo</th>
+                            <th>Activo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <div class="student-avatar small">JP</div>
-                                    Juan Pérez
-                                </div>
-                            </td>
-                            <td>2021-0123</td>
-                            <td>Ingeniería de Software II</td>
-                            <td>12 completadas</td>
-                            <td><span class="score-badge high">8.5</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver perfil">
-                                        <i class="fas fa-user"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Historial">
-                                        <i class="fas fa-history"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <div class="student-avatar small">MG</div>
-                                    María González
-                                </div>
-                            </td>
-                            <td>2021-0124</td>
-                            <td>Metodología de la Investigación</td>
-                            <td>10 completadas</td>
-                            <td><span class="score-badge high">9.1</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver perfil">
-                                        <i class="fas fa-user"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Historial">
-                                        <i class="fas fa-history"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <div class="student-avatar small">CR</div>
-                                    Carlos Rodríguez
-                                </div>
-                            </td>
-                            <td>2021-0125</td>
-                            <td>Ingeniería de Software II</td>
-                            <td>11 completadas</td>
-                            <td><span class="score-badge medium">7.8</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver perfil">
-                                        <i class="fas fa-user"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Historial">
-                                        <i class="fas fa-history"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <% if(profesores.length > 0) { %>
+                            <% profesores.forEach((profe)=>{ %>
+                                <tr>
+                                    <td><%= profe.nombre + ' ' + profe.apellido %></td>
+                                    <td><%= profe.cedula %></td>
+                                    <td><%= profe.especializacion %></td>
+                                    <td><%= profe.email %></td>
+                                    <td id="act"><%= profe.activo === 1 ? 'activo' : 'inactivo' %></td>
+                                    <td>
+                                        <button class="btns btn-edit"><i class="fa fa-edit"></i></button>
+                                        <button class="btns btn-delete"><i class="fa fa-trash"></i></button>
+                                        <button class="btns btn-add"><i class="fa fa-user-plus"></i></button>
+                                    </td>
+                                </tr>
+                            <%})%>
+                        <% }else{ %>
+                            <tr>
+                                <td colspan="6" style="text-align: center;">No hay profesores registrados.</td>
+                            </tr>
+                        <% }%>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script>
+                Swal.fire({
+                    icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                    title: 'Información',
+                    text: '<%= locals.mensaje || mensaje %>',
+                    confirmButtonText: 'Aceptar'
+                });
+            </script>
+        <% } %>
+        <div class="modal-overlay" id="modalOverlay">
+            <div class="modal-add" id="modalAdd">
+                <button class="btn-cerrar" id="btnCerrar">&times;</button>
+                <h2>Agregar Nuevo Profesor</h2>
+                
+                <form id="formProfesor" method="post" action="/envioProfe">
+                    
+                    <div class="form-group">
+                        <label for="nombre">Cedula:</label>
+                        <input type="text" id="cedula" name="cedula" required placeholder="Ej: 12345678 ">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nombre">Nombres:</label>
+                        <input type="text" id="nombre" name="nombre" required placeholder="Ej: Juan ">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="apellido">Apellidos:</label>
+                        <input type="text" id="apellido" name="apellido" required placeholder="Ej: Gómez">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" required placeholder="profesor@ejemplo.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="0414 500 00 00">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="especialidad">Especialidad</label>
+                        <select id="especialidad" name="especialidad" required>
+                            <option value="">Seleccionar especialidad</option>
+                            <option value="matematicas">Matemáticas</option>
+                            <option value="fisica">Física</option>
+                            <option value="quimica">Química</option>
+                            <option value="biologia">Biología</option>
+                            <option value="historia">Historia</option>
+                            <option value="literatura">Literatura</option>
+                            <option value="ingles">Inglés</option>
+                            <option value="informatico">Informatico</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notas">Notas adicionales</label>
+                        <textarea id="notas" name="notas" placeholder="Información adicional sobre el profesor..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Profesor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </main>
 
     <script src="../js/home.js"></script>
@@ -202,6 +229,58 @@
                 }
             });
         }
+
+        //Funcion de color de activo y no 
+        const estado = document.querySelectorAll('#act');
+        estado.forEach((act) => {
+            if(act.textContent.trim() === 'activo'){
+                act.style.color = 'green';
+            } else {
+                act.style.color = 'red';
+            }
+        });
+    </script>
+
+    <!--  Funcion del modal -->
+    <script>
+        // Elementos del DOM
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const btnCerrar = document.getElementById('btnCerrar');
+        const btnCancelar = document.getElementById('btnCancelar');
+        const formProfesor = document.getElementById('formProfesor');
+
+        // Función para abrir el modal
+        function abrirModal() {
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        // Función para cerrar el modal
+        function cerrarModal() {
+            modalOverlay.classList.remove('active');
+            document.body.style.overflow = ''; // Restaurar scroll del body
+            formProfesor.reset(); // Limpiar el formulario
+        }
+
+        // Event listeners
+        btnAbrirModal.addEventListener('click', abrirModal);
+        btnCerrar.addEventListener('click', cerrarModal);
+        btnCancelar.addEventListener('click', cerrarModal);
+
+        // Cerrar modal al hacer clic fuera de él
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                cerrarModal();
+            }
+        });
+
+        // Cerrar modal con la tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                cerrarModal();
+            }
+        });
     </script>
 </body>
 </html>
