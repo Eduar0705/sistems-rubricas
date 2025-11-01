@@ -38,6 +38,7 @@ app.use(require('./routers/permisosAdmin'));
 app.use(require('./routers/evaluacionAdmin'));
 app.use(require('./routers/profeAdmin'));
 app.use(require('./routers/reportesAdmin'));
+app.use(require('./routers/configAdmin'));
 
 //RUTAS TEACHER
 app.use(require('./routers/teacher'));

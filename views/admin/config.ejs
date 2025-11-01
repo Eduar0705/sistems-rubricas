@@ -22,7 +22,7 @@
         </div>
         
         <nav class="sidebar-nav">
-            <a href="/home" class="nav-item" data-external="true">
+            <a href="/home" class="nav-item " data-external="true">
                 <i class="fas fa-chart-line"></i>
                 <span>Panel Principal</span>
             </a>
@@ -66,8 +66,6 @@
             </button>
         </div>
     </aside>
-
-    <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
         <header class="header">
@@ -83,14 +81,61 @@
                 </button>
             </div>
         </header>
-
-        <!-- Estudiantes View -->
-        <div class="view" id="permisos">
-            <h2>...Prosimamente</h2>
+        
+        <div class="view active" id="config">
+            <h2>Configuración</h2>
+            
+            <div class="view-header">
+                <div class="search-box">
+                    <i class="fa fa-search"></i>
+                    <input type="text" placeholder="Buscar usuario..." id="searchInput">
+                </div>
+                <button class="btn-abrir-modal" id="btnAbrirModal">
+                    <i class="fa fa-user-plus"></i>
+                    Agregar Usuario
+                </button>
+            </div>
+            <div class="view-content">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cedula</th>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (usuarios.length === 0) { %>
+                            <tr>
+                                <td colspan="5" style="text-align: center;">No se encontraron usuarios.</td>
+                            </tr>
+                        <% } else { %>
+                            <% usuarios.forEach(function(usuario) { %>
+                                <tr>
+                                    <td><%= usuario.cedula %></td>
+                                    <td><%= usuario.username %></td>
+                                    <td><%= usuario.email %></td>
+                                    <td><%= (usuario.id_rol === 1) ? 'Administrador' : (usuario.id_rol === 2) ? 'Docente' : 'Estudiante' %></td>
+                                    <td>
+                                        <button class="btns btn-edit">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <button class="btns btn-delete">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
-    <script src="../js/home.js"></script>
+    <script src="./js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         //Funcion para confirmar la salida del programa
