@@ -284,6 +284,10 @@ body {
     border: none;
 }
 
+.btns-add{
+    background-color: #0891b2;
+}
+
 .btn-edit{
     background-color: var(--color-info);
     color: white;

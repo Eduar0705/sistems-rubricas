@@ -9,8 +9,8 @@ router.get("/home", function(req, res) {
     }
 
     // Contar los profesores
-    let countProfesoresQuery = 'SELECT COUNT(*) AS totalProfesores FROM docente';
-    conexion.query(countProfesoresQuery, (err, profesResult) => {
+    let countProf = 'SELECT COUNT(*) AS totalProfesores FROM docente';
+    conexion.query(countProf, (err, profesResult) => {
         if (err) {
             console.log('Error al contar profesores: ', err);
             return res.render("home/index", {
