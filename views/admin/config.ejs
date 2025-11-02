@@ -10,6 +10,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
+        <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script>
+                Swal.fire({
+                    icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                    title: 'Información',
+                    text: '<%= locals.mensaje || mensaje %>',
+                    confirmButtonText: 'Aceptar'
+                });
+            </script>
+        <% } %>
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -141,7 +152,8 @@
         <div class="modal-content">
             <span class="close-btn" id="closeModalAdd">&times;</span>
             <h2>Agregar Nuevo Usuario</h2>
-            <form id="formAgregarUsuario">
+
+            <form id="formAgregarUsuario" method="post" action="/envioUser">
                 <div class="form-group">
                     <label>Seleccione una opción:</label>
                     <div class="radio-group">
@@ -183,7 +195,15 @@
                     </div>
                     <div class="form-group">
                         <label for="clave">Clave:</label>
-                        <input type="password" id="clave" name="clave" readonly>
+                        <input type="password" id="clave" name="password">
+                    </div>
+                    <div class="form-group">
+                        <label for="rol">Rol:</label>
+                        <select id="rol" name="rol">
+                            <option value="">Seleccione un rol</option>
+                            <option value="1">Administrador</option>
+                            <option value="2">Docente</option>
+                        </select>
                     </div>
                 </div>
 
@@ -337,11 +357,31 @@
         function mostrarCamposRegistrado() {
             camposRegistrado.classList.remove('hidden');
             camposNuevo.classList.add('hidden');
+            
+            // Habilitar campos de profesor registrado
+            document.querySelectorAll('#camposRegistrado input:not([readonly]), #camposRegistrado select').forEach(el => {
+                el.disabled = false;
+            });
+            
+            // Deshabilitar campos de nuevo registro
+            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
+                el.disabled = true;
+            });
         }
 
         function mostrarCamposNuevo() {
             camposNuevo.classList.remove('hidden');
             camposRegistrado.classList.add('hidden');
+            
+            // Deshabilitar campos de profesor registrado
+            document.querySelectorAll('#camposRegistrado input, #camposRegistrado select').forEach(el => {
+                el.disabled = true;
+            });
+            
+            // Habilitar campos de nuevo registro
+            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
+                el.disabled = false;
+            });
         }
 
         // Cargar datos del profesor seleccionado
@@ -366,7 +406,6 @@
             document.getElementById('nombreRegistrado').value = nombreCompleto;
             document.getElementById('emailRegistrado').value = email;
             document.getElementById('clave').value = '';
-            document.getElementById('clave').readOnly = false;
             document.getElementById('clave').focus();
         });
 
@@ -408,6 +447,63 @@
                     fila.style.display = 'none';
                 }
             });
+        });
+
+        // Validación antes de enviar el formulario
+        document.getElementById('formAgregarUsuario').addEventListener('submit', (e) => {
+            const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked').value;
+            
+            if (tipoRegistro === 'registrado') {
+                const profesorSeleccionado = document.getElementById('profesorSelect').value;
+                const clave = document.getElementById('clave').value;
+                const rol = document.getElementById('rol').value;
+                
+                if (!profesorSeleccionado) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe seleccionar un profesor'
+                    });
+                    return false;
+                }
+                
+                if (!clave) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe ingresar una contraseña'
+                    });
+                    return false;
+                }
+                
+                if (!rol) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe seleccionar un rol'
+                    });
+                    return false;
+                }
+            } else {
+                const cedula = document.getElementById('cedulaNuevo').value;
+                const nombre = document.getElementById('nombreNuevo').value;
+                const email = document.getElementById('emailNuevo').value;
+                const password = document.getElementById('passwordNuevo').value;
+                const rol = document.getElementById('rolNuevo').value;
+                
+                if (!cedula || !nombre || !email || !password || !rol) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Todos los campos son obligatorios'
+                    });
+                    return false;
+                }
+            }
         });
     </script>
 </body>
