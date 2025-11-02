@@ -1,44 +1,51 @@
 const mysql = require('mysql2');
 
-const conexion = mysql.createConnection({
-    host: 'mysql-sistems.alwaysdata.net',
-    user: 'sistems',
-    password: '31466704',
-    database: 'sistems_rb'
-});
+let conexion;
 
-conexion.connect((err) => {
-    if (err) {
-        console.log('Error de conexión a la base de datos:', err);
-        return;
-    } else {
-        console.log('Conexión exitosa a la base de datos en AlwaysData :D....');
-    }
-});
+function crearConexion() {
+    conexion = mysql.createConnection({
+        host: 'mysql-sistems.alwaysdata.net',
+        user: 'sistems',
+        password: '31466704',
+        database: 'sistems_rb',
+        connectTimeout: 10000, // 10 segundos
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0
+    });
 
-// Mantener conexión viva
-setInterval(() => {
-    conexion.query('SELECT 1', (err) => {
+    conexion.connect((err) => {
         if (err) {
-            console.log('Error en ping:', err);
-            // Reconectar automáticamente
-            conexion.connect((connectErr) => {
-                if (!connectErr) console.log('Reconexión automática exitosa');
-            });
+            console.log('Error de conexión:', err.message);
+            setTimeout(crearConexion, 2000); // Reintentar en 2 segundos
+        } else {
+            console.log('Conexión exitosa a la base de datos :D');
         }
     });
-}, 300000); // Cada 5 minutos
 
-// Manejar errores de conexión
-conexion.on('error', (err) => {
-    if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET') {
-        console.log('Conexión perdida, reconectando...');
-        setTimeout(() => {
-            conexion.connect();
-        }, 2000);
-    } else {
-        console.log('Error MySQL:', err);
+    conexion.on('error', (err) => {
+        console.log('Error MySQL:', err.code);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST' || 
+            err.code === 'ECONNRESET' || 
+            err.code === 'ETIMEDOUT') {
+            console.log('Reconectando...');
+            crearConexion();
+        }
+    });
+}
+
+// Iniciar conexión
+crearConexion();
+
+// Ping cada 4 minutos
+setInterval(() => {
+    if (conexion && conexion.state !== 'disconnected') {
+        conexion.ping((err) => {
+            if (err) {
+                console.log('Ping falló, reconectando...');
+                crearConexion();
+            }
+        });
     }
-});
+}, 240000);
 
 module.exports = conexion;

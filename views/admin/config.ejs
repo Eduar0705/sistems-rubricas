@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title || 'Rubricas' %></title>
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/modalConfig.css">
     <link rel="shortcut icon" href="../img/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -135,8 +136,137 @@
         </div>
     </main>
 
+    <!-- Modal Agregar Usuario -->
+    <div class="modal-add-usuarios" id="modalAgregar">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalAdd">&times;</span>
+            <h2>Agregar Nuevo Usuario</h2>
+            <form id="formAgregarUsuario">
+                <div class="form-group">
+                    <label>Seleccione una opción:</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="radioRegistrado" name="tipoRegistro" value="registrado" checked>
+                            <label for="radioRegistrado">Profesor registrado</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="radioNuevo" name="tipoRegistro" value="nuevo">
+                            <label for="radioNuevo">Registro nuevo</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campos para profesor registrado -->
+                <div id="camposRegistrado">
+                    <div class="form-group">
+                        <label for="profesorSelect">Seleccione un profesor:</label>
+                        <select id="profesorSelect" name="profesorSelect">
+                            <option value="">-- Seleccione un profesor --</option>
+                            <% docentes.forEach(function(docente) { %>
+                                <option value="<%= docente.cedula %>" data-email="<%= docente.email || '' %>">
+                                    <%= docente.nombre + ' ' + docente.apellido %>
+                                </option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cedulaRegistrado">Cédula:</label>
+                        <input type="text" id="cedulaRegistrado" name="cedula" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreRegistrado">Nombre:</label>
+                        <input type="text" id="nombreRegistrado" name="nombre" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="emailRegistrado">Correo:</label>
+                        <input type="email" id="emailRegistrado" name="email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="clave">Clave:</label>
+                        <input type="password" id="clave" name="clave" readonly>
+                    </div>
+                </div>
+
+                <!-- Campos para nuevo registro -->
+                <div id="camposNuevo" class="hidden">
+                    <div class="form-group">
+                        <label for="cedulaNuevo">Cédula:</label>
+                        <input type="text" id="cedulaNuevo" name="cedula" placeholder="Ingrese la cédula">
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreNuevo">Nombre:</label>
+                        <input type="text" id="nombreNuevo" name="nombre" placeholder="Ingrese el nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailNuevo">Correo:</label>
+                        <input type="email" id="emailNuevo" name="email" placeholder="ejemplo@correo.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="passwordNuevo">Contraseña:</label>
+                        <input type="password" id="passwordNuevo" name="password" placeholder="Ingrese la contraseña">
+                    </div>
+                    <div class="form-group">
+                        <label for="rolNuevo">Rol:</label>
+                        <select id="rolNuevo" name="rol">
+                            <option value="">Seleccione un rol</option>
+                            <option value="1">Administrador</option>
+                            <option value="2">Docente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="btnCancelarAdd">Cancelar</button>
+                    <button type="submit" class="btn-submit">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuario -->
+    <div class="modal-edit-usuario" id="modalEditar">
+        <div class="modal-content">
+            <span class="close-btn" id="closeModalEdit">&times;</span>
+            <h2>Editar Usuario</h2>
+            <form id="formEditarUsuario">
+                <input type="hidden" id="cedulaOriginal" name="cedulaOriginal">
+                
+                <div class="form-group">
+                    <label for="cedulaEdit">Cédula:</label>
+                    <input type="text" id="cedulaEdit" name="cedula" required>
+                </div>
+                <div class="form-group">
+                    <label for="nombreEdit">Nombre:</label>
+                    <input type="text" id="nombreEdit" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="emailEdit">Correo:</label>
+                    <input type="email" id="emailEdit" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="passwordEdit">Contraseña (dejar vacío para no cambiar):</label>
+                    <input type="password" id="passwordEdit" name="password" placeholder="Nueva contraseña (opcional)">
+                </div>
+                <div class="form-group">
+                    <label for="rolEdit">Rol:</label>
+                    <select id="rolEdit" name="rol" required>
+                        <option value="1">Administrador</option>
+                        <option value="2">Docente</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="btnCancelarEdit">Cancelar</button>
+                    <button type="submit" class="btn-submit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         //Funcion para confirmar la salida del programa
         function Exit(){
@@ -155,6 +285,130 @@
                 }
             });
         }
+
+        // Elementos del DOM
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const modalAgregar = document.getElementById('modalAgregar');
+        const modalEditar = document.getElementById('modalEditar');
+        const closeModalAdd = document.getElementById('closeModalAdd');
+        const closeModalEdit = document.getElementById('closeModalEdit');
+        const btnCancelarAdd = document.getElementById('btnCancelarAdd');
+        const btnCancelarEdit = document.getElementById('btnCancelarEdit');
+        const searchInput = document.getElementById('searchInput');
+
+        // Radio buttons y campos
+        const radioRegistrado = document.getElementById('radioRegistrado');
+        const radioNuevo = document.getElementById('radioNuevo');
+        const camposRegistrado = document.getElementById('camposRegistrado');
+        const camposNuevo = document.getElementById('camposNuevo');
+        const profesorSelect = document.getElementById('profesorSelect');
+
+        // Abrir modal agregar
+        btnAbrirModal.addEventListener('click', () => {
+            modalAgregar.style.display = 'flex';
+            document.getElementById('formAgregarUsuario').reset();
+            mostrarCamposRegistrado();
+        });
+
+        // Cerrar modales
+        closeModalAdd.addEventListener('click', cerrarModalAgregar);
+        btnCancelarAdd.addEventListener('click', cerrarModalAgregar);
+        closeModalEdit.addEventListener('click', cerrarModalEditar);
+        btnCancelarEdit.addEventListener('click', cerrarModalEditar);
+
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            if (e.target === modalAgregar) cerrarModalAgregar();
+            if (e.target === modalEditar) cerrarModalEditar();
+        });
+
+        function cerrarModalAgregar() {
+            modalAgregar.style.display = 'none';
+        }
+
+        function cerrarModalEditar() {
+            modalEditar.style.display = 'none';
+        }
+
+        // Cambiar entre profesor registrado y nuevo
+        radioRegistrado.addEventListener('change', mostrarCamposRegistrado);
+        radioNuevo.addEventListener('change', mostrarCamposNuevo);
+
+        function mostrarCamposRegistrado() {
+            camposRegistrado.classList.remove('hidden');
+            camposNuevo.classList.add('hidden');
+        }
+
+        function mostrarCamposNuevo() {
+            camposNuevo.classList.remove('hidden');
+            camposRegistrado.classList.add('hidden');
+        }
+
+        // Cargar datos del profesor seleccionado
+        profesorSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            
+            if (!e.target.value) {
+                document.getElementById('cedulaRegistrado').value = '';
+                document.getElementById('nombreRegistrado').value = '';
+                document.getElementById('emailRegistrado').value = '';
+                document.getElementById('clave').value = '';
+                return;
+            }
+            
+            // Obtener los datos del option seleccionado
+            const cedula = selectedOption.value;
+            const nombreCompleto = selectedOption.textContent.trim();
+            const email = selectedOption.getAttribute('data-email') || '';
+            
+            // Cargar los datos en los campos
+            document.getElementById('cedulaRegistrado').value = cedula;
+            document.getElementById('nombreRegistrado').value = nombreCompleto;
+            document.getElementById('emailRegistrado').value = email;
+            document.getElementById('clave').value = '';
+            document.getElementById('clave').readOnly = false;
+            document.getElementById('clave').focus();
+        });
+
+        // Cargar datos en modal de edición
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const fila = e.target.closest('tr');
+                const celdas = fila.querySelectorAll('td');
+                
+                const cedula = celdas[0].textContent.trim();
+                const nombre = celdas[1].textContent.trim();
+                const email = celdas[2].textContent.trim();
+                const rolTexto = celdas[3].textContent.trim();
+                
+                let rolId = 2; // Por defecto docente
+                if (rolTexto === 'Administrador') rolId = 1;
+                
+                document.getElementById('cedulaOriginal').value = cedula;
+                document.getElementById('cedulaEdit').value = cedula;
+                document.getElementById('nombreEdit').value = nombre;
+                document.getElementById('emailEdit').value = email;
+                document.getElementById('rolEdit').value = rolId;
+                document.getElementById('passwordEdit').value = '';
+                
+                modalEditar.style.display = 'flex';
+            });
+        });
+
+        // Búsqueda en tiempo real
+        searchInput.addEventListener('input', (e) => {
+            const busqueda = e.target.value.toLowerCase();
+            const filas = document.querySelectorAll('.data-table tbody tr');
+            
+            filas.forEach(fila => {
+                const texto = fila.textContent.toLowerCase();
+                if (texto.includes(busqueda)) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
+            });
+        });
     </script>
 </body>
 </html>
