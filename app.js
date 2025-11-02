@@ -30,6 +30,7 @@ app.use(require('./controllers/addProfeControllers'));
 app.use(require('./controllers/deleteProfeControllers'));
 app.use(require('./controllers/updateProfeControllers'));
 app.use(require('./controllers/addUserControllers'));
+app.use(require('./controllers/updateUserControllers'))
 
 //RUTAS ADMIN
 app.use(require('./routers/admin'));
