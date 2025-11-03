@@ -1,10 +1,612 @@
-// Variables de paginación
+// ============================================
+// FUNCIONES GENERALES
+// ============================================
+
+// Función para confirmar la salida del programa
+function Exit() {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Validación',
+        text: '¿Estás seguro que deseas salir?',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'No'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/login';
+        }
+    });
+}
+
+// Función de color de activo y no activo
+function inicializarColoresEstado() {
+    const estado = document.querySelectorAll('#act');
+    estado.forEach((act) => {
+        if (act.textContent.trim() === 'activo') {
+            act.style.color = 'green';
+        } else {
+            act.style.color = 'red';
+        }
+    });
+}
+
+// ============================================
+// MODAL DE AGREGAR PROFESOR
+// ============================================
+
+function inicializarModalAgregar() {
+    const btnAbrirModal = document.getElementById('btnAbrirModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const btnCerrar = document.getElementById('btnCerrar');
+    const btnCancelar = document.getElementById('btnCancelar');
+    const formProfesor = document.getElementById('formProfesor');
+
+    if (!modalOverlay) return;
+
+    // Función para abrir el modal
+    function abrirModal() {
+        modalOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Función para cerrar el modal
+    function cerrarModal() {
+        modalOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        if (formProfesor) formProfesor.reset();
+    }
+
+    // Event listeners
+    if (btnAbrirModal) btnAbrirModal.addEventListener('click', abrirModal);
+    if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+    if (btnCancelar) btnCancelar.addEventListener('click', cerrarModal);
+
+    // Cerrar modal al hacer clic fuera de él
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            cerrarModal();
+        }
+    });
+
+    // Cerrar modal con la tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+            cerrarModal();
+        }
+    });
+}
+
+// ============================================
+// ELIMINAR PROFESOR
+// ============================================
+
+function eliminarProfesor(profesorId) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminarlo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/deleteProfe/${profesorId}`;
+        }
+    });
+}
+
+// ============================================
+// MODAL DE EDITAR PROFESOR
+// ============================================
+
+function inicializarModalEditar() {
+    const modalEditOverlay = document.getElementById('modalEditOverlay');
+    const btnCerrarEdit = document.getElementById('btnCerrarEdit');
+    const btnCancelarEdit = document.getElementById('btnCancelarEdit');
+    const formProfesorEdit = document.getElementById('formProfesorEdit');
+
+    if (!modalEditOverlay) return;
+
+    // Agregar evento click a todos los botones de editar
+    const botonesEditar = document.querySelectorAll('.btn-edit');
+    botonesEditar.forEach(button => {
+        button.addEventListener('click', function() {
+            abrirModalEdicion(this);
+        });
+    });
+
+    // VALIDACIONES EN TIEMPO REAL
+    inicializarValidacionesEdicion();
+
+    // Función para abrir el modal de edición
+    function abrirModalEdicion(button) {
+        try {
+            // Obtener los datos del botón usando dataset
+            const cedula = button.dataset.cedula || '';
+            const nombre = button.dataset.nombre || '';
+            const apellido = button.dataset.apellido || '';
+            const especializacion = button.dataset.especializacion || '';
+            const email = button.dataset.email || '';
+            const telf = button.dataset.telf || '';
+            const descripcion = button.dataset.descripcion || '';
+            const activo = button.dataset.activo || '';
+            
+            // Llenar el formulario con los datos
+            document.getElementById('cedulaEdit').value = cedula;
+            document.getElementById('nombreEdit').value = nombre;
+            document.getElementById('apellidoEdit').value = apellido;
+            document.getElementById('especialidadEdit').value = especializacion;
+            document.getElementById('emailEdit').value = email;
+            document.getElementById('telefonoEdit').value = telf;
+            document.getElementById('notasEdit').value = descripcion;
+            document.getElementById('activo').value = activo;
+            
+            // Log para verificar que los datos se cargaron
+            console.log('Datos cargados en el modal:', {
+                cedula, nombre, apellido, especializacion, email, telf, descripcion, activo
+            });
+            
+            // Mostrar el modal
+            modalEditOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+        } catch (error) {
+            console.error('Error al abrir modal:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudieron cargar los datos del profesor',
+                confirmButtonColor: '#d33'
+            });
+        }
+    }
+
+    // Función para cerrar el modal
+    function cerrarModalEdicion() {
+        modalEditOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+        if (formProfesorEdit) formProfesorEdit.reset();
+    }
+
+    // Event listeners para cerrar el modal
+    if (btnCerrarEdit) {
+        btnCerrarEdit.addEventListener('click', cerrarModalEdicion);
+    }
+
+    if (btnCancelarEdit) {
+        btnCancelarEdit.addEventListener('click', cerrarModalEdicion);
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    modalEditOverlay.addEventListener('click', (e) => {
+        if (e.target === modalEditOverlay) {
+            cerrarModalEdicion();
+        }
+    });
+
+    // Cerrar modal con la tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalEditOverlay.classList.contains('active')) {
+            cerrarModalEdicion();
+        }
+    });
+
+    // Validación final antes de enviar el formulario
+    if (formProfesorEdit) {
+        formProfesorEdit.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const cedula = document.getElementById('cedulaEdit').value.trim();
+            const nombre = document.getElementById('nombreEdit').value.trim();
+            const apellido = document.getElementById('apellidoEdit').value.trim();
+            const email = document.getElementById('emailEdit').value.trim();
+            const telefono = document.getElementById('telefonoEdit').value.trim();
+            
+            // Validar campos obligatorios
+            if (!cedula || !nombre || !apellido || !email) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campos incompletos',
+                    text: 'Por favor complete todos los campos obligatorios',
+                    confirmButtonColor: '#3085d6'
+                });
+                return false;
+            }
+            
+            // Validar cédula
+            if (cedula.length < 7 || cedula.length > 8) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Cédula inválida',
+                    text: 'La cédula debe tener entre 7 y 8 dígitos',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+            
+            // Validar que solo contenga números
+            if (!/^\d+$/.test(cedula)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Cédula inválida',
+                    text: 'La cédula solo debe contener números',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+            
+            // Validar nombre
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Nombre inválido',
+                    text: 'El nombre solo debe contener letras',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+            
+            // Validar apellido
+            if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellido)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Apellido inválido',
+                    text: 'El apellido solo debe contener letras',
+                    confirmButtonColor: '#d33'
+                });
+                return false;
+            }
+            
+            // Validar teléfono si fue ingresado
+            if (telefono.length > 0) {
+                const codigosValidos = ['0414', '0424', '0412', '0422', '0416', '0426'];
+                const codigo = telefono.substring(0, 4);
+                
+                if (!codigosValidos.includes(codigo)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Teléfono inválido',
+                        text: 'El teléfono debe comenzar con 0414, 0424, 0412, 0422, 0416 o 0426',
+                        confirmButtonColor: '#d33'
+                    });
+                    return false;
+                }
+                
+                if (telefono.length !== 11) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Teléfono inválido',
+                        text: 'El teléfono debe tener 11 dígitos',
+                        confirmButtonColor: '#d33'
+                    });
+                    return false;
+                }
+            }
+            
+            // Si todo está bien, confirmar antes de enviar
+            Swal.fire({
+                title: '¿Actualizar profesor?',
+                text: "¿Estás seguro de guardar los cambios?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, actualizar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formProfesorEdit.submit();
+                }
+            });
+            
+            return false;
+        });
+    }
+}
+
+// Validaciones en tiempo real para el formulario de edición
+function inicializarValidacionesEdicion() {
+    // Validación de cédula: solo números, mín 7, máx 8
+    const cedulaEdit = document.getElementById('cedulaEdit');
+    if (cedulaEdit) {
+        cedulaEdit.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 8) {
+                this.value = this.value.slice(0, 8);
+            }
+        });
+
+        cedulaEdit.addEventListener('blur', function(e) {
+            if (this.value.length > 0 && this.value.length < 7) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Cédula inválida',
+                    text: 'La cédula debe tener mínimo 7 dígitos',
+                    confirmButtonColor: '#3085d6'
+                });
+            }
+        });
+    }
+
+    // Validación de nombre: solo letras y acentos
+    const nombreEdit = document.getElementById('nombreEdit');
+    if (nombreEdit) {
+        nombreEdit.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        });
+    }
+
+    // Validación de apellido: solo letras y acentos
+    const apellidoEdit = document.getElementById('apellidoEdit');
+    if (apellidoEdit) {
+        apellidoEdit.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        });
+    }
+
+    // Validación de teléfono: debe comenzar con códigos específicos
+    const telefonoEdit = document.getElementById('telefonoEdit');
+    if (telefonoEdit) {
+        telefonoEdit.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            if (this.value.length > 11) {
+                this.value = this.value.slice(0, 11);
+            }
+        });
+
+        telefonoEdit.addEventListener('blur', function(e) {
+            if (this.value.length > 0) {
+                const codigosValidos = ['0414', '0424', '0412', '0422', '0416', '0426'];
+                const codigo = this.value.substring(0, 4);
+                
+                if (!codigosValidos.includes(codigo)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Teléfono inválido',
+                        text: 'El teléfono debe comenzar con 0414, 0424, 0412, 0422, 0416 o 0426',
+                        confirmButtonColor: '#3085d6'
+                    });
+                } else if (this.value.length !== 11) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Teléfono incompleto',
+                        text: 'El teléfono debe tener 11 dígitos (ejemplo: 04141234567)',
+                        confirmButtonColor: '#3085d6'
+                    });
+                }
+            }
+        });
+    }
+}
+
+// ============================================
+// BÚSQUEDA Y FILTRADO
+// ============================================
+
+// Función para buscar profesores por nombre
+function buscarProfesor() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+
+    tableRows.forEach(row => {
+        // Saltar la fila de "No hay profesores registrados"
+        if (row.cells.length === 1) return;
+
+        const nombreCompleto = row.cells[0].textContent.toLowerCase();
+        
+        if (nombreCompleto.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Función para limpiar la búsqueda y mostrar todos los registros
+function limpiarBusqueda() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    
+    searchInput.value = '';
+    
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+}
+
+// Búsqueda avanzada en múltiples campos
+function buscarProfesorAvanzado() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+
+    tableRows.forEach(row => {
+        if (row.cells.length === 1) return;
+
+        const nombreCompleto = row.cells[0].textContent.toLowerCase();
+        const cedula = row.cells[1].textContent.toLowerCase();
+        const especialidad = row.cells[2].textContent.toLowerCase();
+        const email = row.cells[3].textContent.toLowerCase();
+        
+        // Buscar en múltiples campos
+        if (nombreCompleto.includes(searchTerm) || 
+            cedula.includes(searchTerm) || 
+            especialidad.includes(searchTerm) || 
+            email.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function inicializarBusqueda() {
+    const searchInput = document.querySelector('.search-box input');
+    
+    if (!searchInput) return;
+
+    // Búsqueda mientras se escribe
+    searchInput.addEventListener('input', buscarProfesor);
+    
+    // Búsqueda al presionar Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            buscarProfesor();
+        }
+    });
+    
+    // Evento click al ícono de búsqueda
+    const searchIcon = document.querySelector('.search-box .fa-search');
+    if (searchIcon) {
+        searchIcon.addEventListener('click', buscarProfesor);
+    }
+}
+
+// ============================================
+// VER DETALLES DEL PROFESOR
+// ============================================
+
+function verProfesor(button) {
+    // Obtener los datos del botón
+    const cedula = button.dataset.cedula || 'No especificada';
+    const nombre = button.dataset.nombre || 'No especificado';
+    const apellido = button.dataset.apellido || 'No especificado';
+    const especializacion = button.dataset.especializacion || 'No especificada';
+    const email = button.dataset.email || 'No especificado';
+    const telf = button.dataset.telf || 'No especificado';
+    const descripcion = button.dataset.descripcion || 'Sin descripción adicional';
+    const activo = button.dataset.activo === '1' ? 'Activo' : 'Inactivo';
+    const estadoBadge = button.dataset.activo === '1' 
+        ? '<span style="background: #e8f5e9; color: #2e7d32; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; display: inline-block;">● ACTIVO</span>'
+        : '<span style="background: #ffebee; color: #c62828; padding: 6px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; display: inline-block;">● INACTIVO</span>';
+    
+    // Capitalizar primera letra de especialización
+    const especializacionCapitalizada = especializacion.charAt(0).toUpperCase() + especializacion.slice(1);
+    
+    // Mostrar alerta con diseño profesional institucional
+    Swal.fire({
+        html: `
+            <div style="padding: 0;">
+                <!-- Header -->
+                <div style="background: #2196F3; padding: 25px 30px; border-radius: 0; text-align: left;">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div style="background: white; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                            <i class="fa fa-user" style="font-size: 35px; color: #2196F3;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h2 style="color: white; margin: 0 0 8px 0; font-size: 24px; font-weight: 600;">${nombre} ${apellido}</h2>
+                            <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 15px;">
+                                <i class="fa fa-graduation-cap" style="margin-right: 8px;"></i>${especializacionCapitalizada}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estado -->
+                <div style="padding: 20px 30px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #666; font-size: 14px; font-weight: 500;">Estado del Profesor</span>
+                        ${estadoBadge}
+                    </div>
+                </div>
+                
+                <!-- Información Personal -->
+                <div style="padding: 25px 30px; text-align: left;">
+                    <h3 style="color: #333; font-size: 16px; margin: 0 0 20px 0; font-weight: 600; border-bottom: 2px solid #2196F3; padding-bottom: 10px;">
+                        <i class="fa fa-info-circle" style="color: #2196F3; margin-right: 8px;"></i>
+                        Información Personal
+                    </h3>
+                    
+                    <div style="display: grid; gap: 18px;">
+                        <!-- Cédula -->
+                        <div style="display: flex; align-items: start;">
+                            <div style="background: #E3F2FD; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">
+                                <i class="fa fa-id-card" style="color: #2196F3; font-size: 18px;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="color: #757575; font-size: 12px; font-weight: 500; margin-bottom: 3px;">CÉDULA DE IDENTIDAD</div>
+                                <div style="color: #212121; font-size: 15px; font-weight: 500;">${cedula}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div style="display: flex; align-items: start;">
+                            <div style="background: #E8F5E9; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">
+                                <i class="fa fa-envelope" style="color: #4CAF50; font-size: 18px;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="color: #757575; font-size: 12px; font-weight: 500; margin-bottom: 3px;">CORREO ELECTRÓNICO</div>
+                                <div style="color: #212121; font-size: 15px; font-weight: 500;">
+                                    <a href="mailto:${email}" style="color: #2196F3; text-decoration: none;">${email}</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Teléfono -->
+                        <div style="display: flex; align-items: start;">
+                            <div style="background: #FFF3E0; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0;">
+                                <i class="fa fa-phone" style="color: #FF9800; font-size: 18px;"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="color: #757575; font-size: 12px; font-weight: 500; margin-bottom: 3px;">TELÉFONO</div>
+                                <div style="color: #212121; font-size: 15px; font-weight: 500;">
+                                    ${telf !== 'No especificado' ? `<a href="tel:${telf}" style="color: #2196F3; text-decoration: none;">${telf}</a>` : telf}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Descripción -->
+                ${descripcion !== 'Sin descripción adicional' ? `
+                    <div style="padding: 0 30px 25px 30px; text-align: left;">
+                        <h3 style="color: #333; font-size: 16px; margin: 0 0 15px 0; font-weight: 600; border-bottom: 2px solid #2196F3; padding-bottom: 10px;">
+                            <i class="fa fa-sticky-note" style="color: #2196F3; margin-right: 8px;"></i>
+                            Notas Adicionales
+                        </h3>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                            <p style="margin: 0; color: #616161; line-height: 1.6; font-size: 14px;">${descripcion}</p>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `,
+        width: '550px',
+        showConfirmButton: true,
+        confirmButtonText: '<i class="fa fa-times"></i> Cerrar',
+        confirmButtonColor: '#2196F3',
+        showCloseButton: false,
+        padding: 0,
+        customClass: {
+            popup: 'swal-profesor-card',
+            htmlContainer: 'swal-no-padding'
+        }
+    });
+}
+
+function inicializarBotonesVer() {
+    const botonesVer = document.querySelectorAll('.btn-view');
+    botonesVer.forEach(button => {
+        button.addEventListener('click', function() {
+            verProfesor(this);
+        });
+    });
+}
+
+// ============================================
+// PAGINACIÓN
+// ============================================
+
 let currentPage = 1;
 let entriesPerPage = 5;
 let allRows = [];
 
-// Inicializar paginación
-document.addEventListener('DOMContentLoaded', function() {
+function inicializarPaginacion() {
     // Guardar todas las filas
     allRows = Array.from(document.querySelectorAll('.profesor-row'));
     
@@ -20,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar la tabla
     updateTable();
-});
+}
 
 // Actualizar tabla según paginación
 function updateTable() {
@@ -43,9 +645,13 @@ function updateTable() {
     }
     
     // Actualizar información
-    document.getElementById('showingStart').textContent = totalEntries > 0 ? start + 1 : 0;
-    document.getElementById('showingEnd').textContent = end;
-    document.getElementById('totalEntries').textContent = totalEntries;
+    const showingStart = document.getElementById('showingStart');
+    const showingEnd = document.getElementById('showingEnd');
+    const totalEntriesEl = document.getElementById('totalEntries');
+    
+    if (showingStart) showingStart.textContent = totalEntries > 0 ? start + 1 : 0;
+    if (showingEnd) showingEnd.textContent = end;
+    if (totalEntriesEl) totalEntriesEl.textContent = totalEntries;
     
     // Generar botones de paginación
     generatePaginationButtons();
@@ -147,3 +753,27 @@ function generatePaginationButtons() {
     };
     paginationContainer.appendChild(nextBtn);
 }
+
+// ============================================
+// INICIALIZACIÓN PRINCIPAL
+// ============================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar colores de estado
+    inicializarColoresEstado();
+    
+    // Inicializar modal de agregar
+    inicializarModalAgregar();
+    
+    // Inicializar modal de editar
+    inicializarModalEditar();
+    
+    // Inicializar búsqueda
+    inicializarBusqueda();
+    
+    // Inicializar botones de ver
+    inicializarBotonesVer();
+    
+    // Inicializar paginación
+    inicializarPaginacion();
+});

@@ -1,293 +1,279 @@
-//Funcion para confirmar la salida del programa
-function Exit(){
-    Swal.fire({
-        icon: 'warning',
-        title: 'Validacion',
-        text: 'Estas seguro que deseas salir?',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Si',
-        cancelButtonText: 'No'
-    }).then((result) => {
-        if(result.isConfirmed){
-            window.location.href = '/login'
+        // Variables globales para paginación
+        let paginaActual = 1;
+        let registrosPorPagina = 5;
+        let todasLasFilas = [];
+        let filasFiltradas = [];
+
+        // Función para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/login'
+                }
+            });
         }
-    });
-}
 
-// ==================== ELEMENTOS DEL DOM ====================
-const btnAbrirModal = document.getElementById('btnAbrirModal');
-const modalAgregar = document.getElementById('modalAgregar');
-const modalEditar = document.getElementById('modalEditar');
-const closeModalAdd = document.getElementById('closeModalAdd');
-const closeModalEdit = document.getElementById('closeModalEdit');
-const btnCancelarAdd = document.getElementById('btnCancelarAdd');
-const btnCancelarEdit = document.getElementById('btnCancelarEdit');
-const searchInput = document.getElementById('searchInput');
+        function eliminarUsuario(cedula) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminarlo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/deleteUser/${cedula}`;
+                }
+            });
+        }
 
-// Radio buttons y campos
-const radioRegistrado = document.getElementById('radioRegistrado');
-const radioNuevo = document.getElementById('radioNuevo');
-const camposRegistrado = document.getElementById('camposRegistrado');
-const camposNuevo = document.getElementById('camposNuevo');
-const profesorSelect = document.getElementById('profesorSelect');
+        // Elementos del DOM
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const modalAgregar = document.getElementById('modalAgregar');
+        const modalEditar = document.getElementById('modalEditar');
+        const closeModalAdd = document.getElementById('closeModalAdd');
+        const closeModalEdit = document.getElementById('closeModalEdit');
+        const btnCancelarAdd = document.getElementById('btnCancelarAdd');
+        const btnCancelarEdit = document.getElementById('btnCancelarEdit');
+        const searchInput = document.getElementById('searchInput');
+        const entriesPerPage = document.getElementById('entriesPerPage');
 
-// Elementos de paginación
-const itemsPerPageSelect = document.getElementById('itemsPerPage');
-const paginationInfo = document.getElementById('paginationInfo');
-const prevPageBtn = document.getElementById('prevPage');
-const nextPageBtn = document.getElementById('nextPage');
-const pageNumbersContainer = document.getElementById('pageNumbers');
+        // Radio buttons y campos
+        const radioRegistrado = document.getElementById('radioRegistrado');
+        const radioNuevo = document.getElementById('radioNuevo');
+        const camposRegistrado = document.getElementById('camposRegistrado');
+        const camposNuevo = document.getElementById('camposNuevo');
+        const profesorSelect = document.getElementById('profesorSelect');
 
-// Variables de paginación
-let currentPage = 1;
-let itemsPerPage = 5;
-let allRows = [];
-let filteredRows = [];
+        // Inicializar array de filas
+        function inicializarFilas() {
+            const tbody = document.getElementById('tablaUsuarios');
+            todasLasFilas = Array.from(tbody.querySelectorAll('tr'));
+            filasFiltradas = [...todasLasFilas];
+            mostrarPagina();
+        }
 
-// ==================== VALIDACIÓN DE CÉDULA ====================
-function validarCedula(input) {
-    // Solo permitir números
-    input.value = input.value.replace(/[^0-9]/g, '');
-    
-    // Limitar a 8 dígitos máximo
-    if (input.value.length > 8) {
-        input.value = input.value.slice(0, 8);
-    }
-}
+        // Función para mostrar página
+        function mostrarPagina() {
+            const tbody = document.getElementById('tablaUsuarios');
+            tbody.innerHTML = '';
 
-// Validar cédula en tiempo real
-document.getElementById('cedulaRegistrado').addEventListener('input', function() {
-    validarCedula(this);
-});
+            if (filasFiltradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No se encontraron usuarios.</td></tr>';
+                actualizarInfoEntries(0, 0, 0);
+                actualizarBotonesPaginacion();
+                return;
+            }
 
-document.getElementById('cedulaNuevo').addEventListener('input', function() {
-    validarCedula(this);
-});
+            let inicio, fin;
+            if (registrosPorPagina === 'todos') {
+                inicio = 0;
+                fin = filasFiltradas.length;
+            } else {
+                inicio = (paginaActual - 1) * registrosPorPagina;
+                fin = Math.min(inicio + registrosPorPagina, filasFiltradas.length);
+            }
 
-document.getElementById('cedulaEdit').addEventListener('input', function() {
-    validarCedula(this);
-});
+            for (let i = inicio; i < fin; i++) {
+                tbody.appendChild(filasFiltradas[i].cloneNode(true));
+            }
 
-// ==================== INICIALIZACIÓN DE TABLA ====================
-function initTable() {
-    const tbody = document.querySelector('.data-table tbody');
-    allRows = Array.from(tbody.querySelectorAll('tr'));
-    filteredRows = [...allRows];
-    
-    if (allRows.length > 0 && allRows[0].querySelector('td[colspan]')) {
-        // Si la tabla está vacía
-        document.getElementById('paginationControls').style.display = 'none';
-    } else {
-        renderTable();
-    }
-}
+            // Re-agregar event listeners a botones de editar
+            tbody.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', abrirModalEditar);
+            });
 
-// ==================== RENDERIZAR TABLA ====================
-function renderTable() {
-    const tbody = document.querySelector('.data-table tbody');
-    tbody.innerHTML = '';
-    
-    const totalItems = filteredRows.length;
-    const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / itemsPerPage);
-    
-    // Ajustar página actual si es necesario
-    if (currentPage > totalPages) {
-        currentPage = totalPages || 1;
-    }
-    
-    // Calcular índices
-    let startIndex, endIndex;
-    if (itemsPerPage === 'all') {
-        startIndex = 0;
-        endIndex = totalItems;
-    } else {
-        startIndex = (currentPage - 1) * itemsPerPage;
-        endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-    }
-    
-    // Mostrar filas correspondientes
-    const rowsToShow = filteredRows.slice(startIndex, endIndex);
-    
-    if (rowsToShow.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No se encontraron usuarios.</td></tr>';
-        document.getElementById('paginationControls').style.display = 'none';
-        paginationInfo.textContent = 'profesores';
-        return;
-    }
-    
-    rowsToShow.forEach(row => {
-        tbody.appendChild(row.cloneNode(true));
-    });
-    
-    // Actualizar info de paginación
-    paginationInfo.textContent = `Mostrando ${startIndex + 1} a ${endIndex} de ${totalItems} profesores`;
-    
-    // Actualizar controles de paginación
-    if (itemsPerPage === 'all') {
-        document.getElementById('paginationControls').style.display = 'none';
-    } else {
-        document.getElementById('paginationControls').style.display = 'flex';
-        renderPagination(totalPages);
-    }
-    
-    // Re-attachear event listeners a los botones
-    attachButtonListeners();
-}
+            actualizarInfoEntries(inicio + 1, fin, filasFiltradas.length);
+            actualizarBotonesPaginacion();
+        }
 
-// ==================== RENDERIZAR PAGINACIÓN ====================
-function renderPagination(totalPages) {
-    pageNumbersContainer.innerHTML = '';
-    
-    prevPageBtn.disabled = currentPage === 1;
-    nextPageBtn.disabled = currentPage === totalPages;
-    
-    prevPageBtn.style.opacity = currentPage === 1 ? '0.5' : '1';
-    prevPageBtn.style.cursor = currentPage === 1 ? 'not-allowed' : 'pointer';
-    nextPageBtn.style.opacity = currentPage === totalPages ? '0.5' : '1';
-    nextPageBtn.style.cursor = currentPage === totalPages ? 'not-allowed' : 'pointer';
-    
-    // Mostrar números de página
-    for (let i = 1; i <= totalPages; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.textContent = i;
-        pageBtn.style.cssText = `
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background: ${i === currentPage ? '#1e40af' : '#f0f0f0'};
-            color: ${i === currentPage ? 'white' : 'black'};
-        `;
-        
-        pageBtn.addEventListener('click', () => {
-            currentPage = i;
-            renderTable();
+        // Actualizar información de entradas
+        function actualizarInfoEntries(inicio, fin, total) {
+            const infoEntries = document.getElementById('infoEntries');
+            if (total === 0) {
+                infoEntries.textContent = 'No hay usuarios para mostrar';
+            } else {
+                infoEntries.textContent = `Mostrando ${inicio} a ${fin} de ${total} usuarios`;
+            }
+        }
+
+        // Actualizar botones de paginación
+        function actualizarBotonesPaginacion() {
+            const totalPaginas = registrosPorPagina === 'todos' ? 1 : Math.ceil(filasFiltradas.length / registrosPorPagina);
+            const numerosPagina = document.getElementById('numerosPagina');
+            const btnAnterior = document.getElementById('btnAnterior');
+            const btnSiguiente = document.getElementById('btnSiguiente');
+            const paginacion = document.getElementById('paginacion');
+
+            if (registrosPorPagina === 'todos' || filasFiltradas.length === 0) {
+                paginacion.style.display = 'none';
+                return;
+            }
+
+            paginacion.style.display = 'flex';
+            numerosPagina.innerHTML = '';
+
+            btnAnterior.disabled = paginaActual === 1;
+            btnSiguiente.disabled = paginaActual === totalPaginas;
+
+            btnAnterior.style.opacity = paginaActual === 1 ? '0.5' : '1';
+            btnAnterior.style.cursor = paginaActual === 1 ? 'not-allowed' : 'pointer';
+            btnSiguiente.style.opacity = paginaActual === totalPaginas ? '0.5' : '1';
+            btnSiguiente.style.cursor = paginaActual === totalPaginas ? 'not-allowed' : 'pointer';
+
+            for (let i = 1; i <= totalPaginas; i++) {
+                const btnPagina = document.createElement('button');
+                btnPagina.textContent = i;
+                btnPagina.style.padding = '8px 12px';
+                btnPagina.style.border = '1px solid #ddd';
+                btnPagina.style.borderRadius = '6px';
+                btnPagina.style.cursor = 'pointer';
+                btnPagina.style.background = i === paginaActual ? '#6698e2' : 'white';
+                btnPagina.style.color = i === paginaActual ? 'white' : '#333';
+                
+                btnPagina.addEventListener('click', () => {
+                    paginaActual = i;
+                    mostrarPagina();
+                });
+
+                numerosPagina.appendChild(btnPagina);
+            }
+        }
+
+        // Cambiar cantidad de registros por página
+        entriesPerPage.addEventListener('change', (e) => {
+            registrosPorPagina = e.target.value === 'todos' ? 'todos' : parseInt(e.target.value);
+            paginaActual = 1;
+            mostrarPagina();
         });
-        
-        pageNumbersContainer.appendChild(pageBtn);
-    }
-}
 
-// ==================== EVENT LISTENERS DE PAGINACIÓN ====================
-itemsPerPageSelect.addEventListener('change', (e) => {
-    itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
-    currentPage = 1;
-    renderTable();
-});
+        // Botones de navegación
+        document.getElementById('btnAnterior').addEventListener('click', () => {
+            if (paginaActual > 1) {
+                paginaActual--;
+                mostrarPagina();
+            }
+        });
 
-prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        renderTable();
-    }
-});
+        document.getElementById('btnSiguiente').addEventListener('click', () => {
+            const totalPaginas = Math.ceil(filasFiltradas.length / registrosPorPagina);
+            if (paginaActual < totalPaginas) {
+                paginaActual++;
+                mostrarPagina();
+            }
+        });
 
-nextPageBtn.addEventListener('click', () => {
-    const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderTable();
-    }
-});
+        // Búsqueda en tiempo real
+        searchInput.addEventListener('input', (e) => {
+            const busqueda = e.target.value.toLowerCase();
+            
+            if (busqueda === '') {
+                filasFiltradas = [...todasLasFilas];
+            } else {
+                filasFiltradas = todasLasFilas.filter(fila => {
+                    const texto = fila.textContent.toLowerCase();
+                    return texto.includes(busqueda);
+                });
+            }
+            
+            paginaActual = 1;
+            mostrarPagina();
+        });
 
-// ==================== BÚSQUEDA ====================
-searchInput.addEventListener('input', (e) => {
-    const busqueda = e.target.value.toLowerCase();
-    
-    filteredRows = allRows.filter(row => {
-        const texto = row.textContent.toLowerCase();
-        return texto.includes(busqueda);
-    });
-    
-    currentPage = 1;
-    renderTable();
-});
+        // Abrir modal agregar
+        btnAbrirModal.addEventListener('click', () => {
+            modalAgregar.style.display = 'flex';
+            document.getElementById('formAgregarUsuario').reset();
+            mostrarCamposRegistrado();
+        });
 
-// ==================== MODALES ====================
-btnAbrirModal.addEventListener('click', () => {
-    modalAgregar.style.display = 'flex';
-    document.getElementById('formAgregarUsuario').reset();
-    mostrarCamposRegistrado();
-});
+        // Cerrar modales
+        closeModalAdd.addEventListener('click', cerrarModalAgregar);
+        btnCancelarAdd.addEventListener('click', cerrarModalAgregar);
+        closeModalEdit.addEventListener('click', cerrarModalEditar);
+        btnCancelarEdit.addEventListener('click', cerrarModalEditar);
 
-closeModalAdd.addEventListener('click', cerrarModalAgregar);
-btnCancelarAdd.addEventListener('click', cerrarModalAgregar);
-closeModalEdit.addEventListener('click', cerrarModalEditar);
-btnCancelarEdit.addEventListener('click', cerrarModalEditar);
+        // Cerrar modal al hacer clic fuera
+        window.addEventListener('click', (e) => {
+            if (e.target === modalAgregar) cerrarModalAgregar();
+            if (e.target === modalEditar) cerrarModalEditar();
+        });
 
-window.addEventListener('click', (e) => {
-    if (e.target === modalAgregar) cerrarModalAgregar();
-    if (e.target === modalEditar) cerrarModalEditar();
-});
+        function cerrarModalAgregar() {
+            modalAgregar.style.display = 'none';
+        }
 
-function cerrarModalAgregar() {
-    modalAgregar.style.display = 'none';
-}
+        function cerrarModalEditar() {
+            modalEditar.style.display = 'none';
+        }
 
-function cerrarModalEditar() {
-    modalEditar.style.display = 'none';
-}
+        // Cambiar entre profesor registrado y nuevo
+        radioRegistrado.addEventListener('change', mostrarCamposRegistrado);
+        radioNuevo.addEventListener('change', mostrarCamposNuevo);
 
-// ==================== CAMBIAR TIPO DE REGISTRO ====================
-radioRegistrado.addEventListener('change', mostrarCamposRegistrado);
-radioNuevo.addEventListener('change', mostrarCamposNuevo);
+        function mostrarCamposRegistrado() {
+            camposRegistrado.classList.remove('hidden');
+            camposNuevo.classList.add('hidden');
+            
+            document.querySelectorAll('#camposRegistrado input:not([readonly]), #camposRegistrado select').forEach(el => {
+                el.disabled = false;
+            });
+            
+            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
+                el.disabled = true;
+            });
+        }
 
-function mostrarCamposRegistrado() {
-    camposRegistrado.classList.remove('hidden');
-    camposNuevo.classList.add('hidden');
-    
-    document.querySelectorAll('#camposRegistrado input:not([readonly]), #camposRegistrado select').forEach(el => {
-        el.disabled = false;
-    });
-    
-    document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
-        el.disabled = true;
-    });
-}
+        function mostrarCamposNuevo() {
+            camposNuevo.classList.remove('hidden');
+            camposRegistrado.classList.add('hidden');
+            
+            document.querySelectorAll('#camposRegistrado input, #camposRegistrado select').forEach(el => {
+                el.disabled = true;
+            });
+            
+            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
+                el.disabled = false;
+            });
+        }
 
-function mostrarCamposNuevo() {
-    camposNuevo.classList.remove('hidden');
-    camposRegistrado.classList.add('hidden');
-    
-    document.querySelectorAll('#camposRegistrado input, #camposRegistrado select').forEach(el => {
-        el.disabled = true;
-    });
-    
-    document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
-        el.disabled = false;
-    });
-}
+        // Cargar datos del profesor seleccionado
+        profesorSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            
+            if (!e.target.value) {
+                document.getElementById('cedulaRegistrado').value = '';
+                document.getElementById('nombreRegistrado').value = '';
+                document.getElementById('emailRegistrado').value = '';
+                document.getElementById('clave').value = '';
+                return;
+            }
+            
+            const cedula = selectedOption.value;
+            const nombreCompleto = selectedOption.textContent.trim();
+            const email = selectedOption.getAttribute('data-email') || '';
+            
+            document.getElementById('cedulaRegistrado').value = cedula;
+            document.getElementById('nombreRegistrado').value = nombreCompleto;
+            document.getElementById('emailRegistrado').value = email;
+            document.getElementById('clave').value = '';
+            document.getElementById('clave').focus();
+        });
 
-// ==================== CARGAR DATOS DEL PROFESOR ====================
-profesorSelect.addEventListener('change', (e) => {
-    const selectedOption = e.target.options[e.target.selectedIndex];
-    
-    if (!e.target.value) {
-        document.getElementById('cedulaRegistrado').value = '';
-        document.getElementById('nombreRegistrado').value = '';
-        document.getElementById('emailRegistrado').value = '';
-        document.getElementById('clave').value = '';
-        return;
-    }
-    
-    const cedula = selectedOption.value;
-    const nombreCompleto = selectedOption.textContent.trim();
-    const email = selectedOption.getAttribute('data-email') || '';
-    
-    document.getElementById('cedulaRegistrado').value = cedula;
-    document.getElementById('nombreRegistrado').value = nombreCompleto;
-    document.getElementById('emailRegistrado').value = email;
-    document.getElementById('clave').value = '';
-    document.getElementById('clave').focus();
-});
-
-// ==================== ATTACHEAR BOTONES ====================
-function attachButtonListeners() {
-    // Botones de editar
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        // Función para abrir modal de edición
+        function abrirModalEditar(e) {
             const fila = e.target.closest('tr');
             const celdas = fila.querySelectorAll('td');
             
@@ -307,120 +293,66 @@ function attachButtonListeners() {
             document.getElementById('passwordEdit').value = '';
             
             modalEditar.style.display = 'flex';
-        });
-    });
-    
-    // Botones de eliminar
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const fila = e.target.closest('tr');
-            const cedula = fila.querySelector('td').textContent.trim();
-            const nombre = fila.querySelectorAll('td')[1].textContent.trim();
+        }
+
+        // Validación antes de enviar el formulario
+        document.getElementById('formAgregarUsuario').addEventListener('submit', (e) => {
+            const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked').value;
             
-            Swal.fire({
-                icon: 'warning',
-                title: '¿Eliminar usuario?',
-                text: `¿Estás seguro de eliminar a ${nombre}?`,
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Aquí iría la lógica para eliminar
-                    window.location.href = `/deleteUser/${cedula}`;
+            if (tipoRegistro === 'registrado') {
+                const profesorSeleccionado = document.getElementById('profesorSelect').value;
+                const clave = document.getElementById('clave').value;
+                const rol = document.getElementById('rol').value;
+                
+                if (!profesorSeleccionado) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe seleccionar un profesor'
+                    });
+                    return false;
                 }
-            });
+                
+                if (!clave) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe ingresar una contraseña'
+                    });
+                    return false;
+                }
+                
+                if (!rol) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Debe seleccionar un rol'
+                    });
+                    return false;
+                }
+            } else {
+                const cedula = document.getElementById('cedulaNuevo').value;
+                const nombre = document.getElementById('nombreNuevo').value;
+                const email = document.getElementById('emailNuevo').value;
+                const password = document.getElementById('passwordNuevo').value;
+                const rol = document.getElementById('rolNuevo').value;
+                
+                if (!cedula || !nombre || !email || !password || !rol) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Todos los campos son obligatorios'
+                    });
+                    return false;
+                }
+            }
         });
-    });
-}
 
-// ==================== VALIDACIÓN FORMULARIO AGREGAR ====================
-document.getElementById('formAgregarUsuario').addEventListener('submit', (e) => {
-    const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked').value;
-    
-    if (tipoRegistro === 'registrado') {
-        const profesorSeleccionado = document.getElementById('profesorSelect').value;
-        const clave = document.getElementById('clave').value;
-        const rol = document.getElementById('rol').value;
-        
-        if (!profesorSeleccionado) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe seleccionar un profesor'
-            });
-            return false;
-        }
-        
-        if (!clave) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe ingresar una contraseña'
-            });
-            return false;
-        }
-        
-        if (!rol) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe seleccionar un rol'
-            });
-            return false;
-        }
-    } else {
-        const cedula = document.getElementById('cedulaNuevo').value;
-        const nombre = document.getElementById('nombreNuevo').value;
-        const email = document.getElementById('emailNuevo').value;
-        const password = document.getElementById('passwordNuevo').value;
-        const rol = document.getElementById('rolNuevo').value;
-        
-        // Validar longitud de cédula
-        if (cedula.length < 7 || cedula.length > 8) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'La cédula debe tener entre 7 y 8 dígitos'
-            });
-            return false;
-        }
-        
-        if (!cedula || !nombre || !email || !password || !rol) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Todos los campos son obligatorios'
-            });
-            return false;
-        }
-    }
-});
-
-// ==================== VALIDACIÓN FORMULARIO EDITAR ====================
-document.getElementById('formEditarUsuario').addEventListener('submit', (e) => {
-    const cedula = document.getElementById('cedulaEdit').value;
-    
-    // Validar longitud de cédula
-    if (cedula.length < 7 || cedula.length > 8) {
-        e.preventDefault();
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'La cédula debe tener entre 7 y 8 dígitos'
+        // Inicializar cuando cargue la página
+        window.addEventListener('DOMContentLoaded', () => {
+            inicializarFilas();
         });
-        return false;
-    }
-});
-
-// ==================== INICIALIZAR AL CARGAR ====================
-document.addEventListener('DOMContentLoaded', () => {
-    initTable();
-});

@@ -10,17 +10,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-        <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            <script>
-                Swal.fire({
-                    icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
-                    title: 'Información',
-                    text: '<%= locals.mensaje || mensaje %>',
-                    confirmButtonText: 'Aceptar'
-                });
-            </script>
-        <% } %>
+    <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                title: 'Información',
+                text: '<%= locals.mensaje || mensaje %>',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    <% } %>
+    
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -78,6 +79,7 @@
             </button>
         </div>
     </aside>
+    
     <main class="main-content">
         <!-- Header -->
         <header class="header">
@@ -98,16 +100,31 @@
             <h2>Configuración</h2>
             
             <div class="view-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>Mostrar:</span>
+                    <select id="entriesPerPage" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                    <span>usuarios</span>
+                </div>
                 <div class="search-box">
                     <i class="fa fa-search"></i>
                     <input type="text" placeholder="Buscar usuario..." id="searchInput">
                 </div>
-                <button class="btns btn-abrir-modal" id="btnAbrirModal">
+                <button class="btns btn-abrir-modal" id="btnAbrirModal" style="background-color: #6698e2; padding: 10px 15px;">
                     <i class="fa fa-user-plus"></i>
                     Agregar Usuario
                 </button>
             </div>
-            <div class="view-content">
+
+            <div style="margin: 15px 0; color: #666; font-size: 14px;" id="infoEntries">
+                Mostrando 1 a 5 de <%= usuarios.length %> usuarios
+            </div>
+
+            <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -118,7 +135,7 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tablaUsuarios">
                         <% if (usuarios.length === 0) { %>
                             <tr>
                                 <td colspan="5" style="text-align: center;">No se encontraron usuarios.</td>
@@ -143,6 +160,19 @@
                         <% } %>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Paginación -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;" id="paginacion">
+                <button id="btnAnterior" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <div id="numerosPagina" style="display: flex; gap: 5px;">
+                    <!-- Los números de página se generarán con JavaScript -->
+                </div>
+                <button id="btnSiguiente" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
             </div>
         </div>
     </main>
@@ -283,245 +313,8 @@
         </div>
     </div>
 
-
-    <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script>
-        //Funcion para confirmar la salida del programa
-        function Exit(){
-            Swal.fire({
-                icon: 'warning',
-                title: 'Validacion',
-                text: 'Estas seguro que deseas salir?',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Si',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if(result.isConfirmed){
-                    window.location.href = '/login'
-                }
-            });
-        }
-
-        function eliminarUsuario(cedula) {
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "¡No podrás revertir esto!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminarlo',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = `/deleteUser/${cedula}`;
-                }
-            });
-        }
-
-        // Elementos del DOM
-        const btnAbrirModal = document.getElementById('btnAbrirModal');
-        const modalAgregar = document.getElementById('modalAgregar');
-        const modalEditar = document.getElementById('modalEditar');
-        const closeModalAdd = document.getElementById('closeModalAdd');
-        const closeModalEdit = document.getElementById('closeModalEdit');
-        const btnCancelarAdd = document.getElementById('btnCancelarAdd');
-        const btnCancelarEdit = document.getElementById('btnCancelarEdit');
-        const searchInput = document.getElementById('searchInput');
-
-        // Radio buttons y campos
-        const radioRegistrado = document.getElementById('radioRegistrado');
-        const radioNuevo = document.getElementById('radioNuevo');
-        const camposRegistrado = document.getElementById('camposRegistrado');
-        const camposNuevo = document.getElementById('camposNuevo');
-        const profesorSelect = document.getElementById('profesorSelect');
-
-        // Abrir modal agregar
-        btnAbrirModal.addEventListener('click', () => {
-            modalAgregar.style.display = 'flex';
-            document.getElementById('formAgregarUsuario').reset();
-            mostrarCamposRegistrado();
-        });
-
-        // Cerrar modales
-        closeModalAdd.addEventListener('click', cerrarModalAgregar);
-        btnCancelarAdd.addEventListener('click', cerrarModalAgregar);
-        closeModalEdit.addEventListener('click', cerrarModalEditar);
-        btnCancelarEdit.addEventListener('click', cerrarModalEditar);
-
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', (e) => {
-            if (e.target === modalAgregar) cerrarModalAgregar();
-            if (e.target === modalEditar) cerrarModalEditar();
-        });
-
-        function cerrarModalAgregar() {
-            modalAgregar.style.display = 'none';
-        }
-
-        function cerrarModalEditar() {
-            modalEditar.style.display = 'none';
-        }
-
-        // Cambiar entre profesor registrado y nuevo
-        radioRegistrado.addEventListener('change', mostrarCamposRegistrado);
-        radioNuevo.addEventListener('change', mostrarCamposNuevo);
-
-        function mostrarCamposRegistrado() {
-            camposRegistrado.classList.remove('hidden');
-            camposNuevo.classList.add('hidden');
-            
-            // Habilitar campos de profesor registrado
-            document.querySelectorAll('#camposRegistrado input:not([readonly]), #camposRegistrado select').forEach(el => {
-                el.disabled = false;
-            });
-            
-            // Deshabilitar campos de nuevo registro
-            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
-                el.disabled = true;
-            });
-        }
-
-        function mostrarCamposNuevo() {
-            camposNuevo.classList.remove('hidden');
-            camposRegistrado.classList.add('hidden');
-            
-            // Deshabilitar campos de profesor registrado
-            document.querySelectorAll('#camposRegistrado input, #camposRegistrado select').forEach(el => {
-                el.disabled = true;
-            });
-            
-            // Habilitar campos de nuevo registro
-            document.querySelectorAll('#camposNuevo input, #camposNuevo select').forEach(el => {
-                el.disabled = false;
-            });
-        }
-
-        // Cargar datos del profesor seleccionado
-        profesorSelect.addEventListener('change', (e) => {
-            const selectedOption = e.target.options[e.target.selectedIndex];
-            
-            if (!e.target.value) {
-                document.getElementById('cedulaRegistrado').value = '';
-                document.getElementById('nombreRegistrado').value = '';
-                document.getElementById('emailRegistrado').value = '';
-                document.getElementById('clave').value = '';
-                return;
-            }
-            
-            // Obtener los datos del option seleccionado
-            const cedula = selectedOption.value;
-            const nombreCompleto = selectedOption.textContent.trim();
-            const email = selectedOption.getAttribute('data-email') || '';
-            
-            // Cargar los datos en los campos
-            document.getElementById('cedulaRegistrado').value = cedula;
-            document.getElementById('nombreRegistrado').value = nombreCompleto;
-            document.getElementById('emailRegistrado').value = email;
-            document.getElementById('clave').value = '';
-            document.getElementById('clave').focus();
-        });
-
-        // Cargar datos en modal de edición
-        document.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const fila = e.target.closest('tr');
-                const celdas = fila.querySelectorAll('td');
-                
-                const cedula = celdas[0].textContent.trim();
-                const nombre = celdas[1].textContent.trim();
-                const email = celdas[2].textContent.trim();
-                const rolTexto = celdas[3].textContent.trim();
-                
-                let rolId = 2; // Por defecto docente
-                if (rolTexto === 'Administrador') rolId = 1;
-                
-                document.getElementById('cedulaOriginal').value = cedula;
-                document.getElementById('cedulaEdit').value = cedula;
-                document.getElementById('nombreEdit').value = nombre;
-                document.getElementById('emailEdit').value = email;
-                document.getElementById('rolEdit').value = rolId;
-                document.getElementById('passwordEdit').value = '';
-                
-                modalEditar.style.display = 'flex';
-            });
-        });
-
-        // Búsqueda en tiempo real
-        searchInput.addEventListener('input', (e) => {
-            const busqueda = e.target.value.toLowerCase();
-            const filas = document.querySelectorAll('.data-table tbody tr');
-            
-            filas.forEach(fila => {
-                const texto = fila.textContent.toLowerCase();
-                if (texto.includes(busqueda)) {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
-                }
-            });
-        });
-
-        // Validación antes de enviar el formulario
-        document.getElementById('formAgregarUsuario').addEventListener('submit', (e) => {
-            const tipoRegistro = document.querySelector('input[name="tipoRegistro"]:checked').value;
-            
-            if (tipoRegistro === 'registrado') {
-                const profesorSeleccionado = document.getElementById('profesorSelect').value;
-                const clave = document.getElementById('clave').value;
-                const rol = document.getElementById('rol').value;
-                
-                if (!profesorSeleccionado) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Debe seleccionar un profesor'
-                    });
-                    return false;
-                }
-                
-                if (!clave) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Debe ingresar una contraseña'
-                    });
-                    return false;
-                }
-                
-                if (!rol) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Debe seleccionar un rol'
-                    });
-                    return false;
-                }
-            } else {
-                const cedula = document.getElementById('cedulaNuevo').value;
-                const nombre = document.getElementById('nombreNuevo').value;
-                const email = document.getElementById('emailNuevo').value;
-                const password = document.getElementById('passwordNuevo').value;
-                const rol = document.getElementById('rolNuevo').value;
-                
-                if (!cedula || !nombre || !email || !password || !rol) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Todos los campos son obligatorios'
-                    });
-                    return false;
-                }
-            }
-        });
-    </script>
+    <script src="../js/home.js"></script>
+    <script src="../js/config.js"></script>
 </body>
 </html>
