@@ -45,6 +45,11 @@ app.use(require('./routers/configAdmin'));
 
 //RUTAS TEACHER
 app.use(require('./routers/teacher'));
+app.use(require('./routers/crearRubricaTeachers'));
+app.use(require('./routers/estudiantesTeacher'));
+app.use(require('./routers/evaluacionTeacher'));
+app.use(require('./routers/reportesTeacher'));
+app.use(require('./routers/rubricasTeacher'));
 
 //RUTAS STUDENT
 app.use(require('./routers/student'));

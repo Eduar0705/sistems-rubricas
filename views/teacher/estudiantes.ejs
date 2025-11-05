@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Rubricas' %></title>
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/estudiantes.css">
+    <link rel="shortcut icon" href="../img/logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>Sistema de Rúbricas</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="/teacher" class="nav-item active" data-external="true">
+                <i class="fas fa-chart-line"></i>
+                <span>Panel Principal</span>
+            </a>
+            <a href="/teacher/rubricas" class="nav-item" data-external="true">
+                <i class="fas fa-table"></i>
+                <span>Mis Rúbricas</span>
+            </a>
+            <a href="/teacher/createrubricas" class="nav-item" data-external="true">
+                <i class="fas fa-plus-circle"></i>
+                <span>Crear Rúbrica</span>
+            </a>
+            <a href="/teacher/evaluacion" class="nav-item" data-external="true">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Evaluaciones</span>
+            </a>
+            <a href="/teacher/students" class="nav-item" data-external="true">
+                <i class="fas fa-users"></i>
+                <span>Estudiantes</span>
+            </a>
+            <a href="/teacher/report" class="nav-item" data-external="true">
+                <i class="fas fa-file-alt"></i>
+                <span>Reportes</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name"><%= datos.username %></div>
+                    <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
+                </div>
+            </div>
+            <button class="header-btn" onclick="Exit()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="pageTitle">Panel Principal</h1>
+            </div>
+            <div class="header-right">
+                <button class="header-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Estudiantes View -->
+        <div class="view" id="estudiantes">
+            <div class="view-header">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Buscar estudiantes...">
+                </div>
+                <button class="btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Agregar Estudiante
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Estudiante</th>
+                            <th>Cedula</th>
+                            <th>Correo</th>
+                            <th>Evaluaciones</th>
+                            <th>Promedio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% estudiantes.forEach(function(estudiante) { %>
+                        <tr>
+                            <td><%= estudiante.nombre + ' ' + estudiante.apellido %></td>
+                            <td><%= estudiante.cedula %></td>
+                            <td><%= estudiante.email %></td>
+                            <td><%= estudiante.evaluaciones || 0 %></td>
+                            <td>
+                                <span class="badge <%= estudiante.promedio >= 14 ? 'badge-success' : estudiante.promedio >= 10 ? 'badge-warning' : 'badge-danger' %>">
+                                    <%= //estudiante.promedio ? estudiante.promedio.toFixed(2) : '0.00' %>
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-action" onclick="verEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-action" onclick="editarEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-action" onclick="eliminarEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Ver Estudiante -->
+    <div id="modalVerEstudiante" class="modal-overlay">
+        <div class="modal-estudiante">
+            <div class="estudiante-header">
+                <div class="estudiante-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="estudiante-info-header">
+                    <h2 id="estudianteNombre"></h2>
+                    <p><i class="fas fa-graduation-cap"></i> <span id="estudianteCarrera"></span></p>
+                </div>
+            </div>
+
+            <div class="estudiante-estado">
+                <span>Estado del Estudiante</span>
+                <span class="badge-estado" id="estudianteEstado"></span>
+            </div>
+
+            <div class="estudiante-section">
+                <h3><i class="fas fa-info-circle"></i> Información Personal</h3>
+                
+                <div class="info-item">
+                    <div class="info-icon cedula-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <div class="info-content">
+                        <span class="info-label">CÉDULA DE IDENTIDAD</span>
+                        <span class="info-value" id="estudianteCedula"></span>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon email-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="info-content">
+                        <span class="info-label">CORREO ELECTRÓNICO</span>
+                        <a class="info-value info-link" id="estudianteEmail"></a>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon phone-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="info-content">
+                        <span class="info-label">TELÉFONO</span>
+                        <span class="info-value" id="estudianteTelefono"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="estudiante-section">
+                <h3><i class="fas fa-sticky-note"></i> Notas Adicionales</h3>
+                <div class="notas-box">
+                    <p id="estudianteNotas">Sin notas adicionales</p>
+                </div>
+            </div>
+
+            <button class="btn-cerrar" onclick="cerrarModal()">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+        </div>
+    </div>
+
+    <script src="../js/home.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Funcion para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/login'
+                }
+            });
+        }
+    </script>
+    <script>
+    // Función para ver estudiante
+    function verEstudiante(cedula) {
+        fetch(`/teacher/students/${cedula}`)
+            .then(response => response.json())
+            .then(data => {
+                // Llenar la información del modal
+                document.getElementById('estudianteNombre').textContent = 
+                    `${data.nombre} ${data.apellido}`;
+                document.getElementById('estudianteCarrera').textContent = 
+                    data.cod_carrera || 'Sin carrera asignada';
+                document.getElementById('estudianteCedula').textContent = data.cedula;
+                document.getElementById('estudianteEmail').textContent = data.email;
+                document.getElementById('estudianteEmail').href = `mailto:${data.email}`;
+                document.getElementById('estudianteTelefono').textContent = 
+                    data.telf || 'No registrado';
+                
+                // Estado del estudiante
+                const estadoBadge = document.getElementById('estudianteEstado');
+                const estado = data.estado || 'CURSANDO';
+                estadoBadge.textContent = estado;
+                estadoBadge.className = `badge-estado ${estado.toLowerCase()}`;
+                
+                // Notas adicionales
+                document.getElementById('estudianteNotas').textContent = 
+                    data.notas || 'Sin notas adicionales';
+                
+                // Mostrar modal
+                document.getElementById('modalVerEstudiante').classList.add('active');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo cargar la información del estudiante', 'error');
+            });
+    }
+
+    // Función para cerrar el modal
+    function cerrarModal() {
+        document.getElementById('modalVerEstudiante').classList.remove('active');
+    }
+
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalVerEstudiante')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            cerrarModal();
+        }
+    });
+
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarModal();
+        }
+    });
+    </script>
+</body>
+</html>
