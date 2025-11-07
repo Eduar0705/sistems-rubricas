@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../models/conetion');
 
-// Ruta existente para listar rúbricas
+// Ruta para listar rúbricas
 router.get("/admin/rubricas", function(req, res) {
     if(!req.session.login){
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
@@ -48,7 +48,7 @@ router.get("/admin/rubricas", function(req, res) {
     });
 });
 
-// NUEVA RUTA API para obtener detalle de rúbrica en JSON
+// Ruta API para obtener detalle de rúbrica
 router.get("/admin/rubricas/detalle/:id", function(req, res) {
     if(!req.session.login){
         return res.status(401).json({ success: false, message: 'No autorizado' });
