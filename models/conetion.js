@@ -7,7 +7,7 @@ function crearConexion() {
         host: 'mysql-sistems.alwaysdata.net',
         user: 'sistems',
         password: '31466704',
-        database: 'sistems_rb',
+        database: 'sistems_rubricas',
         connectTimeout: 10000, // 10 segundos
         enableKeepAlive: true,
         keepAliveInitialDelay: 0

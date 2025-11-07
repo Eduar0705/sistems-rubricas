@@ -88,10 +88,22 @@
                     <i class="fas fa-search"></i>
                     <input type="text" placeholder="Buscar estudiantes...">
                 </div>
-                <button class="btn-primary">
-                    <i class="fas fa-user-plus"></i>
-                    Agregar Estudiante
-                </button>
+                <select name="seccion" id="seccion">
+                    <option value="" disabled selected>Seleccionar Sección</option>
+                    <% secciones.forEach(function(seccion) { %>
+                        <option value="<%= seccion.id_seccion %>">
+                            <%= seccion.letra %>
+                        </option>
+                    <% }); %>
+                </select>
+                <select name="materia" id="materia">
+                    <option value="" disabled selected>Seleccionar Materia</option>
+                    <% secciones.forEach(function(materia) { %>
+                        <option value="<%= materia.id_materia %>">
+                            <%= materia.codigo_materia %>
+                        </option>
+                    <% }); %>
+                </select>
             </div>
 
             <div class="table-container">
@@ -106,38 +118,13 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <% estudiantes.forEach(function(estudiante) { %>
-                        <tr>
-                            <td><%= estudiante.nombre + ' ' + estudiante.apellido %></td>
-                            <td><%= estudiante.cedula %></td>
-                            <td><%= estudiante.email %></td>
-                            <td><%= estudiante.evaluaciones || 0 %></td>
-                            <td>
-                                <span class="badge <%= estudiante.promedio >= 14 ? 'badge-success' : estudiante.promedio >= 10 ? 'badge-warning' : 'badge-danger' %>">
-                                    <%= //estudiante.promedio ? estudiante.promedio.toFixed(2) : '0.00' %>
-                                </span>
-                            </td>
-                            <td>
-                                <button class="btn-action" onclick="verEstudiante('<%= estudiante.cedula %>')">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn-action" onclick="editarEstudiante('<%= estudiante.cedula %>')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-action" onclick="eliminarEstudiante('<%= estudiante.cedula %>')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <% }); %>
-                    </tbody>
+                    
                 </table>
             </div>
         </div>
     </main>
 
-    <!-- Modal Ver Estudiante -->
+    <!-- Modal Ver Estudiante
     <div id="modalVerEstudiante" class="modal-overlay">
         <div class="modal-estudiante">
             <div class="estudiante-header">
@@ -200,7 +187,7 @@
                 <i class="fas fa-times"></i> Cerrar
             </button>
         </div>
-    </div>
+    </div>-->
 
     <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

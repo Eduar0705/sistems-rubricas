@@ -1,0 +1,26 @@
+                    <tbody>
+                        <% //estudiantes.forEach(function(estudiante) { %>
+                        <tr>
+                            <td><%= //estudiante.nombre + ' ' + estudiante.apellido %></td>
+                            <td><%= //estudiante.cedula %></td>
+                            <td><%= //estudiante.email %></td>
+                            <td><%= //estudiante.evaluaciones || 0 %></td>
+                            <td>
+                                <span class="badge <%= estudiante.promedio >= 14 ? 'badge-success' : estudiante.promedio >= 10 ? 'badge-warning' : 'badge-danger' %>">
+                                    <%= //estudiante.promedio ? estudiante.promedio.toFixed(2) : '0.00' %>
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-action" onclick="verEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-action" onclick="editarEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-action" onclick="eliminarEstudiante('<%= estudiante.cedula %>')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <% //}); %>
+                    </tbody>

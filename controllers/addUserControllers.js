@@ -4,6 +4,7 @@ const conexion = require('../models/conetion');
 
 router.post('/envioUser', (req, res) => {
     const { cedula, nombre, email, password, rol } = req.body;
+    const activo = 1;
 
     // Validación básica
     if (!cedula || !nombre || !email || !password || !rol) {
@@ -39,10 +40,10 @@ router.post('/envioUser', (req, res) => {
 
         // Si no existe, insertar el nuevo usuario
         const insert = `INSERT INTO usuario 
-        (cedula, username, password, email, id_rol) 
-        VALUES (?, ?, ?, ?, ?)`;
+        (cedula, username, password, email, id_rol, activo) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
 
-        const valores = [cedula, nombre, password, email, rol];
+        const valores = [cedula, nombre, password, email, rol, activo];
         
         console.log('Insertando usuario con valores:', valores);
         
