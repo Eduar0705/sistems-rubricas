@@ -6,7 +6,7 @@ router.get("/admin/evaluaciones", function(req, res) {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
-    res.render("admin/evaluaciones", {datos : req.session, title: 'SGR - Evaluaciones'});
+    res.render("admin/evaluaciones", {datos : req.session, title: 'SGR - Evaluaciones', currentPage: 'evaluaciones'});
 });
 
 module.exports = router;

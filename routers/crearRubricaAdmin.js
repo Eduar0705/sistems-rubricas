@@ -24,7 +24,8 @@ router.get("/admin/createrubricas", (req, res) => {
                 datos: req.session,
                 title: 'Crear Rúbrica',
                 materias: [],
-                secciones: []
+                secciones: [],
+                currentPage: 'createrubricas'
             });
         }
         
@@ -35,7 +36,8 @@ router.get("/admin/createrubricas", (req, res) => {
                     datos: req.session,
                     title: 'Crear Rúbrica',
                     materias: materias,
-                    secciones: []
+                    secciones: [],
+                    currentPage: 'createrubricas'
                 });
             }
             
@@ -43,7 +45,8 @@ router.get("/admin/createrubricas", (req, res) => {
                 datos: req.session,
                 title: 'Crear Rúbrica',
                 materias: materias,
-                secciones: secciones
+                secciones: secciones,
+                currentPage: 'createrubricas'
             });
         });
     });

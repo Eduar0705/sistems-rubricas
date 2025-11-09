@@ -10,63 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-graduation-cap"></i>
-                <span>Sistema de Rúbricas</span>
-            </div>
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <nav class="sidebar-nav">
-            <a href="/home" class="nav-item" data-external="true">
-                <i class="fas fa-chart-line"></i>
-                <span>Panel Principal</span>
-            </a>
-            <a href="/admin/rubricas" class="nav-item" data-external="true">
-                <i class="fas fa-table"></i>
-                <span>Mis Rúbricas</span>
-            </a>
-            <a href="/admin/createrubricas" class="nav-item" data-external="true">
-                <i class="fas fa-plus-circle"></i>
-                <span>Crear Rúbrica</span>
-            </a>
-            <a href="/admin/evaluaciones" class="nav-item" data-external="true">
-                <i class="fas fa-clipboard-check"></i>
-                <span>Evaluaciones</span>
-            </a>
-            <a href="/admin/permisos" class="nav-item" data-external="true">
-                <i class="fas fa-user-plus"></i>
-                <span>Permisos</span>
-            </a>
-            <a href="/admin/profesores" class="nav-item active" data-external="true">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <span>Profesores</span>
-            </a>
-            <a href="/admin/reportes" class="nav-item" data-external="true">
-                <i class="fas fa-file-alt"></i>
-                <span>Reportes</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="user-profile">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-info">
-                    <div class="user-name"><%= datos.username %></div>
-                    <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
-                </div>
-            </div>
-            <button class="header-btn" onclick="Exit()">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-    </aside>
+    <%- include('../inc/menu.ejs') %>
 
     <!-- Main Content -->
     <main class="main-content">

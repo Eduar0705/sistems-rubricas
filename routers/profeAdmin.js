@@ -16,10 +16,11 @@ router.get("/admin/profesores", function(req, res) {
             return res.status(500).send('Error en el servidor');
         }
         res.render("admin/Profesores", {
-            mensaje: mensaje, 
-            datos: req.session, 
-            profesores: results, 
-            title: 'SGR - Profesores'
+            mensaje: mensaje,
+            datos: req.session,
+            profesores: results,
+            title: 'SGR - Profesores',
+            currentPage: 'profesores'
         });
     });
 });

@@ -32,7 +32,8 @@ router.get('/admin/config', (req, res) => {
                 datos: req.session,
                 usuarios: results,
                 docentes: resul,  // Esto se pasa correctamente
-                title: 'SGR - Configuración'
+                title: 'SGR - Configuración',
+                currentPage: 'config'
             });
         });
     });

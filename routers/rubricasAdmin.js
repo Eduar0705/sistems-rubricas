@@ -36,14 +36,16 @@ router.get("/admin/rubricas", function(req, res) {
             return res.render("admin/rubricas", {
                 datos: req.session,
                 title: 'SGR - Rúbricas',
-                rubricas: []
+                rubricas: [],
+                currentPage: 'rubricas'
             });
         }
         
         res.render("admin/rubricas", {
             datos: req.session,
             title: 'SGR - Rúbricas',
-            rubricas: rubricas
+            rubricas: rubricas,
+            currentPage: 'rubricas'
         });
     });
 });

@@ -14,9 +14,10 @@ router.get("/home", function(req, res) {
         if (err) {
             console.log('Error al contar profesores: ', err);
             return res.render("home/index", {
-                datos: req.session, 
+                datos: req.session,
                 title: 'Sistema de Gestion de Rubricas',
-                totalProfesores: 0 // o null según prefieras
+                totalProfesores: 0, // o null según prefieras
+                currentPage: 'home'
             });
         }
         
@@ -24,9 +25,10 @@ router.get("/home", function(req, res) {
         
         // Renderizar dentro del callback con los datos obtenidos
         res.render("home/index", {
-            datos: req.session, 
-            title: 'Sistema de Gestion de Rubricas', 
-            totalProfesores: totalProfesores
+            datos: req.session,
+            title: 'Sistema de Gestion de Rubricas',
+            totalProfesores: totalProfesores,
+            currentPage: 'home'
         });
     });
 });
