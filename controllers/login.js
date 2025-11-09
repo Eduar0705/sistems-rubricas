@@ -30,6 +30,7 @@ routers.post('/verifLogin', (req, res)=>{
         req.session.login = true;
         req.session.id = user.id;
         req.session.username = user.username;
+        req.session.cedula = user.cedula;
         req.session.email = user.email;
         req.session.id_rol = user.id_rol;
         console.log(req.session);
