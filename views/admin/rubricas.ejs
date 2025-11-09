@@ -27,14 +27,33 @@
 
         <div style="padding: 30px;" id="rubricas">
             <div class="view-header">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar rúbricas...">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>Mostrar:</span>
+                    <select id="entriesPerPage" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                    <span>rúbricas</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar rúbricas...">
+                    </div>
+                    <select id="professorFilter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">Todos los profesores</option>
+                    </select>
                 </div>
                 <button class="btn-primary" onclick="window.location.href='/admin/createrubricas'">
                     <i class="fas fa-plus"></i>
                     Nueva Rúbrica
                 </button>
+            </div>
+
+            <div style="margin: 15px 0; color: #666; font-size: 14px;" id="infoEntries">
+                Mostrando 1 a <%= rubricas.length %> de <%= rubricas.length %> rúbricas
             </div>
 
             <div class="table-container">
@@ -47,14 +66,15 @@
                             <th>Tipo</th>
                             <th>Porcentaje</th>
                             <th>Fecha Evaluación</th>
+                            <th>Profesor</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="rubricasTableBody">
                         <% if(rubricas && rubricas.length > 0) { %>
                             <% rubricas.forEach(function(rubrica) { %>
-                                <tr>
+                                <tr data-professor="<%= rubrica.docente_nombre %>">
                                     <td>
                                         <div class="table-cell-main">
                                             <i class="fas fa-file-alt"></i>
@@ -66,6 +86,7 @@
                                     <td><%= rubrica.tipo_evaluacion %></td>
                                     <td><%= rubrica.porcentaje_evaluacion %>%</td>
                                     <td><%= new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') %></td>
+                                    <td><%= rubrica.docente_nombre %></td>
                                     <td>
                                         <span class="badge-status active">Activa</span>
                                     </td>
@@ -74,7 +95,7 @@
                                             <button class="btn-icon" title="Ver" onclick="verRubrica('<%= rubrica.id %>')">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="btn-icon" title="Editar">
+                                            <button class="btn-icon" title="Editar" onclick="openModal('<%= rubrica.id %>')">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <!--<button class="btn-icon" title="Duplicar">
@@ -89,7 +110,7 @@
                             <% }); %>
                         <% } else { %>
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 40px;">
+                                <td colspan="9" style="text-align: center; padding: 40px;">
                                     <i class="fas fa-inbox" style="font-size: 48px; color: #ccc; margin-bottom: 10px; display: block;"></i>
                                     <p style="color: #999;">No hay rúbricas disponibles. Crea tu primera rúbrica.</p>
                                 </td>
@@ -98,11 +119,834 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginación -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;" id="paginacion">
+                <button id="btnAnterior" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <div id="numerosPagina" style="display: flex; gap: 5px;">
+                    <!-- Los números de página se generarán con JavaScript -->
+                </div>
+                <button id="btnSiguiente" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
         </div>
     </main>
     
+    <style>
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 20px;
+        }
+
+        /* Modal Container */
+        .modal {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 900px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 50px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        /* Modal Body */
+        .modal-body {
+            padding: 30px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        /* Alert Info */
+        .alert-info {
+            background: #c8e6f5;
+            border-left: 4px solid #0288d1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            display: flex;
+            gap: 10px;
+            font-size: 14px;
+            color: #01579b;
+        }
+
+        .alert-info-icon {
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Form Sections */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .required::after {
+            content: " *";
+            color: #d32f2f;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #0288d1;
+            box-shadow: 0 0 0 3px rgba(2, 136, 209, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 20px;
+            padding-right: 40px;
+        }
+
+        /* Row Layout */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title-icon {
+            font-size: 18px;
+        }
+
+        /* Criteria Section */
+        .criteria-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .criteria-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .criteria-main {
+            flex: 1;
+        }
+
+        .criteria-delete {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+
+        .criteria-delete:hover {
+            background: #b71c1c;
+        }
+
+        .criteria-fields {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 15px;
+        }
+
+        /* Performance Levels */
+        .performance-level {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        .performance-header {
+            display: grid;
+            grid-template-columns: 1fr 120px 80px 40px;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+
+        .performance-header input[type="text"] {
+            grid-column: 1;
+        }
+
+        .performance-score {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .performance-score label {
+            margin: 0;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .performance-score input {
+            width: 80px;
+        }
+
+        .performance-order {
+            width: 80px;
+        }
+
+        .performance-delete {
+            justify-self: end;
+        }
+
+        /* Button Groups */
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #0288d1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0277bd;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .btn-add {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Add Button Section */
+        .add-button-section {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .placeholder-text {
+            color: #999;
+        }
+    </style>
+    <!-- Modal Editar -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Editar Rúbrica</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="alert-info">
+                    <span class="alert-info-icon"><i class="fas fa-inbox"></i></span>
+                    <span>Complete todos los campos requeridos. Puede agregar múltiples criterios y niveles de desempeño.</span>
+                </div>
+
+                <form id="rubricForm" method="post" action="/updateRubrica">
+                    <input type="hidden" id="rubricId" name="id">
+                    <!-- Nombre de la Rúbrica -->
+                    <div class="form-group">
+                        <label for="rubricName" class="required">Nombre de la Rúbrica</label>
+                        <input type="text" id="rubricName" name="nombre_rubrica" placeholder="Ej: EVALUACIÓN INDIVIDUAL DISTRIBUCIÓN DE FRECUENCIAS" required>
+                    </div>
+
+                    <!-- Materia y Sección -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subject" class="required">Materia</label>
+                            <select id="subject" name="materia_codigo" required>
+                                <option value="">Seleccionar materia</option>
+                                <option value="math">Matemáticas</option>
+                                <option value="science">Ciencias</option>
+                                <option value="spanish">Español</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="section" class="required">Sección</label>
+                            <select id="section" name="seccion_id" required>
+                                <option value="">Seleccionar sección</option>
+                                <option value="a">Sección A</option>
+                                <option value="b">Sección B</option>
+                                <option value="c">Sección C</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fecha, Porcentaje y Tipo -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evalDate" class="required">Fecha de Evaluación</label>
+                            <input type="date" id="evalDate" name="fecha_evaluacion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="evalPercent" class="required">Porcentaje de Evaluación (%)</label>
+                            <input type="number" id="evalPercent" name="porcentaje_evaluacion" value="10" min="0" max="100" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="evalType" class="required">Tipo de Evaluación</label>
+                        <select id="evalType" name="tipo_evaluacion" required>
+                            <option value="">Seleccionar tipo</option>
+                            <option value="Individual">Individual</option>
+                            <option value="Grupal">Grupal</option>
+                            <option value="Oral">Oral</option>
+                            <option value="Taller">Taller</option>
+                            <option value="Presentacion">Presentación</option>
+                            <option value="Proyecto">Proyecto</option>
+                            <option value="Mixta">Mixta</option>
+                        </select>
+                    </div>
+
+                    <!-- Competencias -->
+                    <div class="form-group">
+                        <label for="competencies" class="required">Competencias</label>
+                        <textarea id="competencies" name="competencias" placeholder="Describe las competencias que se evaluarán..." required></textarea>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="form-group">
+                        <label for="instructions">Instrucciones</label>
+                        <textarea id="instructions" name="instrucciones" placeholder="Instrucciones para la evaluación..."></textarea>
+                    </div>
+
+                    <!-- Criterios de Evaluación -->
+                    <div class="section-title">
+                        <span class="section-title-icon"><i class="fas fa-clipboard-list"></i></span>
+                        Criterios de Evaluación
+                    </div>
+                    <div id="criteriaContainer"></div>
+                    <div class="add-button-section">
+                        <button type="button" class="btn btn-add btn-small" onclick="addCriteria()">+ Agregar Criterio</button>
+                    </div>
+
+                    <!-- Niveles de Desempeño -->
+                    <div class="section-title">
+                        <span class="section-title-icon"><i class="fas fa-star"></i></span>
+                        Niveles de Desempeño
+                    </div>
+                    <div id="performanceLevelsContainer"></div>
+                    <div class="add-button-section">
+                        <button type="button" class="btn btn-add btn-small" onclick="addPerformanceLevel()">+ Agregar Nivel</button>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/rubricas.js"></script>
+    <script>
+    // ===================================
+    // SCRIPT PARA EL MODAL DE EDICIÓN
+    // ===================================
+
+    let rubricData = {
+        criteria: []
+    };
+
+    // Abrir modal
+    function openModal(rubricId) {
+        if (rubricId) {
+            loadRubricData(rubricId);
+        } else {
+            resetModal();
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+    }
+
+    // Cargar datos de la rúbrica
+    function loadRubricData(rubricId) {
+        fetch(`/admin/rubricas/editar/${rubricId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    populateModal(data);
+                    document.getElementById('modalOverlay').classList.add('active');
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+            });
+    }
+
+    // Poblar el modal con datos
+    function populateModal(data) {
+        const rubrica = data.rubrica;
+
+        // Campos básicos
+        document.getElementById('rubricId').value = rubrica.id;
+        document.getElementById('rubricName').value = rubrica.nombre_rubrica;
+        document.getElementById('evalDate').value = rubrica.fecha_evaluacion.split('T')[0];
+        document.getElementById('evalPercent').value = rubrica.porcentaje_evaluacion;
+        document.getElementById('evalType').value = rubrica.tipo_evaluacion;
+        document.getElementById('competencies').value = rubrica.competencias || '';
+        document.getElementById('instructions').value = rubrica.instrucciones || '';
+
+        // Cargar opciones y seleccionar valores
+        loadMateriasYSecciones(() => {
+            document.getElementById('subject').value = rubrica.materia_codigo;
+            document.getElementById('section').value = rubrica.seccion_id;
+        });
+
+        // Preparar criterios con sus niveles
+        rubricData.criteria = data.criterios.map(criterio => ({
+            id: criterio.id,
+            description: criterio.descripcion,
+            maxScore: criterio.puntaje_maximo,
+            order: criterio.orden,
+            niveles: (criterio.niveles || []).map(nivel => ({
+                nombre_nivel: nivel.nombre_nivel,
+                descripcion: nivel.descripcion,
+                puntaje: nivel.puntaje,
+                orden: nivel.orden
+            }))
+        }));
+
+        renderCriteria();
+    }
+
+    // Cargar materias y secciones
+    function loadMateriasYSecciones(callback) {
+        fetch('/admin/opciones')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const materiaSelect = document.getElementById('subject');
+                    materiaSelect.innerHTML = '<option value="">Seleccionar materia</option>';
+                    data.materias.forEach(materia => {
+                        materiaSelect.innerHTML += `<option value="${materia.codigo}">${materia.nombre}</option>`;
+                    });
+
+                    const seccionSelect = document.getElementById('section');
+                    seccionSelect.innerHTML = '<option value="">Seleccionar sección</option>';
+                    data.secciones.forEach(seccion => {
+                        seccionSelect.innerHTML += `<option value="${seccion.id}">${seccion.codigo} - ${seccion.materia_codigo}</option>`;
+                    });
+
+                    if (callback) callback();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Resetear modal
+    function resetModal() {
+        document.getElementById('rubricForm').reset();
+        document.getElementById('rubricId').value = '';
+        rubricData.criteria = [];
+        loadMateriasYSecciones();
+        renderCriteria();
+    }
+
+    // Cerrar modal
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    // Cerrar modal al hacer click en el overlay
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // Agregar criterio
+    function addCriteria() {
+        rubricData.criteria.push({
+            id: null,
+            description: '',
+            maxScore: 10,
+            order: rubricData.criteria.length + 1,
+            niveles: [
+                { nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 10, orden: 1 },
+                { nombre_nivel: 'Notable', descripcion: '', puntaje: 8, orden: 2 },
+                { nombre_nivel: 'Aprobado', descripcion: '', puntaje: 6, orden: 3 },
+                { nombre_nivel: 'Reprobado', descripcion: '', puntaje: 4, orden: 4 }
+            ]
+        });
+        renderCriteria();
+    }
+
+    // Eliminar criterio
+    function deleteCriteria(index) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Se eliminará el criterio y todos sus niveles",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                rubricData.criteria.splice(index, 1);
+                renderCriteria();
+            }
+        });
+    }
+
+    // Renderizar criterios
+    function renderCriteria() {
+        const container = document.getElementById('criteriaContainer');
+        
+        if (rubricData.criteria.length === 0) {
+            container.innerHTML = '<p class="placeholder-text">No hay criterios. Haga clic en "Agregar Criterio".</p>';
+            return;
+        }
+
+        container.innerHTML = rubricData.criteria.map((criteria, index) => `
+            <div class="criteria-container">
+                <div class="criteria-header">
+                    <div class="criteria-main">
+                        <div class="form-group">
+                            <label>Descripción del criterio</label>
+                            <input type="text" placeholder="Descripción del criterio"
+                                value="${criteria.description}"
+                                onchange="updateCriteria(${index}, 'description', this.value)">
+                        </div>
+                    </div>
+                    <button type="button" class="criteria-delete" onclick="deleteCriteria(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="criteria-fields">
+                    <div class="form-group">
+                        <label>Puntaje Máximo</label>
+                        <input type="number" value="${criteria.maxScore}" min="1"
+                            onchange="updateCriteria(${index}, 'maxScore', this.value)">
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" value="${criteria.order}" min="1"
+                            onchange="updateCriteria(${index}, 'order', this.value)">
+                    </div>
+                </div>
+                
+                <div class="section-title" style="font-size: 14px; margin-top: 15px;">
+                    <span class="section-title-icon"><i class="fas fa-star"></i></span>
+                    Niveles de Desempeño
+                </div>
+                <div id="niveles-${index}"></div>
+                <div class="add-button-section">
+                    <button type="button" class="btn btn-add btn-small" onclick="addNivelToCriteria(${index})">
+                        + Agregar Nivel
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        rubricData.criteria.forEach((criteria, index) => {
+            renderNivelesDeCriterio(index);
+        });
+    }
+
+    // Actualizar criterio
+    function updateCriteria(index, field, value) {
+        if (field === 'description') {
+            rubricData.criteria[index][field] = value;
+        } else {
+            rubricData.criteria[index][field] = parseInt(value) || 0;
+        }
+    }
+
+    // Agregar nivel a criterio
+    function addNivelToCriteria(criteriaIndex) {
+        if (!rubricData.criteria[criteriaIndex].niveles) {
+            rubricData.criteria[criteriaIndex].niveles = [];
+        }
+
+        const niveles = rubricData.criteria[criteriaIndex].niveles;
+        const defaultNames = ['Sobresaliente', 'Notable', 'Aprobado', 'Reprobado'];
+        const nextName = defaultNames[niveles.length] || '';
+
+        niveles.push({
+            nombre_nivel: nextName,
+            descripcion: '',
+            puntaje: niveles.length + 1,
+            orden: niveles.length + 1
+        });
+
+        renderNivelesDeCriterio(criteriaIndex);
+    }
+
+    // Eliminar nivel
+    function deleteNivelFromCriteria(criteriaIndex, nivelIndex) {
+        rubricData.criteria[criteriaIndex].niveles.splice(nivelIndex, 1);
+        renderNivelesDeCriterio(criteriaIndex);
+    }
+
+    // Renderizar niveles de un criterio
+    function renderNivelesDeCriterio(criteriaIndex) {
+        const container = document.getElementById(`niveles-${criteriaIndex}`);
+        const niveles = rubricData.criteria[criteriaIndex].niveles || [];
+        
+        if (niveles.length === 0) {
+            container.innerHTML = '<p class="placeholder-text" style="font-size: 12px; margin: 10px 0;">No hay niveles. Agregue al menos uno.</p>';
+            return;
+        }
+        
+        container.innerHTML = niveles.map((nivel, nivelIndex) => `
+            <div class="performance-level">
+                <div class="performance-header">
+                    <div class="form-group">
+                        <input type="text" placeholder="Nombre (ej: Sobresaliente)"
+                            value="${nivel.nombre_nivel}"
+                            onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'nombre_nivel', this.value)">
+                    </div>
+                    <div class="performance-score">
+                        <label>Puntaje</label>
+                        <input type="number" value="${nivel.puntaje}" min="0"
+                            onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'puntaje', this.value)">
+                    </div>
+                    <div class="form-group performance-order">
+                        <input type="number" value="${nivel.orden}" min="1"
+                            onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'orden', this.value)">
+                    </div>
+                    <button type="button" class="criteria-delete" onclick="deleteNivelFromCriteria(${criteriaIndex}, ${nivelIndex})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Descripción del nivel</label>
+                    <textarea placeholder="Descripción..."
+                        onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'descripcion', this.value)">${nivel.descripcion}</textarea>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Actualizar nivel
+    function updateNivel(criteriaIndex, nivelIndex, field, value) {
+        const nivel = rubricData.criteria[criteriaIndex].niveles[nivelIndex];
+        if (field === 'puntaje' || field === 'orden') {
+            nivel[field] = parseInt(value) || 0;
+        } else {
+            nivel[field] = value;
+        }
+    }
+
+    // Enviar formulario
+    document.getElementById('rubricForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Validaciones
+        if (rubricData.criteria.length === 0) {
+            Swal.fire('Error', 'Debe agregar al menos un criterio', 'error');
+            return;
+        }
+
+        for (let i = 0; i < rubricData.criteria.length; i++) {
+            if (!rubricData.criteria[i].niveles || rubricData.criteria[i].niveles.length === 0) {
+                Swal.fire('Error', `El criterio ${i + 1} debe tener al menos un nivel`, 'error');
+                return;
+            }
+        }
+
+        // Preparar datos
+        const criteriosData = rubricData.criteria.map((criterio, index) => ({
+            id: criterio.id,
+            descripcion: criterio.description,
+            puntaje_maximo: criterio.maxScore,
+            orden: criterio.order || index + 1,
+            niveles: criterio.niveles.map((nivel, idx) => ({
+                nombre_nivel: nivel.nombre_nivel,
+                descripcion: nivel.descripcion,
+                puntaje: nivel.puntaje,
+                orden: nivel.orden || idx + 1
+            }))
+        }));
+
+        const formData = new FormData(this);
+        const data = {
+            id: formData.get('id'),
+            nombre_rubrica: formData.get('nombre_rubrica'),
+            materia_codigo: formData.get('materia_codigo'),
+            seccion_id: formData.get('seccion_id'),
+            fecha_evaluacion: formData.get('fecha_evaluacion'),
+            porcentaje_evaluacion: formData.get('porcentaje_evaluacion'),
+            tipo_evaluacion: formData.get('tipo_evaluacion'),
+            competencias: formData.get('competencias'),
+            instrucciones: formData.get('instrucciones'),
+            criterios: criteriosData
+        };
+
+        // Loading
+        Swal.fire({
+            title: 'Actualizando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Enviar como JSON
+        fetch('/updateRubrica', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+            return response.text();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire('Error', 'No se pudo actualizar la rúbrica', 'error');
+        });
+    });
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMateriasYSecciones();
+    });
+    </script>
 </body>
 </html>

@@ -2,8 +2,12 @@ const express = require('express');
 const router = express.Router();
 const connection = require('../models/conetion');
 
-//Actualizar rubrica
+// Actualizar rubrica
 router.post('/updateRubrica', (req, res) => {
+    console.log('📝 POST /updateRubrica recibido');
+    console.log('Body:', req.body);
+    console.log('Headers:', req.headers);
+    
     let mensaje;
 
     const { id, nombre_rubrica, materia_codigo, seccion_id, fecha_evaluacion,
@@ -16,6 +20,7 @@ router.post('/updateRubrica', (req, res) => {
         try {
             criteriosParsed = JSON.parse(criterios);
         } catch(e) {
+            console.error('Error al parsear criterios:', e);
             mensaje = 'Error al procesar los criterios';
             return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
         }
@@ -38,6 +43,14 @@ router.post('/updateRubrica', (req, res) => {
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
 
+    // Validar permisos por rol
+    if(req.session.id_rol === 3) {
+        mensaje = 'No tienes permisos para editar rúbricas';
+        return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+    }
+
+    console.log('✅ Validaciones pasadas, iniciando transacción...');
+
     // Iniciar transacción
     connection.beginTransaction((err) => {
         if(err) {
@@ -47,25 +60,51 @@ router.post('/updateRubrica', (req, res) => {
         }
 
         // 1. Actualizar la rúbrica principal
-        const queryUpdateRubrica = `
-            UPDATE rubrica_evaluacion
-            SET nombre_rubrica = ?, materia_codigo = ?, seccion_id = ?, fecha_evaluacion = ?,
-                porcentaje_evaluacion = ?, tipo_evaluacion = ?, competencias = ?, instrucciones = ?
-            WHERE id = ? AND docente_cedula = ?
-        `;
+        let queryUpdateRubrica;
+        let valuesUpdateRubrica;
 
-        const valuesUpdateRubrica = [
-            nombre_rubrica,
-            materia_codigo,
-            seccion_id,
-            fecha_evaluacion,
-            porcentaje_evaluacion,
-            tipo_evaluacion,
-            competencias || null,
-            instrucciones || null,
-            id,
-            req.session.cedula
-        ];
+        if(req.session.id_rol === 1) {
+            // Administrador puede editar cualquier rúbrica
+            queryUpdateRubrica = `
+                UPDATE rubrica_evaluacion
+                SET nombre_rubrica = ?, materia_codigo = ?, seccion_id = ?, fecha_evaluacion = ?,
+                    porcentaje_evaluacion = ?, tipo_evaluacion = ?, competencias = ?, instrucciones = ?
+                WHERE id = ?
+            `;
+
+            valuesUpdateRubrica = [
+                nombre_rubrica,
+                materia_codigo,
+                seccion_id,
+                fecha_evaluacion,
+                porcentaje_evaluacion,
+                tipo_evaluacion,
+                competencias || null,
+                instrucciones || null,
+                id
+            ];
+        } else {
+            // Docente solo puede editar sus propias rúbricas
+            queryUpdateRubrica = `
+                UPDATE rubrica_evaluacion
+                SET nombre_rubrica = ?, materia_codigo = ?, seccion_id = ?, fecha_evaluacion = ?,
+                    porcentaje_evaluacion = ?, tipo_evaluacion = ?, competencias = ?, instrucciones = ?
+                WHERE id = ? AND docente_cedula = ?
+            `;
+
+            valuesUpdateRubrica = [
+                nombre_rubrica,
+                materia_codigo,
+                seccion_id,
+                fecha_evaluacion,
+                porcentaje_evaluacion,
+                tipo_evaluacion,
+                competencias || null,
+                instrucciones || null,
+                id,
+                req.session.cedula
+            ];
+        }
 
         connection.query(queryUpdateRubrica, valuesUpdateRubrica, (error, resultRubrica) => {
             if(error) {
@@ -83,215 +122,216 @@ router.post('/updateRubrica', (req, res) => {
                 });
             }
 
+            console.log('✅ Rúbrica principal actualizada');
+
             // 2. Obtener criterios existentes
-            const queryGetCriterios = `SELECT id, descripcion, puntaje_maximo, orden FROM criterio_evaluacion WHERE rubrica_id = ?`;
+            const queryGetCriterios = `SELECT id FROM criterio_evaluacion WHERE rubrica_id = ?`;
             connection.query(queryGetCriterios, [id], (error, criteriosExistentes) => {
                 if(error) {
                     return connection.rollback(() => {
-                        console.error('Error al obtener criterios existentes:', error);
+                        console.error('Error al obtener criterios:', error);
                         mensaje = 'Error al obtener criterios existentes';
                         res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
                     });
                 }
 
-                // 3. Procesar criterios
-                const criteriosMap = new Map();
-                criteriosExistentes.forEach(c => criteriosMap.set(c.id, c));
+                procesarCriterios(criteriosExistentes);
+            });
+        });
 
-                let operacionesCompletadas = 0;
-                const totalOperaciones = criteriosParsed.length + criteriosExistentes.length; // Para updates/inserts y deletes
+        // 3. Procesar criterios
+        function procesarCriterios(criteriosExistentes) {
+            const criteriosExistentesIds = criteriosExistentes.map(c => c.id);
+            const criteriosParsedIds = criteriosParsed.filter(c => c.id).map(c => parseInt(c.id));
+            const criteriosAEliminar = criteriosExistentesIds.filter(id => !criteriosParsedIds.includes(id));
+            
+            let operacionesPendientes = criteriosParsed.length + criteriosAEliminar.length;
+            let operacionesCompletadas = 0;
+            let errorOcurrido = false;
 
-                // Actualizar/Insertar criterios
-                criteriosParsed.forEach((criterio, index) => {
-                    if(criterio.id && criteriosMap.has(criterio.id)) {
-                        // Actualizar criterio existente
-                        const queryUpdateCriterio = `
-                            UPDATE criterio_evaluacion
-                            SET descripcion = ?, puntaje_maximo = ?, orden = ?
-                            WHERE id = ? AND rubrica_id = ?
-                        `;
-                        connection.query(queryUpdateCriterio, [
-                            criterio.descripcion, criterio.puntaje_maximo, criterio.orden || index,
-                            criterio.id, id
-                        ], (error) => {
-                            if(error) {
-                                return connection.rollback(() => {
-                                    console.error('Error al actualizar criterio:', error);
-                                    mensaje = 'Error al actualizar criterios';
-                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                });
-                            }
-                            operacionesCompletadas++;
-                            checkCompletion();
-                        });
-                    } else {
-                        // Insertar nuevo criterio
-                        const queryInsertCriterio = `
-                            INSERT INTO criterio_evaluacion
-                            (rubrica_id, descripcion, puntaje_maximo, orden)
-                            VALUES (?, ?, ?, ?)
-                        `;
-                        connection.query(queryInsertCriterio, [
-                            id, criterio.descripcion, criterio.puntaje_maximo, criterio.orden || index
-                        ], (error, result) => {
-                            if(error) {
-                                return connection.rollback(() => {
-                                    console.error('Error al insertar criterio:', error);
-                                    mensaje = 'Error al insertar criterios';
-                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                });
-                            }
-                            criterio.id = result.insertId; // Asignar ID para niveles
-                            operacionesCompletadas++;
-                            checkCompletion();
-                        });
-                    }
-                });
+            if(operacionesPendientes === 0) {
+                procesarNiveles();
+                return;
+            }
 
-                // Eliminar criterios no incluidos
-                criteriosExistentes.forEach(criterioExistente => {
-                    const encontrado = criteriosParsed.some(c => c.id == criterioExistente.id);
-                    if(!encontrado) {
-                        connection.query('DELETE FROM criterio_evaluacion WHERE id = ?', [criterioExistente.id], (error) => {
-                            if(error) {
-                                return connection.rollback(() => {
-                                    console.error('Error al eliminar criterio:', error);
-                                    mensaje = 'Error al eliminar criterios';
-                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                });
-                            }
-                            operacionesCompletadas++;
-                            checkCompletion();
-                        });
-                    } else {
-                        operacionesCompletadas++; // Contar como completado si no se elimina
-                        checkCompletion();
-                    }
-                });
-
-                function checkCompletion() {
-                    if(operacionesCompletadas >= totalOperaciones) {
-                        // Ahora procesar niveles
-                        procesarNiveles();
-                    }
+            function verificarCompletado() {
+                operacionesCompletadas++;
+                console.log(`Criterios: ${operacionesCompletadas}/${operacionesPendientes}`);
+                if(operacionesCompletadas >= operacionesPendientes && !errorOcurrido) {
+                    procesarNiveles();
                 }
+            }
 
-                function procesarNiveles() {
-                    // Obtener niveles existentes
-                    const queryGetNiveles = `SELECT id, criterio_id, nombre_nivel, descripcion, puntaje, orden FROM nivel_desempeno WHERE criterio_id IN (SELECT id FROM criterio_evaluacion WHERE rubrica_id = ?)`;
-                    connection.query(queryGetNiveles, [id], (error, nivelesExistentes) => {
-                        if(error) {
-                            return connection.rollback(() => {
-                                console.error('Error al obtener niveles existentes:', error);
-                                mensaje = 'Error al obtener niveles existentes';
-                                res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                            });
-                        }
+            function manejarError(error, msg) {
+                if(!errorOcurrido) {
+                    errorOcurrido = true;
+                    return connection.rollback(() => {
+                        console.error(msg, error);
+                        mensaje = msg;
+                        res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                    });
+                }
+            }
 
-                        const nivelesMap = new Map();
-                        nivelesExistentes.forEach(n => {
-                            const key = `${n.criterio_id}-${n.nombre_nivel}`;
-                            nivelesMap.set(key, n);
-                        });
+            // Eliminar criterios y sus niveles
+            criteriosAEliminar.forEach(criterioId => {
+                connection.query('DELETE FROM nivel_desempeno WHERE criterio_id = ?', [criterioId], (error) => {
+                    if(error) return manejarError(error, 'Error al eliminar niveles');
+                    
+                    connection.query('DELETE FROM criterio_evaluacion WHERE id = ?', [criterioId], (error) => {
+                        if(error) return manejarError(error, 'Error al eliminar criterio');
+                        verificarCompletado();
+                    });
+                });
+            });
 
-                        let operacionesNivelesCompletadas = 0;
-                        let totalOperacionesNiveles = 0;
-
-                        criteriosParsed.forEach(criterio => {
-                            if(criterio.niveles && criterio.niveles.length > 0) {
-                                totalOperacionesNiveles += criterio.niveles.length;
-                                criterio.niveles.forEach(nivel => {
-                                    const key = `${criterio.id}-${nivel.nombre_nivel}`;
-                                    if(nivelesMap.has(key)) {
-                                        // Actualizar nivel existente
-                                        const queryUpdateNivel = `
-                                            UPDATE nivel_desempeno
-                                            SET descripcion = ?, puntaje = ?, orden = ?
-                                            WHERE id = ?
-                                        `;
-                                        connection.query(queryUpdateNivel, [
-                                            nivel.descripcion, nivel.puntaje, nivel.orden,
-                                            nivelesMap.get(key).id
-                                        ], (error) => {
-                                            if(error) {
-                                                return connection.rollback(() => {
-                                                    console.error('Error al actualizar nivel:', error);
-                                                    mensaje = 'Error al actualizar niveles';
-                                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                                });
-                                            }
-                                            operacionesNivelesCompletadas++;
-                                            checkNivelesCompletion();
-                                        });
-                                    } else {
-                                        // Insertar nuevo nivel
-                                        const queryInsertNivel = `
-                                            INSERT INTO nivel_desempeno
-                                            (criterio_id, nombre_nivel, descripcion, puntaje, orden)
-                                            VALUES (?, ?, ?, ?, ?)
-                                        `;
-                                        connection.query(queryInsertNivel, [
-                                            criterio.id, nivel.nombre_nivel, nivel.descripcion, nivel.puntaje, nivel.orden
-                                        ], (error) => {
-                                            if(error) {
-                                                return connection.rollback(() => {
-                                                    console.error('Error al insertar nivel:', error);
-                                                    mensaje = 'Error al insertar niveles';
-                                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                                });
-                                            }
-                                            operacionesNivelesCompletadas++;
-                                            checkNivelesCompletion();
-                                        });
-                                    }
-                                });
-                            }
-                        });
-
-                        // Eliminar niveles no incluidos
-                        nivelesExistentes.forEach(nivelExistente => {
-                            const criterioEncontrado = criteriosParsed.find(c => c.id == nivelExistente.criterio_id);
-                            if(criterioEncontrado) {
-                                const nivelEncontrado = criterioEncontrado.niveles?.some(n => n.nombre_nivel === nivelExistente.nombre_nivel);
-                                if(!nivelEncontrado) {
-                                    totalOperacionesNiveles++;
-                                    connection.query('DELETE FROM nivel_desempeno WHERE id = ?', [nivelExistente.id], (error) => {
-                                        if(error) {
-                                            return connection.rollback(() => {
-                                                console.error('Error al eliminar nivel:', error);
-                                                mensaje = 'Error al eliminar niveles';
-                                                res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                            });
-                                        }
-                                        operacionesNivelesCompletadas++;
-                                        checkNivelesCompletion();
-                                    });
-                                }
-                            }
-                        });
-
-                        function checkNivelesCompletion() {
-                            if(operacionesNivelesCompletadas >= totalOperacionesNiveles) {
-                                // Finalizar transacción
-                                connection.commit((err) => {
-                                    if(err) {
-                                        return connection.rollback(() => {
-                                            console.error('Error al confirmar transacción:', err);
-                                            mensaje = 'Error al confirmar la transacción';
-                                            res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                        });
-                                    }
-
-                                    console.log('Rúbrica actualizada exitosamente con ID:', id);
-                                    mensaje = 'Rúbrica actualizada exitosamente';
-                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                });
-                            }
-                        }
+            // Actualizar o insertar criterios
+            criteriosParsed.forEach((criterio, index) => {
+                const criterioId = criterio.id ? parseInt(criterio.id) : null;
+                
+                if(criterioId && criteriosExistentesIds.includes(criterioId)) {
+                    // Actualizar
+                    const query = `UPDATE criterio_evaluacion SET descripcion = ?, puntaje_maximo = ?, orden = ? WHERE id = ?`;
+                    connection.query(query, [criterio.descripcion, criterio.puntaje_maximo, criterio.orden || index + 1, criterioId], (error) => {
+                        if(error) return manejarError(error, 'Error al actualizar criterio');
+                        verificarCompletado();
+                    });
+                } else {
+                    // Insertar
+                    const query = `INSERT INTO criterio_evaluacion (rubrica_id, descripcion, puntaje_maximo, orden) VALUES (?, ?, ?, ?)`;
+                    connection.query(query, [id, criterio.descripcion, criterio.puntaje_maximo, criterio.orden || index + 1], (error, result) => {
+                        if(error) return manejarError(error, 'Error al insertar criterio');
+                        criterio.id = result.insertId;
+                        verificarCompletado();
                     });
                 }
             });
-        });
+        }
+
+        // 4. Procesar niveles
+        function procesarNiveles() {
+            console.log('🔄 Procesando niveles...');
+            
+            const queryGetNiveles = `
+                SELECT nd.id, nd.criterio_id, nd.nombre_nivel 
+                FROM nivel_desempeno nd
+                INNER JOIN criterio_evaluacion ce ON nd.criterio_id = ce.id
+                WHERE ce.rubrica_id = ?
+            `;
+            
+            connection.query(queryGetNiveles, [id], (error, nivelesExistentes) => {
+                if(error) {
+                    return connection.rollback(() => {
+                        console.error('Error al obtener niveles:', error);
+                        mensaje = 'Error al obtener niveles existentes';
+                        res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                    });
+                }
+
+                const nivelesMap = new Map();
+                nivelesExistentes.forEach(n => {
+                    nivelesMap.set(`${n.criterio_id}-${n.nombre_nivel}`, n);
+                });
+
+                const nivelesAProcesar = [];
+                criteriosParsed.forEach(criterio => {
+                    if(criterio.niveles && Array.isArray(criterio.niveles)) {
+                        criterio.niveles.forEach(nivel => {
+                            nivelesAProcesar.push({
+                                criterio_id: criterio.id,
+                                ...nivel
+                            });
+                        });
+                    }
+                });
+
+                const nivelesAEliminar = [];
+                nivelesExistentes.forEach(nivelExistente => {
+                    const encontrado = nivelesAProcesar.some(n => 
+                        n.criterio_id == nivelExistente.criterio_id && 
+                        n.nombre_nivel === nivelExistente.nombre_nivel
+                    );
+                    if(!encontrado) {
+                        nivelesAEliminar.push(nivelExistente.id);
+                    }
+                });
+
+                let operacionesPendientes = nivelesAProcesar.length + nivelesAEliminar.length;
+                let operacionesCompletadas = 0;
+                let errorOcurrido = false;
+
+                if(operacionesPendientes === 0) {
+                    finalizarTransaccion();
+                    return;
+                }
+
+                function verificarCompletado() {
+                    operacionesCompletadas++;
+                    console.log(`Niveles: ${operacionesCompletadas}/${operacionesPendientes}`);
+                    if(operacionesCompletadas >= operacionesPendientes && !errorOcurrido) {
+                        finalizarTransaccion();
+                    }
+                }
+
+                function manejarError(error, msg) {
+                    if(!errorOcurrido) {
+                        errorOcurrido = true;
+                        return connection.rollback(() => {
+                            console.error(msg, error);
+                            mensaje = msg;
+                            res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                        });
+                    }
+                }
+
+                // Eliminar niveles
+                nivelesAEliminar.forEach(nivelId => {
+                    connection.query('DELETE FROM nivel_desempeno WHERE id = ?', [nivelId], (error) => {
+                        if(error) return manejarError(error, 'Error al eliminar nivel');
+                        verificarCompletado();
+                    });
+                });
+
+                // Insertar o actualizar niveles
+                nivelesAProcesar.forEach((nivel, index) => {
+                    const key = `${nivel.criterio_id}-${nivel.nombre_nivel}`;
+                    
+                    if(nivelesMap.has(key)) {
+                        // Actualizar
+                        const nivelExistente = nivelesMap.get(key);
+                        const query = `UPDATE nivel_desempeno SET descripcion = ?, puntaje = ?, orden = ? WHERE id = ?`;
+                        connection.query(query, [nivel.descripcion, nivel.puntaje, nivel.orden || index + 1, nivelExistente.id], (error) => {
+                            if(error) return manejarError(error, 'Error al actualizar nivel');
+                            verificarCompletado();
+                        });
+                    } else {
+                        // Insertar
+                        const query = `INSERT INTO nivel_desempeno (criterio_id, nombre_nivel, descripcion, puntaje, orden) VALUES (?, ?, ?, ?, ?)`;
+                        connection.query(query, [nivel.criterio_id, nivel.nombre_nivel, nivel.descripcion, nivel.puntaje, nivel.orden || index + 1], (error) => {
+                            if(error) return manejarError(error, 'Error al insertar nivel');
+                            verificarCompletado();
+                        });
+                    }
+                });
+            });
+        }
+
+        // 5. Finalizar transacción
+        function finalizarTransaccion() {
+            connection.commit((err) => {
+                if(err) {
+                    return connection.rollback(() => {
+                        console.error('Error al confirmar transacción:', err);
+                        mensaje = 'Error al confirmar la transacción';
+                        res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                    });
+                }
+
+                console.log('✅ Rúbrica actualizada exitosamente con ID:', id);
+                mensaje = 'Rúbrica actualizada exitosamente';
+                res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            });
+        }
     });
 });
 
