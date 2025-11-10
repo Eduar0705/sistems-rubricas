@@ -33,6 +33,7 @@ app.use(require('./controllers/addUserControllers'));
 app.use(require('./controllers/updateUserControllers'))
 app.use(require('./controllers/deleteUserControllers'))
 app.use(require('./controllers/createRubricaAdmin'));
+app.use(require('./controllers/createRubricaTeacher'));
 app.use(require('./controllers/updateRubricas'));
 
 //RUTAS ADMIN

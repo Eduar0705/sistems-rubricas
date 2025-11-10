@@ -106,90 +106,54 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Proyecto Final - Ingeniería de Software
-                                </div>
-                            </td>
-                            <td>Ingeniería de Software II</td>
-                            <td>8 criterios</td>
-                            <td>15/10/2025</td>
-                            <td><span class="badge-status active">Activa</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Presentación Oral - Metodología
-                                </div>
-                            </td>
-                            <td>Metodología de la Investigación</td>
-                            <td>6 criterios</td>
-                            <td>12/10/2025</td>
-                            <td><span class="badge-status active">Activa</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-main">
-                                    <i class="fas fa-file-alt"></i>
-                                    Ensayo Académico - Investigación
-                                </div>
-                            </td>
-                            <td>Investigación Aplicada</td>
-                            <td>5 criterios</td>
-                            <td>08/10/2025</td>
-                            <td><span class="badge-status draft">Borrador</span></td>
-                            <td>
-                                <div class="table-actions">
-                                    <button class="btn-icon" title="Ver">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Duplicar">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn-icon" title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <% if (rubricas && rubricas.length > 0) { %>
+                            <% rubricas.forEach(function(rubrica) { %>
+                                <tr>
+                                    <td>
+                                        <div class="table-cell-main">
+                                            <i class="fas fa-file-alt"></i>
+                                            <%= rubrica.nombre_rubrica %>
+                                        </div>
+                                    </td>
+                                    <td><%= rubrica.materia_nombre %></td>
+                                    <td>
+                                        <% 
+                                        // Count criteria for this rubrica (simplified - you might want to add this to the query)
+                                        %>Criterios pendientes
+                                    </td>
+                                    <td><%= new Date(rubrica.fecha_creacion).toLocaleDateString('es-ES') %></td>
+                                    <td>
+                                        <span class="badge-status <%= rubrica.activo ? 'active' : 'draft' %>">
+                                            <%= rubrica.activo ? 'Activa' : 'Inactiva' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="btn-icon" title="Ver" onclick="verRubrica('<%= rubrica.id %>')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn-icon" title="Editar" onclick="editarRubrica('<%= rubrica.id %>')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn-icon" title="Duplicar" onclick="duplicarRubrica('<%= rubrica.id %>')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <button class="btn-icon" title="Eliminar" onclick="eliminarRubrica('<%= rubrica.id %>')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 2rem;">
+                                    <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                    <br>
+                                    No hay rúbricas disponibles
+                                </td>
+                            </tr>
+                        <% } %>
                     </tbody>
                 </table>
             </div>
