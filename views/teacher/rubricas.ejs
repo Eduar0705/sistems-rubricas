@@ -180,5 +180,416 @@
             });
         }
     </script>
+    <script>
+        function verRubrica(id) {
+            Swal.fire({
+                title: 'Cargando rúbrica...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/admin/rubricas/detalle/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar la rúbrica');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.success) {
+                        imprimirRubrica(data.rubrica, data.criterios);
+                    } else {
+                        Swal.fire('Error', data.message || 'No se pudo cargar la rúbrica', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+                });
+        }
+
+        function organizarNivelesPorNombre(criterios) {
+            if (!criterios || criterios.length === 0) {
+                return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
+            }
+            
+            // Obtener el criterio con más niveles
+            const criterioConMasNiveles = criterios.reduce((max, criterio) => {
+                const nivelesCount = (criterio.niveles && Array.isArray(criterio.niveles)) ? criterio.niveles.length : 0;
+                const maxCount = (max.niveles && Array.isArray(max.niveles)) ? max.niveles.length : 0;
+                return nivelesCount > maxCount ? criterio : max;
+            }, criterios[0]);
+            
+            if (!criterioConMasNiveles.niveles || criterioConMasNiveles.niveles.length === 0) {
+                return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
+            }
+            
+            // Ordenar por puntaje descendente
+            const nivelesOrdenados = [...criterioConMasNiveles.niveles].sort((a, b) => {
+                const puntajeA = parseFloat(a.puntaje) || 0;
+                const puntajeB = parseFloat(b.puntaje) || 0;
+                return puntajeB - puntajeA;
+            });
+            
+            return { 
+                nombres: nivelesOrdenados.map(n => n.nombre_nivel || 'Sin nombre')
+            };
+        }
+
+        function imprimirRubrica(rubrica, criterios) {
+            Swal.close();
+            
+            if (!rubrica || !criterios) {
+                Swal.fire('Error', 'Datos incompletos para imprimir', 'error');
+                return;
+            }
+            
+            const numNiveles = (criterios.length > 0 && criterios[0].niveles) ? criterios[0].niveles.length : 4;
+            const nivelesOrganizados = organizarNivelesPorNombre(criterios);
+            
+            const ventanaImpresion = window.open('', '_blank', 'width=1200,height=900');
+            
+            if (!ventanaImpresion) {
+                Swal.fire('Error', 'No se pudo abrir la ventana de impresión. Verifique que las ventanas emergentes estén habilitadas.', 'error');
+                return;
+            }
+            
+            const htmlImpresion = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${rubrica.nombre_rubrica || 'Rúbrica'}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 10px; line-height: 1.3; }
+                .header-container { display: flex; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #000; }
+                .logo-section { width: 150px; margin-right: 15px; }
+                .title-section { flex: 1; }
+                .main-title { font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+                .info-table td { border: 1px solid #000; padding: 4px 8px; font-size: 10px; }
+                .info-label { font-weight: bold; background-color: #e8e8e8; width: 130px; }
+                .competencias-section { margin-bottom: 12px; }
+                .competencias-table { width: 100%; border-collapse: collapse; }
+                .competencias-table td { border: 1px solid #000; padding: 6px 8px; }
+                .competencias-label { font-weight: bold; background-color: #e8e8e8; width: 130px; }
+                .student-section { margin-bottom: 12px; }
+                .student-table { width: 100%; border-collapse: collapse; }
+                .student-table td { border: 1px solid #000; padding: 6px 8px; }
+                .student-label { font-weight: bold; width: 130px; background-color: #e8e8e8; }
+                .rubrica-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                .rubrica-table th, .rubrica-table td { border: 1px solid #000; padding: 6px; text-align: left; vertical-align: top; font-size: 9px; }
+                .rubrica-table th { background-color: #2c3e50; color: white; font-weight: bold; text-align: center; font-size: 10px; }
+                .criterio-cell { font-weight: bold; background-color: #f0f0f0; width: 18%; }
+                .nivel-cell { width: ${numNiveles > 0 ? Math.floor(82 / numNiveles) : 20}%; }
+                .puntaje { display: block; margin-top: 4px; font-size: 9px; color: #d35400; font-weight: bold; }
+                @media print {
+                    body { padding: 10px; }
+                    @page { margin: 15mm; size: landscape; }
+                    .no-print { display: none; }
+                }
+                .print-button { position: fixed; top: 20px; right: 20px; padding: 12px 25px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000; }
+                .print-button:hover { background: #2980b9; }
+            </style>
+        </head>
+        <body>
+            <button onclick="window.print()" class="print-button no-print">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <div class="header-container">
+                <div class="logo-section">
+                    <img src="../img/IUJO.gif" alt="Logo" style="max-width: 100%; max-height: 100%;" onerror="this.style.display='none'">
+                </div>
+                <div class="title-section">
+                    <div class="main-title">${(rubrica.nombre_rubrica || 'RÚBRICA').toUpperCase()}</div>
+                </div>
+            </div>
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Docente:</td><td>${rubrica.docente_nombre || 'N/A'}</td>
+                    <td class="info-label">Unidad Curricular:</td><td>${rubrica.materia_nombre || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Carrera:</td><td>${rubrica.carrera_nombre || 'N/A'}</td>
+                    <td class="info-label">Sección:</td><td>${rubrica.seccion_codigo || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Fecha:</td><td>${rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') : 'N/A'}</td>
+                    <td class="info-label">Lapso:</td><td>${rubrica.lapso_academico || 'N/A'}</td>
+                </tr>
+            </table>
+            ${rubrica.competencias ? `
+            <div class="competencias-section">
+                <table class="competencias-table">
+                    <tr>
+                        <td class="competencias-label">Competencias:</td>
+                        <td class="competencias-content">${rubrica.competencias}</td>
+                    </tr>
+                </table>
+            </div>` : ''}
+            <div class="student-section">
+                <table class="student-table">
+                    <tr>
+                        <td class="student-label">Nombre del estudiante:</td><td style="width: 50%;"></td>
+                        <td class="student-label">Observaciones:</td><td style="width: 30%;"></td>
+                    </tr>
+                </table>
+            </div>
+            <table class="rubrica-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Criterios de Evaluación</th>
+                        ${nivelesOrganizados.nombres.map(nombre => `<th class="nivel-cell">${nombre}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${criterios.map(criterio => {
+                        const nivelesDelCriterio = nivelesOrganizados.nombres.map(nombreNivel => {
+                            if (!criterio.niveles || !Array.isArray(criterio.niveles)) {
+                                return { descripcion: '', puntaje: 0 };
+                            }
+                            const nivel = criterio.niveles.find(n => 
+                                n.nombre_nivel && n.nombre_nivel.toLowerCase().includes(nombreNivel.toLowerCase().split(' ')[0])
+                            );
+                            return nivel || { descripcion: '', puntaje: 0 };
+                        });
+                        return `
+                            <tr>
+                                <td class="criterio-cell">
+                                    ${criterio.descripcion || 'Sin descripción'}
+                                    <span class="puntaje">(${criterio.puntaje_maximo || 0} puntos)</span>
+                                </td>
+                                ${nivelesDelCriterio.map(nivel => `
+                                    <td class="nivel-cell">
+                                        ${nivel.descripcion || ''}
+                                        ${nivel.puntaje > 0 ? `<span class="puntaje">(${nivel.puntaje} puntos)</span>` : ''}
+                                    </td>
+                                `).join('')}
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        </body>
+        </html>`;
+            
+            try {
+                ventanaImpresion.document.write(htmlImpresion);
+                ventanaImpresion.document.close();
+            } catch (error) {
+                console.error('Error al generar vista de impresión:', error);
+                Swal.fire('Error', 'No se pudo generar la vista de impresión', 'error');
+            }
+        }function verRubrica(id) {
+            Swal.fire({
+                title: 'Cargando rúbrica...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch(`/admin/rubricas/detalle/${id}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar la rúbrica');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if(data.success) {
+                        imprimirRubrica(data.rubrica, data.criterios);
+                    } else {
+                        Swal.fire('Error', data.message || 'No se pudo cargar la rúbrica', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+                });
+        }
+
+        function organizarNivelesPorNombre(criterios) {
+            if (!criterios || criterios.length === 0) {
+                return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
+            }
+            
+            // Obtener el criterio con más niveles
+            const criterioConMasNiveles = criterios.reduce((max, criterio) => {
+                const nivelesCount = (criterio.niveles && Array.isArray(criterio.niveles)) ? criterio.niveles.length : 0;
+                const maxCount = (max.niveles && Array.isArray(max.niveles)) ? max.niveles.length : 0;
+                return nivelesCount > maxCount ? criterio : max;
+            }, criterios[0]);
+            
+            if (!criterioConMasNiveles.niveles || criterioConMasNiveles.niveles.length === 0) {
+                return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
+            }
+            
+            // Ordenar por puntaje descendente
+            const nivelesOrdenados = [...criterioConMasNiveles.niveles].sort((a, b) => {
+                const puntajeA = parseFloat(a.puntaje) || 0;
+                const puntajeB = parseFloat(b.puntaje) || 0;
+                return puntajeB - puntajeA;
+            });
+            
+            return { 
+                nombres: nivelesOrdenados.map(n => n.nombre_nivel || 'Sin nombre')
+            };
+        }
+
+        function imprimirRubrica(rubrica, criterios) {
+            Swal.close();
+            
+            if (!rubrica || !criterios) {
+                Swal.fire('Error', 'Datos incompletos para imprimir', 'error');
+                return;
+            }
+            
+            const numNiveles = (criterios.length > 0 && criterios[0].niveles) ? criterios[0].niveles.length : 4;
+            const nivelesOrganizados = organizarNivelesPorNombre(criterios);
+            
+            const ventanaImpresion = window.open('', '_blank', 'width=1200,height=900');
+            
+            if (!ventanaImpresion) {
+                Swal.fire('Error', 'No se pudo abrir la ventana de impresión. Verifique que las ventanas emergentes estén habilitadas.', 'error');
+                return;
+            }
+            
+            const htmlImpresion = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${rubrica.nombre_rubrica || 'Rúbrica'}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 10px; line-height: 1.3; }
+                .header-container { display: flex; align-items: flex-start; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #000; }
+                .logo-section { width: 150px; margin-right: 15px; }
+                .title-section { flex: 1; }
+                .main-title { font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+                .info-table td { border: 1px solid #000; padding: 4px 8px; font-size: 10px; }
+                .info-label { font-weight: bold; background-color: #e8e8e8; width: 130px; }
+                .competencias-section { margin-bottom: 12px; }
+                .competencias-table { width: 100%; border-collapse: collapse; }
+                .competencias-table td { border: 1px solid #000; padding: 6px 8px; }
+                .competencias-label { font-weight: bold; background-color: #e8e8e8; width: 130px; }
+                .student-section { margin-bottom: 12px; }
+                .student-table { width: 100%; border-collapse: collapse; }
+                .student-table td { border: 1px solid #000; padding: 6px 8px; }
+                .student-label { font-weight: bold; width: 130px; background-color: #e8e8e8; }
+                .rubrica-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                .rubrica-table th, .rubrica-table td { border: 1px solid #000; padding: 6px; text-align: left; vertical-align: top; font-size: 9px; }
+                .rubrica-table th { background-color: #2c3e50; color: white; font-weight: bold; text-align: center; font-size: 10px; }
+                .criterio-cell { font-weight: bold; background-color: #f0f0f0; width: 18%; }
+                .nivel-cell { width: ${numNiveles > 0 ? Math.floor(82 / numNiveles) : 20}%; }
+                .puntaje { display: block; margin-top: 4px; font-size: 9px; color: #d35400; font-weight: bold; }
+                @media print {
+                    body { padding: 10px; }
+                    @page { margin: 15mm; size: landscape; }
+                    .no-print { display: none; }
+                }
+                .print-button { position: fixed; top: 20px; right: 20px; padding: 12px 25px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000; }
+                .print-button:hover { background: #2980b9; }
+            </style>
+        </head>
+        <body>
+            <button onclick="window.print()" class="print-button no-print">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <div class="header-container">
+                <div class="logo-section">
+                    <img src="../img/IUJO.gif" alt="Logo" style="max-width: 100%; max-height: 100%;" onerror="this.style.display='none'">
+                </div>
+                <div class="title-section">
+                    <div class="main-title">${(rubrica.nombre_rubrica || 'RÚBRICA').toUpperCase()}</div>
+                </div>
+            </div>
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Docente:</td><td>${rubrica.docente_nombre || 'N/A'}</td>
+                    <td class="info-label">Unidad Curricular:</td><td>${rubrica.materia_nombre || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Carrera:</td><td>${rubrica.carrera_nombre || 'N/A'}</td>
+                    <td class="info-label">Sección:</td><td>${rubrica.seccion_codigo || 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td class="info-label">Fecha:</td><td>${rubrica.fecha_evaluacion ? new Date(rubrica.fecha_evaluacion).toLocaleDateString('es-ES') : 'N/A'}</td>
+                    <td class="info-label">Lapso:</td><td>${rubrica.lapso_academico || 'N/A'}</td>
+                </tr>
+            </table>
+            ${rubrica.competencias ? `
+            <div class="competencias-section">
+                <table class="competencias-table">
+                    <tr>
+                        <td class="competencias-label">Competencias:</td>
+                        <td class="competencias-content">${rubrica.competencias}</td>
+                    </tr>
+                </table>
+            </div>` : ''}
+            <div class="student-section">
+                <table class="student-table">
+                    <tr>
+                        <td class="student-label">Nombre del estudiante:</td><td style="width: 50%;"></td>
+                        <td class="student-label">Observaciones:</td><td style="width: 30%;"></td>
+                    </tr>
+                </table>
+            </div>
+            <table class="rubrica-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Criterios de Evaluación</th>
+                        ${nivelesOrganizados.nombres.map(nombre => `<th class="nivel-cell">${nombre}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${criterios.map(criterio => {
+                        const nivelesDelCriterio = nivelesOrganizados.nombres.map(nombreNivel => {
+                            if (!criterio.niveles || !Array.isArray(criterio.niveles)) {
+                                return { descripcion: '', puntaje: 0 };
+                            }
+                            const nivel = criterio.niveles.find(n => 
+                                n.nombre_nivel && n.nombre_nivel.toLowerCase().includes(nombreNivel.toLowerCase().split(' ')[0])
+                            );
+                            return nivel || { descripcion: '', puntaje: 0 };
+                        });
+                        return `
+                            <tr>
+                                <td class="criterio-cell">
+                                    ${criterio.descripcion || 'Sin descripción'}
+                                    <span class="puntaje">(${criterio.puntaje_maximo || 0} puntos)</span>
+                                </td>
+                                ${nivelesDelCriterio.map(nivel => `
+                                    <td class="nivel-cell">
+                                        ${nivel.descripcion || ''}
+                                        ${nivel.puntaje > 0 ? `<span class="puntaje">(${nivel.puntaje} puntos)</span>` : ''}
+                                    </td>
+                                `).join('')}
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        </body>
+        </html>`;
+            
+            try {
+                ventanaImpresion.document.write(htmlImpresion);
+                ventanaImpresion.document.close();
+            } catch (error) {
+                console.error('Error al generar vista de impresión:', error);
+                Swal.fire('Error', 'No se pudo generar la vista de impresión', 'error');
+            }
+        }
+    </script>
 </body>
 </html>
