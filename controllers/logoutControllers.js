@@ -19,7 +19,9 @@ routers.get('/logout', (req, res) => {
         
         // Limpiar la cookie
         res.clearCookie('connect.sid');
-        console.log('Sesión cerrada correctamente');
+        console.log('======================================');
+        console.log('==== Sesión cerrada correctamente ====');
+        console.log('======================================');
         const mensaje = 'Has cerrado sesión exitosamente.';
         res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     });

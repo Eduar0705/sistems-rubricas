@@ -41,11 +41,11 @@ routers.post('/verifLogin', (req, res) => {
 
         // Almacenamos el usuario en la sesión
         req.session.login = true;
-        req.session.userId = user.id;
         req.session.username = user.username;
         req.session.cedula = user.cedula;
         req.session.email = user.email;
         req.session.id_rol = user.id_rol;
+        req.session.activo = user.activo;
         req.session.ultimaActividad = Date.now();
 
         // Registrar la sesión activa
