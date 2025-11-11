@@ -61,14 +61,24 @@
                         const seccionesUnicas = [];
                         if (estudiantes && estudiantes.length > 0) {
                             estudiantes.forEach(function(estudiante) {
-                                if (estudiante.seccion && !seccionesUnicas.includes(estudiante.seccion)) {
-                                    seccionesUnicas.push(estudiante.seccion);
+                                if (estudiante.seccion) {
+                                    // Split by comma and trim each section
+                                    const secciones = estudiante.seccion.split(',').map(s => s.trim());
+                                    secciones.forEach(function(seccion) {
+                                        if (seccion && !seccionesUnicas.includes(seccion)) {
+                                            seccionesUnicas.push(seccion);
+                                        }
+                                    });
+                                }
+                            });
+                            // Sort sections alphabetically
+                            seccionesUnicas.sort();
+                            seccionesUnicas.forEach(function(seccion) {
                         %>
-                            <option value="<%= estudiante.seccion %>">
-                                <%= estudiante.seccion %>
+                            <option value="<%= seccion %>">
+                                <%= seccion %>
                             </option>
                         <%
-                                }
                             });
                         }
                         %>
@@ -116,7 +126,7 @@
                                         <span><%= estudiante.nombre %> <%= estudiante.apellido %></span>
                                     </td>
                                     <td><%= estudiante.cedula %></td>
-                                    <td>
+                                    <td data-codigo="<%= estudiante.carrera_codigo %>">
                                         <span class="badge-carrera">
                                             <%= estudiante.carrera_nombre || 'Sin carrera' %>
                                         </span>
@@ -263,80 +273,204 @@
     <script>
     // Función para buscar estudiantes
     document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('.data-table tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
-        });
+        currentPage = 1; // Reset to first page when searching
+        updateTable();
     });
+
+    // Variables para paginación
+    let currentPage = 1;
+    let entriesPerPage = 10;
+    let allRows = [];
+    let filteredRows = [];
+
+    // Inicializar paginación
+    function initializePagination() {
+        allRows = Array.from(document.querySelectorAll('.data-table tbody tr:not(.no-data)'));
+        filteredRows = [...allRows];
+        updateTable();
+    }
+
+    // Actualizar tabla según filtros y paginación
+    function updateTable() {
+        // Aplicar filtros primero
+        applyFilters();
+
+        // Luego aplicar paginación
+        const totalRows = filteredRows.length;
+        const start = (currentPage - 1) * entriesPerPage;
+        const end = entriesPerPage === 'all' ? totalRows : Math.min(start + entriesPerPage, totalRows);
+
+        // Ocultar todas las filas
+        allRows.forEach(row => row.style.display = 'none');
+
+        // Mostrar solo las filas filtradas y paginadas
+        for (let i = start; i < end; i++) {
+            if (filteredRows[i]) {
+                filteredRows[i].style.display = '';
+            }
+        }
+
+        // Actualizar información de paginación
+        updatePaginationInfo(start + 1, end, totalRows);
+
+        // Generar botones de paginación
+        generatePaginationButtons(totalRows);
+    }
+
+    // Aplicar filtros
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+        const carreraSelect = document.getElementById('carrera');
+        const carreraFilter = carreraSelect.value;
+        const carreraText = carreraSelect.options[carreraSelect.selectedIndex].text.toLowerCase().trim();
+        const seccionFilter = document.getElementById('seccion').value.toLowerCase().trim();
+
+        filteredRows = allRows.filter(row => {
+            const text = row.textContent.toLowerCase();
+            const carreraCell = row.cells[2] ? row.cells[2].textContent.toLowerCase().trim() : '';
+            const seccionCell = row.cells[3] ? row.cells[3].textContent.toLowerCase().trim() : '';
+
+            // Filtro de búsqueda
+            const matchesSearch = text.includes(searchTerm);
+
+            // Filtro de carrera (comparar con el texto mostrado, no el valor)
+            const matchesCarrera = carreraFilter === '' || carreraCell.includes(carreraText);
+
+            // Filtro de sección
+            const matchesSeccion = seccionFilter === '' || seccionCell.includes(seccionFilter);
+
+            return matchesSearch && matchesCarrera && matchesSeccion;
+        });
+    }
 
     // Función para filtrar por cantidad (entries per page)
     document.getElementById('entriesPerPage').addEventListener('change', function(e) {
-        const entriesPerPage = e.target.value;
-        const rows = document.querySelectorAll('.data-table tbody tr');
-        const totalRows = rows.length;
-
-        rows.forEach((row, index) => {
-            if (entriesPerPage === 'all') {
-                row.style.display = '';
-            } else {
-                const limit = parseInt(entriesPerPage);
-                row.style.display = index < limit ? '' : 'none';
-            }
-        });
-
-        // Actualizar información de paginación
-        updatePaginationInfo(entriesPerPage, totalRows);
+        entriesPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+        currentPage = 1;
+        updateTable();
     });
 
     // Función para actualizar la información de paginación
-    function updatePaginationInfo(entriesPerPage, totalRows) {
+    function updatePaginationInfo(start, end, total) {
         const showingStart = document.getElementById('showingStart');
         const showingEnd = document.getElementById('showingEnd');
         const totalEntries = document.getElementById('totalEntries');
 
-        if (entriesPerPage === 'all') {
-            showingStart.textContent = '1';
-            showingEnd.textContent = totalRows;
-        } else {
-            const limit = parseInt(entriesPerPage);
-            showingStart.textContent = '1';
-            showingEnd.textContent = Math.min(limit, totalRows);
-        }
-        totalEntries.textContent = totalRows;
+        showingStart.textContent = total > 0 ? start : 0;
+        showingEnd.textContent = end;
+        totalEntries.textContent = total;
     }
+
+    // Generar botones de paginación
+    function generatePaginationButtons(totalRows) {
+        const paginationContainer = document.getElementById('paginationButtons');
+        paginationContainer.innerHTML = '';
+
+        if (entriesPerPage === 'all' || totalRows <= entriesPerPage) return;
+
+        const totalPages = Math.ceil(totalRows / entriesPerPage);
+
+        // Botón anterior
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pagination-btn';
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updateTable();
+            }
+        };
+        paginationContainer.appendChild(prevBtn);
+
+        // Botones de páginas
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+        if (endPage - startPage < maxButtons - 1) {
+            startPage = Math.max(1, endPage - maxButtons + 1);
+        }
+
+        // Primera página si es necesario
+        if (startPage > 1) {
+            const firstBtn = document.createElement('button');
+            firstBtn.className = 'pagination-btn';
+            firstBtn.textContent = '1';
+            firstBtn.onclick = () => {
+                currentPage = 1;
+                updateTable();
+            };
+            paginationContainer.appendChild(firstBtn);
+
+            if (startPage > 2) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                paginationContainer.appendChild(dots);
+            }
+        }
+
+        // Páginas del rango
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => {
+                currentPage = i;
+                updateTable();
+            };
+            paginationContainer.appendChild(pageBtn);
+        }
+
+        // Última página si es necesario
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.textContent = '...';
+                dots.style.padding = '0 8px';
+                paginationContainer.appendChild(dots);
+            }
+
+            const lastBtn = document.createElement('button');
+            lastBtn.className = 'pagination-btn';
+            lastBtn.textContent = totalPages;
+            lastBtn.onclick = () => {
+                currentPage = totalPages;
+                updateTable();
+            };
+            paginationContainer.appendChild(lastBtn);
+        }
+
+        // Botón siguiente
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pagination-btn';
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateTable();
+            }
+        };
+        paginationContainer.appendChild(nextBtn);
+    }
+
+    // Inicializar cuando se carga la página
+    document.addEventListener('DOMContentLoaded', function() {
+        initializePagination();
+    });
 
     // Función para filtrar por carrera
     document.getElementById('carrera').addEventListener('change', function(e) {
-        const carrera = e.target.value;
-        const rows = document.querySelectorAll('.data-table tbody tr');
-
-        rows.forEach(row => {
-            if (carrera === '') {
-                row.style.display = '';
-            } else {
-                const carreraCell = row.cells[2].textContent;
-                row.style.display = carreraCell.includes(carrera) ? '' : 'none';
-            }
-        });
+        currentPage = 1; // Reset to first page when filtering
+        updateTable();
     });
 
     // Función para filtrar por sección
     document.getElementById('seccion').addEventListener('change', function(e) {
-        const seccion = e.target.value;
-        const rows = document.querySelectorAll('.data-table tbody tr');
-
-        rows.forEach(row => {
-            if (seccion === '') {
-                row.style.display = '';
-            } else {
-                // La sección está en la columna 4 (índice 3), después de Carrera
-                const seccionCell = row.cells[3].textContent;
-                row.style.display = seccionCell.includes(seccion) ? '' : 'none';
-            }
-        });
+        currentPage = 1; // Reset to first page when filtering
+        updateTable();
     });
 
     // Función para ver estudiante
