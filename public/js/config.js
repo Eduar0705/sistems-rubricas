@@ -4,24 +4,6 @@
         let todasLasFilas = [];
         let filasFiltradas = [];
 
-        // Función para confirmar la salida del programa
-        function Exit(){
-            Swal.fire({
-                icon: 'warning',
-                title: 'Validacion',
-                text: 'Estas seguro que deseas salir?',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Si',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if(result.isConfirmed){
-                    window.location.href = '/login'
-                }
-            });
-        }
-
         function eliminarUsuario(cedula) {
             Swal.fire({
                 title: '¿Estás seguro?',

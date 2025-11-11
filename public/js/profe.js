@@ -2,24 +2,6 @@
 // FUNCIONES GENERALES
 // ============================================
 
-// Función para confirmar la salida del programa
-function Exit() {
-    Swal.fire({
-        icon: 'warning',
-        title: 'Validación',
-        text: '¿Estás seguro que deseas salir?',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí',
-        cancelButtonText: 'No'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = '/login';
-        }
-    });
-}
-
 // Función de color de activo y no activo
 function inicializarColoresEstado() {
     const estado = document.querySelectorAll('#act');

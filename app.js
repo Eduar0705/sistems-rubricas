@@ -4,6 +4,9 @@ const app = express();
 const title = 'APP';
 const PORT = process.env.PORT || 3008;
 
+// Objeto para rastrear sesiones activas por usuario
+const sesionesActivas = new Map();
+
 // CONFIGURACIONES
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -17,12 +20,47 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: false,
-        maxAge: 1000 * 60 * 60 * 24
-    } 
+        maxAge: 1000 * 60 * 5  // 5 minutos de inactividad
+    },
+    rolling: true  // Reinicia el tiempo con cada petición
 }));
+
+// Middleware para verificar la inactividad de la sesión
+app.use((req, res, next) => {
+    if (req.session && req.session.userId) {
+        const ahora = Date.now();
+        const ultimaActividad = req.session.ultimaActividad || ahora;
+        const tiempoInactivo = ahora - ultimaActividad;
+        
+        // Si han pasado más de 5 minutos (300000 ms)
+        if (tiempoInactivo > 300000) {
+            const cedula = req.session.cedula;
+            req.session.destroy((err) => {
+                if (err) {
+                    console.error('Error al destruir la sesión:', err);
+                }
+                // Eliminar la sesión activa del mapa
+                if (cedula) {
+                    sesionesActivas.delete(cedula);
+                }
+                return res.redirect('/login');
+            });
+        } else {
+            // Actualizar la última actividad
+            req.session.ultimaActividad = ahora;
+            next();
+        }
+    } else {
+        next();
+    }
+});
+
+// Hacer disponible el objeto de sesiones activas globalmente
+app.locals.sesionesActivas = sesionesActivas;
 
 // RUTAS PRINCIPALES
 app.use(require('./routers/login'));
+app.use(require('./controllers/logoutControllers'))
 
 //RUTAS DE LOS CONTROLLERS
 app.use(require('./controllers/login'));

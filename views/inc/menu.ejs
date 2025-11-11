@@ -1,4 +1,4 @@
-    <!-- Sidebar -->
+<!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
@@ -56,13 +56,62 @@
         </div>
     </aside>
     <script>
-        function currentPageHighlight(page) {
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('href').includes(page)) {
-                    item.classList.add('active');
+        document.addEventListener('DOMContentLoaded', function () {
+            // make callable from other scripts and robust against missing hrefs
+            window.currentPageHighlight = function (page) {
+                const navItems = document.querySelectorAll('.nav-item');
+                const normalize = p => (p || '').replace(/\/+$/, '');
+                const target = normalize(page || window.location.pathname || '/');
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    try {
+                        const href = item.getAttribute('href') || '';
+                        if (normalize(href).includes(target)) {
+                            item.classList.add('active');
+                        }
+                    } catch (e) {
+                        // ignore invalid attributes
+                    }
+                });
+            };
+
+            // initial highlight based on current path
+            window.currentPageHighlight();
+
+            // optional sidebar toggle behavior if present
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebarToggle && sidebar) {
+                sidebarToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                });
+            }
+
+            // Función para confirmar la salida del programa con fallback si Swal no está disponible
+            window.Exit = function () {
+                const doLogout = () => { window.location.href = '/logout'; };
+
+                if (window.Swal && typeof Swal.fire === 'function') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Validación',
+                        text: '¿Estás seguro que deseas cerrar sesión?',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, cerrar sesión',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            doLogout();
+                        }
+                    });
+                } else {
+                    // fallback simple confirm dialog
+                    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                        doLogout();
+                    }
                 }
-            });
-        }
+            };
+        });
     </script>

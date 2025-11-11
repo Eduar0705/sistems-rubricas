@@ -9,7 +9,7 @@
                 <i class="fas fa-bars"></i>
             </button>
         </div>
-        
+
         <nav class="sidebar-nav">
             <a href="/teacher" class="nav-item active" data-external="true">
                 <i class="fas fa-chart-line"></i>
@@ -36,6 +36,7 @@
                 <span>Reportes</span>
             </a>
         </nav>
+
         <div class="sidebar-footer">
             <div class="user-profile">
                 <div class="user-avatar">
@@ -46,19 +47,142 @@
                     <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
                 </div>
             </div>
-            <button class="header-btn" onclick="Exit()">
+            <button class="header-btn" onclick="Exit()" aria-label="Salir">
                 <i class="fas fa-sign-out-alt"></i>
             </button>
         </div>
     </aside>
     <script>
-        function currentPageHighlight(page) {
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('href').includes(page)) {
-                    item.classList.add('active');
+    (function (win, doc) {
+        'use strict';
+
+        function ready(fn) {
+            if (doc.readyState === 'loading') {
+                doc.addEventListener('DOMContentLoaded', fn);
+            } else {
+                fn();
+            }
+        }
+
+        function normalizePath(p) {
+            if (!p) return '/';
+            try {
+                var u = new URL(p, location.origin);
+                p = u.pathname;
+            } catch (e) {
+                // leave as-is (relative path)
+            }
+            // remove trailing slashes except root
+            return String(p).replace(/\/+$/, '') || '/';
+        }
+
+        ready(function () {
+            // currentPageHighlight: define only if missing to avoid overriding other scripts
+            if (typeof win.currentPageHighlight !== 'function') {
+                win.currentPageHighlight = function (page) {
+                    var navItems = Array.prototype.slice.call(doc.querySelectorAll('.nav-item'));
+                    var target = normalizePath(page || win.location.pathname || '/');
+
+                    // compute best match: prefer longest matching href path
+                    var best = { score: -1, node: null };
+                    navItems.forEach(function (item) {
+                        item.classList.remove('active');
+                        try {
+                            var href = item.getAttribute('href') || '';
+                            var hpath = normalizePath(href);
+                            // treat match if target starts with hpath or viceversa (covers root/parent cases)
+                            var match = (hpath === '/' && target === '/') ||
+                                        (hpath !== '/' && (target === hpath || target.indexOf(hpath + '/') === 0 || hpath.indexOf(target + '/') === 0 || hpath.indexOf(target) === 0));
+                            if (match) {
+                                var score = hpath.length;
+                                if (score > best.score) {
+                                    best.score = score;
+                                    best.node = item;
+                                }
+                            }
+                        } catch (e) {
+                            // ignore invalid attributes
+                        }
+                    });
+                    if (best.node) best.node.classList.add('active');
+                };
+            }
+
+            // initial highlight (safe call)
+            try { win.currentPageHighlight(); } catch (e) { /* ignore */ }
+
+            // Sidebar toggle: idempotent binding
+            var sidebarToggle = doc.getElementById('sidebarToggle');
+            var sidebar = doc.getElementById('sidebar');
+            if (sidebarToggle && sidebar && sidebarToggle.dataset.toggleBound !== '1') {
+                sidebarToggle.addEventListener('click', function () {
+                    sidebar.classList.toggle('collapsed');
+                });
+                sidebarToggle.dataset.toggleBound = '1';
+            }
+
+            // Exit: define only if not already present. Provide robust logout (POST if possible, fallback to GET),
+            // show confirmation dialog if Swal available, but do not override existing Exit implementation.
+            if (typeof win.Exit !== 'function') {
+                win.Exit = function () {
+                    var doLogout = function () {
+                        // try a POST logout (some servers expect POST), fallback to navigate to /logout
+                        try {
+                            fetch('/logout', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'Content-Type': 'application/json' }
+                            }).then(function (res) {
+                                // if server redirects, follow; otherwise go to a safe page
+                                if (res && res.redirected) {
+                                    win.location.href = res.url;
+                                } else {
+                                    // prefer server-provided location or fallback to /login or /logout
+                                    win.location.href = '/logout';
+                                }
+                            }).catch(function () {
+                                win.location.href = '/logout';
+                            });
+                        } catch (e) {
+                            win.location.href = '/logout';
+                        }
+                    };
+
+                    var confirmAndLogout = function () {
+                        if (win.Swal && typeof win.Swal.fire === 'function') {
+                            win.Swal.fire({
+                                icon: 'warning',
+                                title: 'Validación',
+                                text: '¿Estás seguro que deseas cerrar sesión?',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Sí, cerrar sesión',
+                                cancelButtonText: 'Cancelar'
+                            }).then(function (result) {
+                                if (result && result.isConfirmed) doLogout();
+                            });
+                        } else {
+                            if (confirm('¿Estás seguro que deseas cerrar sesión?')) doLogout();
+                        }
+                    };
+
+                    confirmAndLogout();
+                };
+            }
+
+            // Also attach a safe click handler to any logout buttons that have data-action="logout"
+            // without overriding existing handlers (idempotent)
+            var logoutButtons = doc.querySelectorAll('[data-action="logout"]');
+            Array.prototype.forEach.call(logoutButtons, function (btn) {
+                if (btn.dataset._logoutBound !== '1') {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        try { (win.Exit || function () { win.location.href = '/logout'; })(); } catch (ex) { win.location.href = '/logout'; }
+                    });
+                    btn.dataset._logoutBound = '1';
                 }
             });
-        }
+        });
+    })(window, document);
     </script>
