@@ -20,7 +20,7 @@
                 <button class="mobile-menu-toggle" id="mobileMenuToggle">
                     <i class="fas fa-bars"></i>
                 </button>
-                <h1 class="page-title" id="pageTitle">Panel Principal</h1>
+                <h1 class="page-title" id="pageTitle">Gestión de Estudiantes</h1>
             </div>
             <div class="header-right">
                 <button class="header-btn">
@@ -34,24 +34,64 @@
             <div class="view-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Buscar estudiantes...">
+                    <input type="text" id="searchInput" placeholder="Buscar estudiantes...">
                 </div>
-                <select name="seccion" id="seccion">
-                    <option value="" disabled selected>Seleccionar Sección</option>
-                    <% secciones.forEach(function(seccion) { %>
-                        <option value="<%= seccion.id_seccion %>">
-                            <%= seccion.letra %>
-                        </option>
-                    <% }); %>
-                </select>
-                <select name="materia" id="materia">
-                    <option value="" disabled selected>Seleccionar Materia</option>
-                    <% secciones.forEach(function(materia) { %>
-                        <option value="<%= materia.id_materia %>">
-                            <%= materia.codigo_materia %>
-                        </option>
-                    <% }); %>
-                </select>
+                <div class="filter-group">
+                    <select name="carrera" id="carrera" class="form-select">
+                        <option value="">Todas las Carreras</option>
+                        <%
+                        const carrerasUnicas = [];
+                        if (estudiantes && estudiantes.length > 0) {
+                            estudiantes.forEach(function(estudiante) {
+                                if (estudiante.carrera_codigo && !carrerasUnicas.includes(estudiante.carrera_codigo)) {
+                                    carrerasUnicas.push(estudiante.carrera_codigo);
+                        %>
+                            <option value="<%= estudiante.carrera_codigo %>">
+                                <%= estudiante.carrera_nombre || estudiante.carrera_codigo %>
+                            </option>
+                        <%
+                                }
+                            });
+                        }
+                        %>
+                    </select>
+                    <select name="seccion" id="seccion" class="form-select">
+                        <option value="">Todas las Secciones</option>
+                        <%
+                        const seccionesUnicas = [];
+                        if (estudiantes && estudiantes.length > 0) {
+                            estudiantes.forEach(function(estudiante) {
+                                if (estudiante.seccion && !seccionesUnicas.includes(estudiante.seccion)) {
+                                    seccionesUnicas.push(estudiante.seccion);
+                        %>
+                            <option value="<%= estudiante.seccion %>">
+                                <%= estudiante.seccion %>
+                            </option>
+                        <%
+                                }
+                            });
+                        }
+                        %>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Controles de paginación -->
+            <div class="pagination-controls">
+                <div class="entries-control">
+                    <label for="entriesPerPage">Mostrar:</label>
+                    <select id="entriesPerPage" class="entries-select">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="all">Todos</option>
+                    </select>
+                    <span>estudiantes</span>
+                </div>
+                <div class="pagination-info">
+                    Mostrando <span id="showingStart">1</span> a <span id="showingEnd"><%= estudiantes ? estudiantes.length : 0 %></span> de <span id="totalEntries"><%= estudiantes ? estudiantes.length : 0 %></span> estudiantes
+                </div>
             </div>
 
             <div class="table-container">
@@ -59,20 +99,80 @@
                     <thead>
                         <tr>
                             <th>Estudiante</th>
-                            <th>Cedula</th>
+                            <th>Cédula</th>
+                            <th>Carrera</th>
+                            <th>Sección</th>
                             <th>Correo</th>
                             <th>Evaluaciones</th>
                             <th>Promedio</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    
+                    <tbody>
+                        <% if (estudiantes && estudiantes.length > 0) { %>
+                            <% estudiantes.forEach(function(estudiante) { %>
+                                <tr>
+                                    <td class="student-name">
+                                        <span><%= estudiante.nombre %> <%= estudiante.apellido %></span>
+                                    </td>
+                                    <td><%= estudiante.cedula %></td>
+                                    <td>
+                                        <span class="badge-carrera">
+                                            <%= estudiante.carrera_nombre || 'Sin carrera' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge-seccion">
+                                            <%= estudiante.seccion || 'Sin sección' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:<%= estudiante.email %>" class="email-link">
+                                            <%= estudiante.email %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge-evaluaciones">
+                                            <%= estudiante.total_evaluaciones || 0 %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="promedio <%= estudiante.promedio_puntaje >= 70 ? 'alto' : (estudiante.promedio_puntaje >= 50 ? 'medio' : 'bajo') %>">
+                                            <%= estudiante.promedio_puntaje ? parseFloat(estudiante.promedio_puntaje).toFixed(2) : '0.00' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="btns btn-view" onclick="verEstudiante('<%= estudiante.cedula %>')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btns btn-evaluate" onclick="evaluarEstudiante('<%= estudiante.cedula %>')">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="8" class="no-data">
+                                    <i class="fas fa-users"></i>
+                                    No se encontraron estudiantes
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
                 </table>
+            </div>
+
+            <!-- Botones de paginación -->
+            <div class="pagination-buttons" id="paginationButtons">
+                <!-- Se generarán dinámicamente con JavaScript -->
             </div>
         </div>
     </main>
 
-    <!-- Modal Ver Estudiante
+    <!-- Modal Ver Estudiante -->
     <div id="modalVerEstudiante" class="modal-overlay">
         <div class="modal-estudiante">
             <div class="estudiante-header">
@@ -122,12 +222,33 @@
                         <span class="info-value" id="estudianteTelefono"></span>
                     </div>
                 </div>
+
+                <div class="info-item">
+                    <div class="info-icon calendar-icon">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="info-content">
+                        <span class="info-label">FECHA DE NACIMIENTO</span>
+                        <span class="info-value" id="estudianteNacimiento"></span>
+                    </div>
+                </div>
             </div>
 
             <div class="estudiante-section">
-                <h3><i class="fas fa-sticky-note"></i> Notas Adicionales</h3>
-                <div class="notas-box">
-                    <p id="estudianteNotas">Sin notas adicionales</p>
+                <h3><i class="fas fa-chart-bar"></i> Estadísticas Académicas</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Evaluaciones</span>
+                        <span class="stat-value" id="estudianteTotalEvaluaciones">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Promedio General</span>
+                        <span class="stat-value" id="estudiantePromedio">0.00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Última Evaluación</span>
+                        <span class="stat-value" id="estudianteUltimaEvaluacion">N/A</span>
+                    </div>
                 </div>
             </div>
 
@@ -135,36 +256,125 @@
                 <i class="fas fa-times"></i> Cerrar
             </button>
         </div>
-    </div>-->
+    </div>
 
     <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+    // Función para buscar estudiantes
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Función para filtrar por cantidad (entries per page)
+    document.getElementById('entriesPerPage').addEventListener('change', function(e) {
+        const entriesPerPage = e.target.value;
+        const rows = document.querySelectorAll('.data-table tbody tr');
+        const totalRows = rows.length;
+
+        rows.forEach((row, index) => {
+            if (entriesPerPage === 'all') {
+                row.style.display = '';
+            } else {
+                const limit = parseInt(entriesPerPage);
+                row.style.display = index < limit ? '' : 'none';
+            }
+        });
+
+        // Actualizar información de paginación
+        updatePaginationInfo(entriesPerPage, totalRows);
+    });
+
+    // Función para actualizar la información de paginación
+    function updatePaginationInfo(entriesPerPage, totalRows) {
+        const showingStart = document.getElementById('showingStart');
+        const showingEnd = document.getElementById('showingEnd');
+        const totalEntries = document.getElementById('totalEntries');
+
+        if (entriesPerPage === 'all') {
+            showingStart.textContent = '1';
+            showingEnd.textContent = totalRows;
+        } else {
+            const limit = parseInt(entriesPerPage);
+            showingStart.textContent = '1';
+            showingEnd.textContent = Math.min(limit, totalRows);
+        }
+        totalEntries.textContent = totalRows;
+    }
+
+    // Función para filtrar por carrera
+    document.getElementById('carrera').addEventListener('change', function(e) {
+        const carrera = e.target.value;
+        const rows = document.querySelectorAll('.data-table tbody tr');
+
+        rows.forEach(row => {
+            if (carrera === '') {
+                row.style.display = '';
+            } else {
+                const carreraCell = row.cells[2].textContent;
+                row.style.display = carreraCell.includes(carrera) ? '' : 'none';
+            }
+        });
+    });
+
+    // Función para filtrar por sección
+    document.getElementById('seccion').addEventListener('change', function(e) {
+        const seccion = e.target.value;
+        const rows = document.querySelectorAll('.data-table tbody tr');
+
+        rows.forEach(row => {
+            if (seccion === '') {
+                row.style.display = '';
+            } else {
+                // La sección está en la columna 4 (índice 3), después de Carrera
+                const seccionCell = row.cells[3].textContent;
+                row.style.display = seccionCell.includes(seccion) ? '' : 'none';
+            }
+        });
+    });
+
     // Función para ver estudiante
     function verEstudiante(cedula) {
         fetch(`/teacher/students/${cedula}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar estudiante');
+                }
+                return response.json();
+            })
             .then(data => {
                 // Llenar la información del modal
                 document.getElementById('estudianteNombre').textContent = 
                     `${data.nombre} ${data.apellido}`;
                 document.getElementById('estudianteCarrera').textContent = 
-                    data.cod_carrera || 'Sin carrera asignada';
+                    data.carrera_nombre || 'Sin carrera asignada';
                 document.getElementById('estudianteCedula').textContent = data.cedula;
                 document.getElementById('estudianteEmail').textContent = data.email;
                 document.getElementById('estudianteEmail').href = `mailto:${data.email}`;
                 document.getElementById('estudianteTelefono').textContent = 
-                    data.telf || 'No registrado';
+                    data.telefono || 'No registrado';
+                document.getElementById('estudianteNacimiento').textContent = 
+                    data.fecha_nacimiento ? new Date(data.fecha_nacimiento).toLocaleDateString() : 'No registrada';
                 
                 // Estado del estudiante
                 const estadoBadge = document.getElementById('estudianteEstado');
-                const estado = data.estado || 'CURSANDO';
+                const estado = data.estudiante_activo ? 'ACTIVO' : 'INACTIVO';
                 estadoBadge.textContent = estado;
                 estadoBadge.className = `badge-estado ${estado.toLowerCase()}`;
                 
-                // Notas adicionales
-                document.getElementById('estudianteNotas').textContent = 
-                    data.notas || 'Sin notas adicionales';
+                // Estadísticas académicas
+                document.getElementById('estudianteTotalEvaluaciones').textContent = 
+                    data.total_evaluaciones || 0;
+                document.getElementById('estudiantePromedio').textContent = 
+                    data.promedio_puntaje ? parseFloat(data.promedio_puntaje).toFixed(2) : '0.00';
+                document.getElementById('estudianteUltimaEvaluacion').textContent = 
+                    data.ultima_evaluacion ? new Date(data.ultima_evaluacion).toLocaleDateString() : 'N/A';
                 
                 // Mostrar modal
                 document.getElementById('modalVerEstudiante').classList.add('active');
@@ -173,6 +383,15 @@
                 console.error('Error:', error);
                 Swal.fire('Error', 'No se pudo cargar la información del estudiante', 'error');
             });
+    }
+
+    // Funciones placeholder para otras acciones
+    function editarEstudiante(cedula) {
+        Swal.fire('Función en desarrollo', `Editar estudiante: ${cedula}`, 'info');
+    }
+
+    function evaluarEstudiante(cedula) {
+        Swal.fire('Función en desarrollo', `Evaluar estudiante: ${cedula}`, 'info');
     }
 
     // Función para cerrar el modal
