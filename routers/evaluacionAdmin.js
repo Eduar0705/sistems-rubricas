@@ -10,7 +10,7 @@ router.get("/admin/evaluaciones", function(req, res) {
     }
 
     const query = `
-        SELECT 
+        SELECT
             ee.id,
             ee.puntaje_total,
             ee.fecha_evaluacion,
@@ -21,7 +21,11 @@ router.get("/admin/evaluaciones", function(req, res) {
             r.nombre_rubrica,
             r.porcentaje_evaluacion,
             m.nombre as materia_nombre,
-            CASE 
+            c.nombre as carrera_nombre,
+            s.codigo as seccion_codigo,
+            s.horario as seccion_horario,
+            s.aula as seccion_aula,
+            CASE
                 WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
                 ELSE 'Pendiente'
             END as estado
@@ -29,8 +33,10 @@ router.get("/admin/evaluaciones", function(req, res) {
         INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
         INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
         INNER JOIN materia m ON r.materia_codigo = m.codigo
-        WHERE e.activo = 1 AND r.activo = 1
-        ORDER BY ee.fecha_evaluacion DESC
+        INNER JOIN seccion s ON r.seccion_id = s.id
+        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
+        WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
+        ORDER BY c.nombre, s.codigo, ee.fecha_evaluacion DESC
     `;
 
     conexion.query(query, (error, evaluaciones) => {

@@ -27,7 +27,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: 1000;
     align-items: center;
     justify-content: center;
 }
@@ -328,6 +328,164 @@
     background: #5568d3;
 }
 
+/* Sección Groups */
+.seccion-group {
+    margin-bottom: 40px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.seccion-header {
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.seccion-title {
+    margin: 0 0 12px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.seccion-info {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.seccion-detail {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.seccion-count {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.seccion-evaluaciones {
+    position: relative;
+    padding: 24px;
+}
+
+.evaluaciones-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+}
+
+/* Paginación de evaluaciones */
+.evaluaciones-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+    min-height: 400px;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.pagination-btn {
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #374151;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f3f4f6;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.pagination-info .current-page {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.pagination-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-dot.active {
+    background: #667eea;
+    width: 24px;
+    border-radius: 4px;
+}
+
+.pagination-dot:hover {
+    background: #667eea;
+    transform: scale(1.2);
+}
+
+/* Animación para cambio de página */
+.evaluaciones-container.fade-out {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.evaluaciones-container.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .modal-content-evaluacion { width: 95%; max-height: 95vh; }
@@ -337,4 +495,27 @@
     .form-row { grid-template-columns: 1fr; }
     .modal-footer-evaluacion { flex-direction: column; }
     .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
+
+    .seccion-info { flex-direction: column; gap: 8px; }
+    .seccion-evaluaciones { padding: 16px; }
+    
+    .evaluaciones-container {
+        grid-template-columns: 1fr;
+        min-height: 300px;
+    }
+    
+    .pagination-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .pagination-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    .pagination-info {
+        width: 100%;
+        justify-content: center;
+    }
 }
