@@ -1,8 +1,3 @@
-// ============================================================
-// crear-rubrica.js - CÓDIGO COMPLETO CORREGIDO
-// Sistema de Creación de Rúbricas
-// ============================================================
-
 let criterioCount = 0;
 
 // ============================================================
@@ -410,16 +405,7 @@ if (rubricaForm) {
         // Crear FormData y agregar todos los campos
         const form = document.createElement('form');
         form.method = 'POST';
-        //Verificacion si es admin o profesor
-        // Determinar seccionId en cliente (fallback al input #seccion)
-        const seccionValue = rubricaData.seccion_id ?? document.getElementById('seccion')?.value;
-        const seccionIdNum = parseInt(seccionValue, 10) || 0;
-
-        if (seccionIdNum === 1) {
-            form.action = '/envioRubrica';
-        } else {
-            form.action = '/envioRubricaTeacher';
-        }
+        form.action = document.getElementById('rubricaForm').action;
 
         
         // Agregar campos simples
