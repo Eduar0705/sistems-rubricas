@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Estudiante - Sistema de Gestión de Rúbricas</title>
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../css/students.css">
+</head>
+<body>
+    <main class="main-content">
+
+        <%- include('../inc/menuStudents.ejs') %>
+        <!-- Calificaciones Section -->
+        <section id="calificaciones" class="content-section">
+            <div class="page-header">
+                <h1>Mis Calificaciones</h1>
+                <p>Consulta tu historial de calificaciones y progreso académico</p>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card-large">
+                    <h3>Promedio General</h3>
+                    <div class="large-score">8.5</div>
+                    <p class="score-label">Excelente desempeño</p>
+                </div>
+                <div class="stat-card-large">
+                    <h3>Materias Aprobadas</h3>
+                    <div class="large-score">12/14</div>
+                    <p class="score-label">85.7% completado</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-bar"></i> Calificaciones por Materia</h2>
+                </div>
+                <div class="card-body">
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Programación Web</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 92%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score excellent">9.2</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Marketing Digital</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 90%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score excellent">9.0</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Literatura Contemporánea</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score good">8.5</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Bases de Datos</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 82%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score good">8.2</div>
+                    </div>
+                    <div class="grade-item">
+                        <div class="grade-info">
+                            <h4>Metodología de la Investigación</h4>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 78%"></div>
+                            </div>
+                        </div>
+                        <div class="grade-score average">7.8</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Ver Evaluacion -->
+    <div id="evaluacionModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2><i class="fas fa-clipboard-check"></i> Detalle de Evaluación</h2>
+                <button class="modal-close" onclick="cerrarModal('evaluacionModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="evaluacion-summary">
+                    <h3>Proyecto Final - Desarrollo Web</h3>
+                    <div class="evaluacion-meta">
+                        <span><i class="fas fa-calendar"></i> Evaluado: 15 Ene 2025</span>
+                        <span><i class="fas fa-user"></i> Profesor: Dr. Carlos Martínez</span>
+                    </div>
+                    <div class="evaluacion-score-large">
+                        <span class="score-label">Calificación Final</span>
+                        <span class="score-value">9.2</span>
+                        <span class="score-max">/ 10.0</span>
+                    </div>
+                </div>
+
+                <div class="evaluacion-criterios">
+                    <h4><i class="fas fa-star"></i> Evaluación por Criterios</h4>
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Funcionalidad</h5>
+                            <span class="criterio-score">24/25</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 96%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Excelente implementación de todas las funcionalidades. El sistema funciona de manera fluida y sin errores.</p>
+                    </div>
+
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Diseño y UX</h5>
+                            <span class="criterio-score">18/20</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 90%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Diseño atractivo y profesional. La experiencia de usuario es muy buena. Sugerencia: mejorar el contraste en algunos elementos.</p>
+                    </div>
+
+                    <div class="criterio-evaluado">
+                        <div class="criterio-eval-header">
+                            <h5>Código</h5>
+                            <span class="criterio-score">23/25</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 92%"></div>
+                        </div>
+                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Código muy bien estructurado y documentado. Buenas prácticas aplicadas consistentemente.</p>
+                    </div>
+                </div>
+
+                <div class="comentarios-generales">
+                    <h4><i class="fas fa-comment"></i> Comentarios Generales</h4>
+                    <p>Excelente trabajo en general. El proyecto demuestra un dominio sólido de los conceptos vistos en clase. La implementación es profesional y cumple con todos los requisitos. Sigue así!</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="cerrarModal('evaluacionModal')">Cerrar</button>
+                <button class="btn-primary" onclick="descargarEvaluacion()">
+                    <i class="fas fa-download"></i> Descargar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./js/students.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        //Funcion para confirmar la salida del programa
+        function Exit(){
+            Swal.fire({
+                icon: 'warning',
+                title: 'Validacion',
+                text: 'Estas seguro que deseas salir?',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Si',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if(result.isConfirmed){
+                    window.location.href = '/logout'
+                }
+            });
+        }
+    </script>
+</body>
+</html>

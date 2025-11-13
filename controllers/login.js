@@ -107,7 +107,6 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     req.session.activo = estudiante.activo;
     req.session.ultimaActividad = Date.now();
     req.session.tipo = 'estudiante';
-    req.session.id_rol = null; 
     console.log('Estudiante autenticado:', req.session);
 
     // Registrar la sesión activa

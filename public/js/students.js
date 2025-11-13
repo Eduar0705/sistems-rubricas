@@ -10,6 +10,12 @@ navItems.forEach((item) => {
 
     const targetSection = item.getAttribute("data-section")
 
+    //cargar si usan link o ruta
+    if (targetSection.startsWith("/")) {
+      window.location.href = targetSection
+      return
+    }
+
     if (targetSection) {
       // Update active nav item
       navItems.forEach((nav) => nav.classList.remove("active"))
@@ -41,7 +47,7 @@ document.addEventListener("click", (e) => {
   }
 })
 
-// Search Rubricas
+// buscar Rubricas
 const searchRubricas = document.getElementById("searchRubricas")
 const filterMateria = document.getElementById("filterMateria")
 const rubricasGrid = document.getElementById("rubricasGrid")
@@ -74,7 +80,7 @@ if (filterMateria) {
   filterMateria.addEventListener("change", filterRubricas)
 }
 
-// Search Evaluaciones
+// Buscar Evaluaciones
 const searchEvaluaciones = document.getElementById("searchEvaluaciones")
 const filterEstado = document.getElementById("filterEstado")
 const evaluacionesTable = document.getElementById("evaluacionesTable")
@@ -139,7 +145,7 @@ function descargarEvaluacion(id) {
   console.log("[v0] Descargar evaluación:", id)
 }
 
-// Close modal when clicking outside
+// Cerrar modal al hacer clic fuera del contenido
 document.querySelectorAll(".modal").forEach((modal) => {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
@@ -148,7 +154,7 @@ document.querySelectorAll(".modal").forEach((modal) => {
   })
 })
 
-// Close modal with Escape key
+// Cerrar modal con la tecla Escape
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     document.querySelectorAll(".modal").forEach((modal) => {
@@ -157,5 +163,3 @@ document.addEventListener("keydown", (e) => {
   }
 })
 
-// Simulate loading data
-console.log("[v0] Portal de estudiante cargado correctamente")

@@ -1,0 +1,45 @@
+<header class="header">
+    <div class="header-container">
+        <div class="header-left">
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>SGR Estudiante</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-menu">
+                <img src="https://ui-avatars.com/api/?name=<%= datos.username %>&background=1e40af&color=fff" alt="Usuario" class="user-avatar">
+                <div class="user-info">
+                    <span class="user-name"><%= datos.username %></span>
+                    <span class="user-role">Estudiante</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+        <a href="/student" class="nav-item active" data-section="/student">
+            <i class="fas fa-home"></i>
+            <span>Inicio</span>
+        </a>
+        <a href="/student/evaluaciones" class="nav-item" data-section="/student/evaluaciones">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Evaluaciones</span>
+        </a>
+        <a href="/students/calificaciones" class="nav-item" data-section="/students/calificaciones">
+            <i class="fas fa-chart-line"></i>
+            <span>Calificaciones</span>
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <a onclick="Exit()" class="nav-item logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Cerrar Sesión</span>
+        </a>
+    </div>
+</aside>

@@ -94,6 +94,8 @@ app.use(require('./routers/rubricasTeacher'));
 
 //RUTAS STUDENT
 app.use(require('./routers/student'));
+app.use(require('./routers/evaluacionStudents'));
+app.use(require('./routers/calificacionesStudents'));
 
 
 // MANEJO DE ERROR 404 

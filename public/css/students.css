@@ -212,9 +212,6 @@ body {
   min-height: calc(100vh - 73px);
 }
 
-.content-section {
-  display: none;
-}
 
 .content-section.active {
   display: block;
