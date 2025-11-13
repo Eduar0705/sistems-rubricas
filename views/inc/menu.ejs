@@ -1,143 +1,130 @@
 <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <img src="../img/logoiujo.jpg" alt="logo IUJO" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="max-width: 100px;">
-                <span>Sistema de Rúbricas</span>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <img src="../img/logoiujo.jpg" alt="logo IUJO" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="max-width: 200px; text-align: center;">
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <a href="/home" class="nav-item <%= currentPage === 'home' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-chart-line"></i>
+            <span>Panel Principal</span>
+        </a>
+        <a href="/admin/rubricas" class="nav-item <%= currentPage === 'rubricas' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-table"></i>
+            <span>Mis Rúbricas</span>
+        </a>
+        <a href="/admin/createrubricas" class="nav-item <%= currentPage === 'createrubricas' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-plus-circle"></i>
+            <span>Crear Rúbrica</span>
+        </a>
+        <a href="/admin/evaluaciones" class="nav-item <%= currentPage === 'evaluaciones' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Evaluaciones</span>
+        </a>
+        <a href="/admin/permisos" class="nav-item <%= currentPage === 'permisos' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-user-plus"></i>
+            <span>Permisos</span>
+        </a>
+        <a href="/admin/profesores" class="nav-item <%= currentPage === 'profesores' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>Profesores</span>
+        </a>
+        <a href="/admin/reportes" class="nav-item <%= currentPage === 'reportes' ? 'active' : '' %>" data-external="true">
+            <i class="fas fa-file-alt"></i>
+            <span>Reportes</span>
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
             </div>
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-        
-        <nav class="sidebar-nav">
-            <a href="/home" class="nav-item <%= currentPage === 'home' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-chart-line"></i>
-                <span>Panel Principal</span>
-            </a>
-            <a href="/admin/rubricas" class="nav-item <%= currentPage === 'rubricas' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-table"></i>
-                <span>Mis Rúbricas</span>
-            </a>
-            <a href="/admin/createrubricas" class="nav-item <%= currentPage === 'createrubricas' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-plus-circle"></i>
-                <span>Crear Rúbrica</span>
-            </a>
-            <a href="/admin/evaluaciones" class="nav-item <%= currentPage === 'evaluaciones' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-clipboard-check"></i>
-                <span>Evaluaciones</span>
-            </a>
-            <a href="/admin/permisos" class="nav-item <%= currentPage === 'permisos' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-user-plus"></i>
-                <span>Permisos</span>
-            </a>
-            <a href="/admin/profesores" class="nav-item <%= currentPage === 'profesores' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-chalkboard-teacher"></i>
-                <span>Profesores</span>
-            </a>
-            <a href="/admin/reportes" class="nav-item <%= currentPage === 'reportes' ? 'active' : '' %>" data-external="true">
-                <i class="fas fa-file-alt"></i>
-                <span>Reportes</span>
-            </a>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="user-profile">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-info">
-                    <div class="user-name"><%= datos.username %></div>
-                    <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
-                </div>
+            <div class="user-info">
+                <div class="user-name"><%= datos.username %></div>
+                <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
             </div>
-            <button class="header-btn" onclick="Exit()">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
         </div>
-    </aside>
-    <script>
-    (function (win, doc) {
-        'use strict';
-
-        // run callback now or on DOMContentLoaded if not ready yet
-        function ready(fn) {
-            if (doc.readyState === 'loading') {
-                doc.addEventListener('DOMContentLoaded', fn);
-            } else {
-                fn();
-            }
+    </div>
+</aside>
+<script>
+(function (win, doc) {
+    'use strict';
+    // run callback now or on DOMContentLoaded if not ready yet
+    function ready(fn) {
+        if (doc.readyState === 'loading') {
+            doc.addEventListener('DOMContentLoaded', fn);
+        } else {
+            fn();
         }
-
-        function normalizePath(p) {
-            if (!p) return '/';
-            try {
-                // convert possible full URLs to pathnames
-                var u = new URL(p, location.origin);
-                p = u.pathname;
-            } catch (e) {
-                // leave as-is
-            }
-            return String(p).replace(/\/+$/, '') || '/';
+    }
+    function normalizePath(p) {
+        if (!p) return '/';
+        try {
+            // convert possible full URLs to pathnames
+            var u = new URL(p, location.origin);
+            p = u.pathname;
+        } catch (e) {
+            // leave as-is
         }
-
-        ready(function () {
-            // Define currentPageHighlight only if not present (avoid overriding other scripts)
-            if (typeof win.currentPageHighlight !== 'function') {
-                win.currentPageHighlight = function (page) {
-                    var navItems = doc.querySelectorAll('.nav-item');
-                    var target = normalizePath(page || win.location.pathname || '/');
-                    navItems.forEach(function (item) {
-                        item.classList.remove('active');
-                        try {
-                            var href = item.getAttribute('href') || '';
-                            var hpath = normalizePath(href);
-                            // match either exact or prefix (so /admin matches /admin/... )
-                            if (hpath === target || target.indexOf(hpath) === 0 || hpath.indexOf(target) === 0) {
-                                item.classList.add('active');
-                            }
-                        } catch (e) {
-                            // ignore invalid attributes
+        return String(p).replace(/\/+$/, '') || '/';
+    }
+    ready(function () {
+        // Define currentPageHighlight only if not present (avoid overriding other scripts)
+        if (typeof win.currentPageHighlight !== 'function') {
+            win.currentPageHighlight = function (page) {
+                var navItems = doc.querySelectorAll('.nav-item');
+                var target = normalizePath(page || win.location.pathname || '/');
+                navItems.forEach(function (item) {
+                    item.classList.remove('active');
+                    try {
+                        var href = item.getAttribute('href') || '';
+                        var hpath = normalizePath(href);
+                        // match either exact or prefix (so /admin matches /admin/... )
+                        if (hpath === target || target.indexOf(hpath) === 0 || hpath.indexOf(target) === 0) {
+                            item.classList.add('active');
                         }
-                    });
-                };
-            }
-
-            // initial highlight
-            try { win.currentPageHighlight(); } catch (e) { /* ignore */ }
-
-            // Sidebar toggle: attach handler once (use data attr to avoid duplicate listeners)
-            var sidebarToggle = doc.getElementById('sidebarToggle');
-            var sidebar = doc.getElementById('sidebar');
-            if (sidebarToggle && sidebar && sidebarToggle.dataset.toggleBound !== '1') {
-                sidebarToggle.addEventListener('click', function () {
-                    sidebar.classList.toggle('collapsed');
-                });
-                sidebarToggle.dataset.toggleBound = '1';
-            }
-
-            // Exit: define only if not already defined by other scripts
-            if (typeof win.Exit !== 'function') {
-                win.Exit = function () {
-                    var doLogout = function () { win.location.href = '/logout'; };
-
-                    if (win.Swal && typeof win.Swal.fire === 'function') {
-                        win.Swal.fire({
-                            icon: 'warning',
-                            title: 'Validación',
-                            text: '¿Estás seguro que deseas cerrar sesión?',
-                            showCancelButton: true,
-                            confirmButtonColor: '#3085d6',
-                            cancelButtonColor: '#d33',
-                            confirmButtonText: 'Sí, cerrar sesión',
-                            cancelButtonText: 'Cancelar'
-                        }).then(function (result) {
-                            if (result && result.isConfirmed) doLogout();
-                        });
-                    } else {
-                        if (confirm('¿Estás seguro que deseas cerrar sesión?')) doLogout();
+                    } catch (e) {
+                        // ignore invalid attributes
                     }
-                };
-            }
-        });
-    })(window, document);
-    </script>
+                });
+            };
+        }
+        // initial highlight
+        try { win.currentPageHighlight(); } catch (e) { /* ignore */ }
+        // Sidebar toggle: attach handler once (use data attr to avoid duplicate listeners)
+        var sidebarToggle = doc.getElementById('sidebarToggle');
+        var sidebar = doc.getElementById('sidebar');
+        if (sidebarToggle && sidebar && sidebarToggle.dataset.toggleBound !== '1') {
+            sidebarToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('collapsed');
+            });
+            sidebarToggle.dataset.toggleBound = '1';
+        }
+        // Exit: define only if not already defined by other scripts
+        if (typeof win.Exit !== 'function') {
+            win.Exit = function () {
+                var doLogout = function () { win.location.href = '/logout'; };
+                if (win.Swal && typeof win.Swal.fire === 'function') {
+                    win.Swal.fire({
+                        icon: 'warning',
+                        title: 'Validación',
+                        text: '¿Estás seguro que deseas cerrar sesión?',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, cerrar sesión',
+                        cancelButtonText: 'Cancelar'
+                    }).then(function (result) {
+                        if (result && result.isConfirmed) doLogout();
+                    });
+                } else {
+                    if (confirm('¿Estás seguro que deseas cerrar sesión?')) doLogout();
+                }
+            };
+        }
+    });
+})(window, document);
+</script>

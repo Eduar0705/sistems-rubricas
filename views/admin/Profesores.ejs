@@ -15,19 +15,7 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <button class="mobile-menu-toggle" id="mobileMenuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h1 class="page-title" id="pageTitle"> <%= title || 'Rubricas' %> </h1>
-            </div>
-            <div class="header-right">
-                <button class="header-btn" onclick="window.location.href = '/admin/config'">
-                    <i class="fas fa-cog"></i>
-                </button>
-            </div>
-        </header>
+        <%- include('../inc/headerAdmin.ejs') %>
 
         <!-- Estudiantes View -->
         <div class="view" id="Profesor">

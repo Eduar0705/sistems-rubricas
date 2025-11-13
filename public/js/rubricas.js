@@ -426,7 +426,7 @@ function imprimirRubrica(rubrica, criterios) {
         .student-section { margin-bottom: 12px; }
         .student-table { width: 100%; border-collapse: collapse; }
         .student-table td { border: 1px solid #000; padding: 6px 8px; }
-        .student-label { font-weight: bold; width: 130px; background-color: #e8e8e8; }
+        .student-label { font-weight: bold; width: 330px; background-color: #e8e8e8; }
         .rubrica-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .rubrica-table th, .rubrica-table td { border: 1px solid #000; padding: 6px; text-align: left; vertical-align: top; font-size: 9px; }
         .rubrica-table th { background-color: #2c3e50; color: white; font-weight: bold; text-align: center; font-size: 10px; }
@@ -479,10 +479,15 @@ function imprimirRubrica(rubrica, criterios) {
     </div>` : ''}
     <div class="student-section">
         <table class="student-table">
-            <tr>
-                <td class="student-label">Nombre del estudiante:</td><td style="width: 50%;"></td>
-                <td class="student-label">Observaciones:</td><td style="width: 30%;"></td>
-            </tr>
+            <!-- Espacio para 6 estudiantes por defecto -->
+            ${[1,2,3,4,5,6].map(i => `
+                <tr>
+                    <td class="student-label">Nombre :</td>
+                    <td style="width: 50%;"></td>
+                    <td class="student-label">Observaciones:</td>
+                    <td style="width: 30%;"></td>
+                </tr>
+            `).join('')}
         </table>
     </div>
     <table class="rubrica-table">

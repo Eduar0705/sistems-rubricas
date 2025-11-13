@@ -1,0 +1,19 @@
+<header class="header">
+    <div class="header-left">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title" id="pageTitle"> <%= title || 'Rubricas' %> </h1>
+    </div>
+    <div class="header-right">
+        <button class="header-btn" title="Configuración" onclick="window.location.href = '/admin/config'">
+            <i class="fas fa-cog"></i>
+        </button>
+        <button class="header-btn" title="Notificaciones" id="notificaciones">
+            <i class="fas fa-bell"></i>
+        </button>
+        <button class="header-btn" id="salir" title="Salir" style="#salir:hover { background-color: #ff4d4d; }" onclick="Exit()">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
