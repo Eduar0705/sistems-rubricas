@@ -9,6 +9,9 @@ router.get("/admin/createrubricas", (req, res) => {
     }
     
     // Obtener materias y secciones para los selects
+    /* 
+    Colocar el filtrado y facilidades de uso
+    */
     const queryMaterias = 'SELECT codigo, nombre FROM materia WHERE activo = TRUE ORDER BY nombre';
     const querySecciones = `
         SELECT s.id, s.codigo, s.materia_codigo, s.lapso_academico 

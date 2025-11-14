@@ -79,19 +79,63 @@ if (cedulaInput) {
     // Función para validar longitud y cambiar color
     function validarLongitudCedula(input) {
         const valor = input.value.trim();
-        
+
+        // Obtener o crear el alert pequeño
+        let alertEl = input.nextElementSibling;
+        if (!alertEl || !alertEl.classList.contains('cedula-alert')) {
+            alertEl = document.createElement('div');
+            alertEl.className = 'cedula-alert';
+            alertEl.setAttribute('aria-live', 'polite');
+            // Estilos inline simples para mostrar como "small alert"
+            alertEl.style.color = '#dc3545';
+            alertEl.style.fontSize = '0.85rem';
+            alertEl.style.marginTop = '0.25rem';
+            alertEl.style.display = 'none';
+            alertEl.textContent = 'El mínimo de digitos son 7 y el máximo 8';
+            input.parentNode.insertBefore(alertEl, input.nextSibling);
+        }
+
+        // Validación de longitud y colores como antes
         if (valor.length < 7) {
-            // Menos de 7 caracteres - color rojo
             input.style.borderColor = "#dc3545";
             input.style.boxShadow = "0 0 0 0.2rem rgba(220, 53, 69, 0.25)";
+            alertEl.style.display = 'block';
         } else if (valor.length >= 7 && valor.length <= 8) {
-            // Entre 7 y 8 caracteres - color verde (válido)
             input.style.borderColor = "#28a745";
             input.style.boxShadow = "0 0 0 0.2rem rgba(40, 167, 69, 0.25)";
+            alertEl.style.display = 'none';
         } else {
-            // Más de 8 caracteres - color rojo
             input.style.borderColor = "#dc3545";
             input.style.boxShadow = "0 0 0 0.2rem rgba(220, 53, 69, 0.25)";
+            alertEl.style.display = 'block';
+        }
+
+        // Asegurarse de mostrar el alert también al hacer focus (clic) y no duplicar listeners
+        if (!input.dataset.cedulaListeners) {
+            input.addEventListener('focus', function () {
+                // Mostrar el mensaje si actualmente NO cumple requisitos
+                const v = this.value.trim();
+                if (v.length < 7 || v.length > 8) {
+                    alertEl.style.display = 'block';
+                } else {
+                    alertEl.style.display = 'none';
+                }
+            });
+
+            // También ocultar mensaje cuando se vuelva válido en cada input (ya hay listener, pero por seguridad)
+            input.addEventListener('input', function () {
+                const v = this.value.trim();
+                if (v.length >= 7 && v.length <= 8) {
+                    alertEl.style.display = 'none';
+                } else {
+                    // Si está enfocado, mostrar; si no, mantener según validarLongitudCedula (que llama esto)
+                    if (document.activeElement === this) {
+                        alertEl.style.display = 'block';
+                    }
+                }
+            });
+
+            input.dataset.cedulaListeners = '1';
         }
     }
 

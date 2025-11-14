@@ -24,52 +24,67 @@ router.get("/home", function(req, res) {
                 rubricasResult = [{ totalRubricas: 0 }];
             }
 
-            // Obtener rúbricas recientes (máximo 5) - CONSULTA CORREGIDA
-            let recentRubricasQuery = `
-                SELECT
-                    r.id,
-                    r.nombre_rubrica,
-                    r.fecha_creacion,
-                    r.tipo_evaluacion,
-                    r.instrucciones as descripcion,
-                    m.nombre as materia_nombre
-                FROM rubrica_evaluacion r
-                LEFT JOIN materia m ON r.materia_codigo = m.codigo
-                WHERE r.activo = TRUE
-                ORDER BY r.fecha_creacion DESC
-                LIMIT 4
+            // **NUEVA CONSULTA: Contar evaluaciones pendientes**
+            let countEvaluacionesPendientes = `
+                SELECT COUNT(*) AS totalEvaluacionesPendientes 
+                FROM evaluacion_estudiante 
+                WHERE puntaje_total IS NULL
             `;
             
-            conexion.query(recentRubricasQuery, (err, recentRubricasResult) => {
+            conexion.query(countEvaluacionesPendientes, (err, evaluacionesResult) => {
                 if (err) {
-                    console.log('Error al obtener rúbricas recientes: ', err);
-                    recentRubricasResult = [];
+                    console.log('Error al contar evaluaciones pendientes: ', err);
+                    evaluacionesResult = [{ totalEvaluacionesPendientes: 0 }];
                 }
 
-                // Formatear las fechas para mostrar "hace X tiempo"
-                const rubricasRecientes = recentRubricasResult.map(rubrica => {
-                    const fechaReferencia = rubrica.fecha_actualizacion || rubrica.fecha_creacion;
-                    return {
-                        id: rubrica.id,
-                        nombre: rubrica.nombre_rubrica,
-                        tipo: rubrica.tipo_evaluacion,
-                        descripcion: rubrica.descripcion,
-                        materia: rubrica.materia_nombre,
-                        tiempo_transcurrido: calcularTiempoTranscurrido(fechaReferencia)
-                    };
-                });
-
-                const totalProfesores = profesResult[0].totalProfesores;
-                const totalRubricas = rubricasResult[0].totalRubricas;
+                // Obtener rúbricas recientes (máximo 5)
+                let recentRubricasQuery = `
+                    SELECT
+                        r.id,
+                        r.nombre_rubrica,
+                        r.fecha_creacion,
+                        r.tipo_evaluacion,
+                        r.instrucciones as descripcion,
+                        m.nombre as materia_nombre
+                    FROM rubrica_evaluacion r
+                    LEFT JOIN materia m ON r.materia_codigo = m.codigo
+                    WHERE r.activo = TRUE
+                    ORDER BY r.fecha_creacion DESC
+                    LIMIT 4
+                `;
                 
-                // Renderizar con todos los datos obtenidos
-                res.render("home/index", {
-                    datos: req.session,
-                    title: 'Sistema de Gestión de Rúbricas',
-                    totalProfesores: totalProfesores,
-                    totalRubricas: totalRubricas,
-                    rubricasRecientes: rubricasRecientes,
-                    currentPage: 'home'
+                conexion.query(recentRubricasQuery, (err, recentRubricasResult) => {
+                    if (err) {
+                        console.log('Error al obtener rúbricas recientes: ', err);
+                        recentRubricasResult = [];
+                    }
+
+                    const rubricasRecientes = recentRubricasResult.map(rubrica => {
+                        const fechaReferencia = rubrica.fecha_actualizacion || rubrica.fecha_creacion;
+                        return {
+                            id: rubrica.id,
+                            nombre: rubrica.nombre_rubrica,
+                            tipo: rubrica.tipo_evaluacion,
+                            descripcion: rubrica.descripcion,
+                            materia: rubrica.materia_nombre,
+                            tiempo_transcurrido: calcularTiempoTranscurrido(fechaReferencia)
+                        };
+                    });
+
+                    const totalProfesores = profesResult[0].totalProfesores;
+                    const totalRubricas = rubricasResult[0].totalRubricas;
+                    const totalEvaluacionesPendientes = evaluacionesResult[0].totalEvaluacionesPendientes;
+                    
+                    // Renderizar con todos los datos obtenidos
+                    res.render("home/index", {
+                        datos: req.session,
+                        title: 'Sistema de Gestión de Rúbricas',
+                        totalProfesores: totalProfesores,
+                        totalRubricas: totalRubricas,
+                        totalEvaluacionesPendientes: totalEvaluacionesPendientes, // **NUEVA VARIABLE**
+                        rubricasRecientes: rubricasRecientes,
+                        currentPage: 'home'
+                    });
                 });
             });
         });

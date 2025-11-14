@@ -91,6 +91,7 @@ app.use(require('./routers/estudiantesTeacher'));
 app.use(require('./routers/evaluacionTeacher'));
 app.use(require('./routers/reportesTeacher'));
 app.use(require('./routers/rubricasTeacher'));
+app.use(require('./controllers/Evaluar'))
 
 //RUTAS STUDENT
 app.use(require('./routers/student'));
