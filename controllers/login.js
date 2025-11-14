@@ -91,8 +91,6 @@ function configurarSesionUsuario(req, user, sesionesActivas) {
     req.session.tipo = 'usuario';
     console.log('Usuario autenticado:', req.session);
 
-    // Registrar la sesión activa
-    registrarSesionActiva(req, user.cedula, user.id, sesionesActivas);
 }
 
 // Función para configurar sesión de estudiante
@@ -109,53 +107,6 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     req.session.tipo = 'estudiante';
     console.log('Estudiante autenticado:', req.session);
 
-    // Registrar la sesión activa
-    registrarSesionActiva(req, estudiante.cedula, estudiante.id, sesionesActivas);
-}
-
-// Función para registrar sesión activa
-function registrarSesionActiva(req, cedula, userId, sesionesActivas) {
-    const sessionId = req.sessionID;
-    const entry = {
-        sessionId,
-        inicioSesion: Date.now(),
-        userId,
-        timeout: null
-    };
-
-    // Guardar la entrada (incluye referencia al timeout para poder cancelarlo al hacer logout)
-    sesionesActivas.set(cedula, entry);
-
-    // Programar eliminación y destrucción de la sesión en 5 minutos
-    entry.timeout = setTimeout(() => {
-        const current = sesionesActivas.get(cedula);
-        // Si la sesión actual no coincide (p. ej. el usuario inició otra sesión), no hacemos nada
-        if (!current || current.sessionId !== sessionId) return;
-
-        // Eliminar del mapa de sesiones activas
-        sesionesActivas.delete(cedula);
-
-        // Registrar motivo de expiración para que el middleware lo detecte y redirija al /login
-        if (req.app) {
-            if (!req.app.locals.sesionesExpiradas) req.app.locals.sesionesExpiradas = new Map();
-            req.app.locals.sesionesExpiradas.set(sessionId, {
-                cedula,
-                message: 'Pasó mucho tiempo inactivo. Por favor inicia sesión de nuevo.',
-                timestamp: Date.now()
-            });
-            console.log(`Sesión expirada registrada para sessionId: ${sessionId}, cedula: ${cedula}`);
-        }
-
-        // Destruir la sesión en el store de express-session
-        if (req.sessionStore && current.sessionId) {
-            req.sessionStore.destroy(current.sessionId, (err) => {
-                if (err) console.log('Error al destruir la sesión:', err);
-                else console.log(`Sesión destruida para cédula: ${cedula}`);
-            });
-        }
-
-        console.log(`Sesión automáticamente eliminada para cédula: ${cedula}`);
-    }, 300000); // 5 minutos
 }
 
 module.exports = routers;

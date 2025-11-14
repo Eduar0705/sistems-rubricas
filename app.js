@@ -20,9 +20,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: false,
-        maxAge: 1000 * 60 * 5  // 5 minutos de inactividad
-    },
-    rolling: true  // Reinicia el tiempo con cada petición
+        maxAge: 1000 * 60 * 20  // 20 minutos de inactividad
+    }
 }));
 
 // Middleware para verificar la inactividad de la sesión
