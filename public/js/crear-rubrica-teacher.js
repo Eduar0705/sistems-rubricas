@@ -1,0 +1,677 @@
+let criterioCount = 0;
+let porcentajeEvaluacion = 10;
+
+// ============================================================
+// SISTEMA DE SELECCIÓN JERÁRQUICO PARA TEACHER
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const carreraSelect = document.getElementById('carrera');
+    const semestreSelect = document.getElementById('semestre');
+    const materiaSelect = document.getElementById('materia');
+    const seccionSelect = document.getElementById('seccion');
+
+    // API prefix para teacher
+    const apiPrefix = '/api/teacher';
+
+    // Cuando cambia la carrera
+    if (carreraSelect) {
+        carreraSelect.addEventListener('change', async function() {
+            const carreraCode = this.value;
+            
+            semestreSelect.innerHTML = '<option value="">Cargando...</option>';
+            materiaSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            
+            materiaSelect.disabled = true;
+            seccionSelect.disabled = true;
+
+            if (!carreraCode) {
+                semestreSelect.innerHTML = '<option value="">Primero seleccione una carrera</option>';
+                semestreSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiPrefix}/semestres/${carreraCode}`);
+                if (!response.ok) throw new Error('Error en la petición');
+                
+                const semestres = await response.json();
+                
+                if (semestres.length === 0) {
+                    semestreSelect.innerHTML = '<option value="">No tiene materias en esta carrera</option>';
+                    semestreSelect.disabled = true;
+                    return;
+                }
+                
+                semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
+                semestres.forEach(sem => {
+                    semestreSelect.innerHTML += `<option value="${sem}">Semestre ${sem}</option>`;
+                });
+                
+                semestreSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                semestreSelect.innerHTML = '<option value="">Error al cargar semestres</option>';
+                Swal.fire('Error', 'No se pudieron cargar los semestres', 'error');
+            }
+        });
+    }
+
+    // Cuando cambia el semestre
+    if (semestreSelect) {
+        semestreSelect.addEventListener('change', async function() {
+            const carreraCode = carreraSelect.value;
+            const semestre = this.value;
+            
+            materiaSelect.innerHTML = '<option value="">Cargando...</option>';
+            seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            seccionSelect.disabled = true;
+
+            if (!semestre) {
+                materiaSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+                materiaSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiPrefix}/materias/${carreraCode}/${semestre}`);
+                if (!response.ok) throw new Error('Error en la petición');
+                
+                const materias = await response.json();
+                
+                if (materias.length === 0) {
+                    materiaSelect.innerHTML = '<option value="">No tiene materias asignadas</option>';
+                    materiaSelect.disabled = true;
+                    return;
+                }
+                
+                materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+                materias.forEach(mat => {
+                    materiaSelect.innerHTML += `<option value="${mat.codigo}">${mat.nombre}</option>`;
+                });
+                
+                materiaSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                materiaSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+                Swal.fire('Error', 'No se pudieron cargar las materias', 'error');
+            }
+        });
+    }
+// Cuando cambia la materia
+    if (materiaSelect) {
+        materiaSelect.addEventListener('change', async function() {
+            const materiaCode = this.value;
+            
+            seccionSelect.innerHTML = '<option value="">Cargando...</option>';
+
+            if (!materiaCode) {
+                seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+                seccionSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${apiPrefix}/secciones/${materiaCode}`);
+                if (!response.ok) throw new Error('Error en la petición');
+                
+                const secciones = await response.json();
+                
+                if (secciones.length === 0) {
+                    seccionSelect.innerHTML = '<option value="">No tiene secciones asignadas</option>';
+                    seccionSelect.disabled = true;
+                    return;
+                }
+                
+                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+                secciones.forEach(sec => {
+                    const info = `${sec.codigo} - ${sec.lapso_academico}${sec.horario ? ' - ' + sec.horario : ''}`;
+                    seccionSelect.innerHTML += `<option value="${sec.id}">${info}</option>`;
+                });
+                
+                seccionSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                seccionSelect.innerHTML = '<option value="">Error al cargar secciones</option>';
+                Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
+            }
+        });
+    }
+
+    // Inicializar
+    agregarCriterio();
+    agregarValidacionTiempoReal();
+    setTimeout(calcularDistribucionAutomatica, 100);
+});
+
+// ============================================================
+// DISTRIBUCIÓN AUTOMÁTICA DE PUNTAJES
+// ============================================================
+
+function calcularDistribucionAutomatica() {
+    const porcentajeInput = document.getElementById('porcentaje');
+    if (!porcentajeInput) return;
+
+    porcentajeEvaluacion = parseFloat(porcentajeInput.value) || 10;
+    
+    // Validar porcentaje mínimo
+    if (porcentajeEvaluacion < 5) {
+        porcentajeInput.value = 5;
+        porcentajeEvaluacion = 5;
+    }
+
+    const criterios = document.querySelectorAll('.criterio-card');
+    const numCriterios = criterios.length;
+
+    if (numCriterios === 0) return;
+
+    // Calcular puntaje por criterio (mínimo 1 punto)
+    const puntajePorCriterio = Math.max(1, Math.floor((porcentajeEvaluacion / numCriterios) * 100) / 100);
+    
+    // Actualizar puntajes de criterios
+    criterios.forEach((criterioCard, index) => {
+        const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+        if (puntajeInput) {
+            puntajeInput.value = puntajePorCriterio.toFixed(2);
+            actualizarPuntajesNiveles(criterioCard, puntajePorCriterio);
+        }
+    });
+
+    mostrarInfoDistribucion(numCriterios, puntajePorCriterio);
+    validarPuntajes();
+}
+
+function actualizarPuntajesNiveles(criterioCard, puntajeMaximoCriterio) {
+    const niveles = criterioCard.querySelectorAll('.nivel-item');
+    const numNiveles = niveles.length;
+
+    if (numNiveles === 0) return;
+
+    // Distribuir puntaje entre niveles de manera descendente
+    niveles.forEach((nivelItem, index) => {
+        const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
+        if (puntajeInput) {
+            const factorDistribucion = (numNiveles - index) / numNiveles;
+            let puntaje = puntajeMaximoCriterio * factorDistribucion;
+            puntaje = Math.max(0.25, Math.round(puntaje * 100) / 100);
+            puntajeInput.value = puntaje.toFixed(2);
+        }
+    });
+}
+
+function mostrarInfoDistribucion(numCriterios, puntajePorCriterio) {
+    const infoDiv = document.getElementById('distribucionInfo');
+    const textoSpan = document.getElementById('distribucionTexto');
+    
+    if (infoDiv && textoSpan) {
+        const total = (numCriterios * puntajePorCriterio).toFixed(2);
+        textoSpan.textContent = `Distribución automática: ${numCriterios} criterio(s) × ${puntajePorCriterio.toFixed(2)} puntos = ${total} puntos de ${porcentajeEvaluacion}%`;
+        infoDiv.style.display = 'block';
+    }
+}
+
+// ============================================================
+// VALIDACIÓN DE PUNTAJES
+// ============================================================
+
+function validarPuntajes() {
+    const porcentajeInput = document.getElementById('porcentaje');
+    const criterios = document.querySelectorAll('.criterio-card');
+    let sumaCriterios = 0;
+    let hayError = false;
+
+    criterios.forEach((criterioCard) => {
+        const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+        const puntajeMaximo = parseFloat(puntajeInput?.value) || 0;
+        
+        if (puntajeMaximo < 1) {
+            puntajeInput.style.borderColor = '#e74c3c';
+            puntajeInput.title = 'El puntaje mínimo por criterio es 1 punto';
+            hayError = true;
+        } else {
+            puntajeInput.style.borderColor = '#e0e0e0';
+            puntajeInput.title = '';
+            sumaCriterios += puntajeMaximo;
+        }
+
+        const niveles = criterioCard.querySelectorAll('.nivel-item');
+        niveles.forEach(nivelItem => {
+            const puntajeNivelInput = nivelItem.querySelector('.nivel-puntaje');
+            const puntajeNivel = parseFloat(puntajeNivelInput?.value) || 0;
+
+            if (puntajeNivel < 0.25) {
+                puntajeNivelInput.style.borderColor = '#e74c3c';
+                puntajeNivelInput.title = 'El puntaje mínimo por nivel es 0.25';
+                hayError = true;
+            } else if (puntajeNivel > puntajeMaximo) {
+                puntajeNivelInput.style.borderColor = '#e74c3c';
+                puntajeNivelInput.title = `El puntaje del nivel no puede exceder ${puntajeMaximo}`;
+                hayError = true;
+            } else {
+                puntajeNivelInput.style.borderColor = '#e0e0e0';
+                puntajeNivelInput.title = '';
+            }
+        });
+    });
+
+    if (porcentajeInput) {
+        const porcentaje = parseFloat(porcentajeInput.value) || 0;
+        
+        if (porcentaje < 5) {
+            porcentajeInput.style.borderColor = '#e74c3c';
+            porcentajeInput.title = 'El porcentaje mínimo es 5%';
+            hayError = true;
+        } else if (sumaCriterios > porcentaje) {
+            porcentajeInput.style.borderColor = '#e74c3c';
+            porcentajeInput.title = `La suma de puntajes (${sumaCriterios.toFixed(2)}) excede el porcentaje (${porcentaje})`;
+            hayError = true;
+        } else {
+            porcentajeInput.style.borderColor = '#e0e0e0';
+            porcentajeInput.title = '';
+        }
+    }
+
+    return !hayError;
+}
+
+function agregarValidacionTiempoReal() {
+    const porcentajeInput = document.getElementById('porcentaje');
+    if (porcentajeInput) {
+        porcentajeInput.addEventListener('input', function() {
+            calcularDistribucionAutomatica();
+        });
+    }
+
+    const observer = new MutationObserver(function() {
+        validarPuntajes();
+    });
+
+    const criteriosList = document.getElementById('criteriosList');
+    if (criteriosList) {
+        observer.observe(criteriosList, { 
+            childList: true, 
+            subtree: true
+        });
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('criterio-puntaje') || 
+            e.target.classList.contains('nivel-puntaje')) {
+            validarPuntajes();
+        }
+    });
+}
+
+// ============================================================
+// VALIDACIÓN DE CRITERIOS
+// ============================================================
+
+function validarEstructuraCriterios(criterios) {
+    if (!Array.isArray(criterios) || criterios.length === 0) {
+        return { valido: false, mensaje: 'Debe agregar al menos un criterio' };
+    }
+    
+    for (let i = 0; i < criterios.length; i++) {
+        const criterio = criterios[i];
+        
+        if (!criterio.descripcion || criterio.descripcion.trim() === '') {
+            return { valido: false, mensaje: `El criterio ${i + 1} necesita descripción` };
+        }
+        
+        if (!criterio.puntaje_maximo || criterio.puntaje_maximo < 1) {
+            return { valido: false, mensaje: `El criterio ${i + 1} necesita un puntaje mínimo de 1 punto` };
+        }
+        
+        if (!criterio.niveles || !Array.isArray(criterio.niveles) || criterio.niveles.length === 0) {
+            return { valido: false, mensaje: `El criterio ${i + 1} necesita al menos un nivel de desempeño` };
+        }
+        
+        for (let j = 0; j < criterio.niveles.length; j++) {
+            const nivel = criterio.niveles[j];
+            
+            if (!nivel.nombre_nivel || nivel.nombre_nivel.trim() === '') {
+                return { valido: false, mensaje: `El nivel ${j + 1} del criterio ${i + 1} necesita nombre` };
+            }
+            
+            if (nivel.puntaje === undefined || nivel.puntaje < 0.25) {
+                return { valido: false, mensaje: `El nivel "${nivel.nombre_nivel}" necesita un puntaje mínimo de 0.25` };
+            }
+            
+            if (!nivel.descripcion || nivel.descripcion.trim() === '') {
+                return { valido: false, mensaje: `El nivel "${nivel.nombre_nivel}" necesita descripción` };
+            }
+            
+            if (parseFloat(nivel.puntaje) > parseFloat(criterio.puntaje_maximo)) {
+                return { 
+                    valido: false, 
+                    mensaje: `El puntaje del nivel "${nivel.nombre_nivel}" (${nivel.puntaje}) excede el máximo del criterio (${criterio.puntaje_maximo})` 
+                };
+            }
+        }
+    }
+    
+    return { valido: true };
+}
+
+// ============================================================
+// GESTIÓN DE CRITERIOS
+// ============================================================
+
+function agregarCriterio() {
+    criterioCount++;
+    const porcentaje = parseFloat(document.getElementById('porcentaje')?.value) || 10;
+    const numCriteriosActuales = document.querySelectorAll('.criterio-card').length + 1;
+    const puntajeSugerido = Math.max(1, (porcentaje / numCriteriosActuales).toFixed(2));
+    
+    const criterioHTML = `
+        <div class="criterio-card" data-criterio="${criterioCount}">
+            <div class="criterio-header">
+                <input type="text" class="form-input criterio-descripcion" 
+                    placeholder="Descripción del criterio (Ej: Análisis de datos)" required>
+                <button type="button" class="btn-icon" onclick="eliminarCriterio(${criterioCount})" title="Eliminar Criterio">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="criterio-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Puntaje Máximo * (mín: 1)</label>
+                        <input type="number" class="form-input criterio-puntaje" 
+                            min="1" step="0.01" placeholder="${puntajeSugerido}" value="${puntajeSugerido}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" class="form-input criterio-orden" 
+                            value="${criterioCount}" min="1" required>
+                    </div>
+                </div>
+
+                <div class="niveles-section">
+                    <div class="niveles-header">
+                        <h4><i class="fas fa-star"></i> Niveles de Desempeño</h4>
+                        <button type="button" class="btn-add" onclick="agregarNivel(${criterioCount})">
+                            <i class="fas fa-plus"></i> Agregar Nivel
+                        </button>
+                    </div>
+                    <div class="niveles-list" id="niveles-${criterioCount}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('criteriosList').insertAdjacentHTML('beforeend', criterioHTML);
+    
+    const puntajeMaximo = parseFloat(puntajeSugerido);
+    agregarNivel(criterioCount, 'Sobresaliente', puntajeMaximo.toFixed(2), 1);
+    agregarNivel(criterioCount, 'Notable', (puntajeMaximo * 0.8).toFixed(2), 2);
+    agregarNivel(criterioCount, 'Aprobado', (puntajeMaximo * 0.6).toFixed(2), 3);
+    agregarNivel(criterioCount, 'Insuficiente', Math.max(0.25, (puntajeMaximo * 0.4)).toFixed(2), 4);
+    
+    calcularDistribucionAutomatica();
+}
+
+function eliminarCriterio(id) {
+    const criterioCard = document.querySelector(`[data-criterio="${id}"]`);
+    if (!criterioCard) return;
+    
+    const criteriosRestantes = document.querySelectorAll('.criterio-card').length;
+    
+    if (criteriosRestantes <= 1) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No se puede eliminar',
+            text: 'Debe mantener al menos un criterio de evaluación'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: '¿Eliminar criterio?',
+        text: 'Se eliminarán todos los niveles de este criterio y se redistribuirán los puntajes',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            criterioCard.remove();
+            calcularDistribucionAutomatica();
+            Swal.fire('Eliminado', 'El criterio ha sido eliminado', 'success');
+        }
+    });
+}
+
+// ============================================================
+// GESTIÓN DE NIVELES
+// ============================================================
+
+function agregarNivel(criterioId, nombreDefault = '', puntajeDefault = '', ordenDefault = '') {
+    const nivelesContainer = document.getElementById(`niveles-${criterioId}`);
+    if (!nivelesContainer) return;
+    
+    const nivelCount = nivelesContainer.querySelectorAll('.nivel-item').length + 1;
+    const orden = ordenDefault || nivelCount;
+    const nombre = nombreDefault || '';
+    const puntaje = puntajeDefault || '0.25';
+    
+    const nivelHTML = `
+        <div class="nivel-item">
+            <div class="nivel-header">
+                <input type="text" class="form-input nivel-nombre" 
+                    placeholder="Nombre del nivel" value="${nombre}" required style="flex: 1;">
+                <input type="number" class="form-input small-input nivel-puntaje" 
+                    placeholder="Puntaje" value="${puntaje}" min="0.25" step="0.01" required>
+                <input type="number" class="form-input small-input nivel-orden" 
+                    placeholder="Orden" value="${orden}" min="1" required>
+                <button type="button" class="btn-icon" onclick="eliminarNivel(this, ${criterioId})" title="Eliminar Nivel">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <textarea class="form-textarea nivel-descripcion" rows="2" 
+                    placeholder="Descripción del nivel de desempeño..." required></textarea>
+            </div>
+        </div>
+    `;
+    
+    nivelesContainer.insertAdjacentHTML('beforeend', nivelHTML);
+    setTimeout(validarPuntajes, 100);
+}
+
+function eliminarNivel(button, criterioId) {
+    const nivelItem = button.closest('.nivel-item');
+    const nivelesContainer = document.getElementById(`niveles-${criterioId}`);
+    
+    if (!nivelItem || !nivelesContainer) return;
+    
+    const nivelesRestantes = nivelesContainer.querySelectorAll('.nivel-item').length;
+    
+    if (nivelesRestantes <= 1) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No se puede eliminar',
+            text: 'Cada criterio debe tener al menos un nivel de desempeño'
+        });
+        return;
+    }
+    
+    nivelItem.remove();
+    setTimeout(validarPuntajes, 100);
+}
+
+// ============================================================
+// ENVÍO DEL FORMULARIO
+// ============================================================
+
+const rubricaForm = document.getElementById('rubricaForm');
+if (rubricaForm) {
+    rubricaForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar campos básicos
+        const nombreRubrica = document.getElementById('nombreRubrica')?.value.trim();
+        const materiaId = document.getElementById('materia')?.value;
+        const seccionId = document.getElementById('seccion')?.value;
+        const fechaEval = document.getElementById('fechaEvaluacion')?.value;
+        const porcentaje = parseFloat(document.getElementById('porcentaje')?.value);
+        const tipoEval = document.getElementById('tipoEvaluacion')?.value;
+
+        if (!nombreRubrica) {
+            Swal.fire('Error', 'El nombre de la rúbrica es obligatorio', 'error');
+            return;
+        }
+
+        if (!materiaId) {
+            Swal.fire('Error', 'Debe seleccionar una materia', 'error');
+            return;
+        }
+
+        if (!seccionId) {
+            Swal.fire('Error', 'Debe seleccionar una sección', 'error');
+            return;
+        }
+
+        if (!fechaEval) {
+            Swal.fire('Error', 'La fecha de evaluación es obligatoria', 'error');
+            return;
+        }
+
+        if (!porcentaje || porcentaje < 5 || porcentaje > 100) {
+            Swal.fire('Error', 'El porcentaje debe estar entre 5% y 100%', 'error');
+            return;
+        }
+
+        if (!tipoEval) {
+            Swal.fire('Error', 'Debe seleccionar un tipo de evaluación', 'error');
+            return;
+        }
+        
+        const criterios = document.querySelectorAll('.criterio-card');
+        if(criterios.length === 0) {
+            Swal.fire('Error', 'Debe agregar al menos un criterio de evaluación', 'error');
+            return;
+        }
+        
+        // Recopilar datos
+        const rubricaData = {
+            nombre_rubrica: nombreRubrica,
+            materia_codigo: materiaId,
+            seccion_id: seccionId,
+            fecha_evaluacion: fechaEval,
+            porcentaje_evaluacion: porcentaje,
+            tipo_evaluacion: tipoEval,
+            competencias: document.getElementById('competencias')?.value || '',
+            instrucciones: document.getElementById('instrucciones')?.value || '',
+            criterios: []
+        };
+        
+        // Recopilar criterios y niveles
+        criterios.forEach((criterioCard) => {
+            const descripcionInput = criterioCard.querySelector('.criterio-descripcion');
+            const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+            const ordenInput = criterioCard.querySelector('.criterio-orden');
+            
+            const criterio = {
+                descripcion: descripcionInput?.value.trim() || '',
+                puntaje_maximo: parseFloat(puntajeInput?.value) || 0,
+                orden: parseInt(ordenInput?.value) || 0,
+                niveles: []
+            };
+            
+            const niveles = criterioCard.querySelectorAll('.nivel-item');
+            niveles.forEach(nivelItem => {
+                const nombreInput = nivelItem.querySelector('.nivel-nombre');
+                const descripcionInput = nivelItem.querySelector('.nivel-descripcion');
+                const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
+                const ordenInput = nivelItem.querySelector('.nivel-orden');
+                
+                const nivel = {
+                    nombre_nivel: nombreInput?.value.trim() || '',
+                    descripcion: descripcionInput?.value.trim() || '',
+                    puntaje: parseFloat(puntajeInput?.value) || 0,
+                    orden: parseInt(ordenInput?.value) || 0
+                };
+                criterio.niveles.push(nivel);
+            });
+            
+            rubricaData.criterios.push(criterio);
+        });
+        
+        // Validar estructura
+        const validacion = validarEstructuraCriterios(rubricaData.criterios);
+        if (!validacion.valido) {
+            Swal.fire('Error', validacion.mensaje, 'error');
+            return;
+        }
+        
+        // Validar suma de puntajes
+        const sumaPuntajes = rubricaData.criterios.reduce((sum, c) => sum + c.puntaje_maximo, 0);
+        if (sumaPuntajes > porcentaje) {
+            Swal.fire('Error', 
+                `La suma de puntajes máximos (${sumaPuntajes.toFixed(2)}) no puede exceder el porcentaje de evaluación (${porcentaje}%)`, 
+                'error');
+            return;
+        }
+
+        // Validar puntajes mínimos
+        const criteriosInvalidos = rubricaData.criterios.filter(c => c.puntaje_maximo < 1);
+        if (criteriosInvalidos.length > 0) {
+            Swal.fire('Error', 'Todos los criterios deben tener un puntaje mínimo de 1 punto', 'error');
+            return;
+        }
+
+        let nivelesInvalidos = false;
+        rubricaData.criterios.forEach(criterio => {
+            criterio.niveles.forEach(nivel => {
+                if (nivel.puntaje < 0.25) {
+                    nivelesInvalidos = true;
+                }
+            });
+        });
+
+        if (nivelesInvalidos) {
+            Swal.fire('Error', 'Todos los niveles deben tener un puntaje mínimo de 0.25 puntos', 'error');
+            return;
+        }
+        
+        // Mostrar loading
+        Swal.fire({
+            title: 'Guardando rúbrica...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Crear form y enviar
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = document.getElementById('rubricaForm').action;
+        
+        const campos = ['nombre_rubrica', 'materia_codigo', 'seccion_id', 'fecha_evaluacion', 
+                        'porcentaje_evaluacion', 'tipo_evaluacion', 'competencias', 'instrucciones'];
+        
+        campos.forEach(campo => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = campo;
+            input.value = rubricaData[campo] || '';
+            form.appendChild(input);
+        });
+        
+        const criteriosInput = document.createElement('input');
+        criteriosInput.type = 'hidden';
+        criteriosInput.name = 'criterios';
+        criteriosInput.value = JSON.stringify(rubricaData.criterios);
+        form.appendChild(criteriosInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    });
+}

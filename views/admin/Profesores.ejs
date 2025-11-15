@@ -103,6 +103,17 @@
                                                     title="Ver detalles">
                                                 <i class="fa fa-eye"></i>
                                             </button>
+                                            <button class="btns btn-permi" title="Permisos" 
+                                                    data-cedula="<%= profe.cedula %>"
+                                                    data-nombre="<%= profe.nombre %>"
+                                                    data-apellido="<%= profe.apellido %>"
+                                                    data-especializacion="<%= profe.especializacion %>"
+                                                    data-email="<%= profe.email %>"
+                                                    data-telf="<%= profe.telf || '' %>"
+                                                    data-descripcion="<%= profe.descripcion || '' %>"
+                                                    data-activo="<%= profe.activo %>">
+                                                <i class="fa fa-book"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -133,6 +144,8 @@
                 });
             </script>
         <% } %>
+
+        <!-- Modal para agregar proferores -->
         <div class="modal-overlay" id="modalOverlay" >
             <div class="modal-add" id="modalAdd">
                 <button class="btn-cerrar" id="btnCerrar">&times;</button>
@@ -262,6 +275,87 @@
                         <button type="submit" class="btn btn-primary">Actualizar Profesor</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Modal de Permisos -->
+        <div class="modal-overlay" id="modalPermisos">
+            <div class="modal-permisos">
+                <div class="modal-header">
+                    <h2><i class="fa fa-book"></i> Gestionar Permisos</h2>
+                    <button class="modal-close" onclick="cerrarModalPermisos()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Información del docente -->
+                    <div class="docente-info">
+                        <div class="info-item">
+                            <strong>Docente:</strong>
+                            <span id="docenteNombre"></span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Especialización:</strong>
+                            <span id="docenteEspecializacion"></span>
+                        </div>
+                    </div>
+
+                    <!-- Permisos actuales -->
+                    <div class="permisos-actuales">
+                        <h3><i class="fa fa-list"></i> Permisos Actuales</h3>
+                        <div id="listaPermisosActuales" class="permisos-lista">
+                            <!-- Se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Agregar nuevo permiso -->
+                    <div class="agregar-permiso">
+                        <h3><i class="fa fa-plus-circle"></i> Agregar Nuevo Permiso</h3>
+                        
+                        <!-- Paso 1: Seleccionar Carrera -->
+                        <div class="paso-permiso">
+                            <h4>1. Seleccionar Carrera</h4>
+                            <div id="carrerasContainer" class="cards-container">
+                                <!-- Se cargarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Paso 2: Seleccionar Semestre -->
+                        <div class="paso-permiso" id="pasoSemestre" style="display: none;">
+                            <h4>2. Seleccionar Semestre</h4>
+                            <div id="semestresContainer" class="cards-container">
+                                <!-- Se cargarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Paso 3: Seleccionar Materia -->
+                        <div class="paso-permiso" id="pasoMateria" style="display: none;">
+                            <h4>3. Seleccionar Materia</h4>
+                            <div id="materiasContainer" class="cards-container">
+                                <!-- Se cargarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Paso 4: Seleccionar Sección -->
+                        <div class="paso-permiso" id="pasoSeccion" style="display: none;">
+                            <h4>4. Seleccionar Sección</h4>
+                            <div id="seccionesContainer" class="cards-container">
+                                <!-- Se cargarán dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Botón de guardar -->
+                        <div class="modal-actions" id="accionesGuardar" style="display: none;">
+                            <button class="btn btn-primary" onclick="guardarPermiso()">
+                                <i class="fa fa-save"></i> Guardar Permiso
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetearSeleccion()">
+                                <i class="fa fa-refresh"></i> Reiniciar Selección
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>

@@ -1,4 +1,22 @@
 // ============================================
+// VARIABLES GLOBALES
+// ============================================
+
+// Variables para el modal de permisos
+let docenteSeleccionado = null;
+let permisoSeleccionado = {
+    carrera: null,
+    semestre: null,
+    materia: null,
+    seccion: null
+};
+
+// Variables para paginación
+let currentPage = 1;
+let entriesPerPage = 5;
+let allRows = [];
+
+// ============================================
 // FUNCIONES GENERALES
 // ============================================
 
@@ -56,27 +74,6 @@ function inicializarModalAgregar() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
             cerrarModal();
-        }
-    });
-}
-
-// ============================================
-// ELIMINAR PROFESOR
-// ============================================
-
-function eliminarProfesor(profesorId) {
-    Swal.fire({
-        title: '¿Estás seguro?',
-        text: "¡No podrás revertir esto!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminarlo',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = `/deleteProfe/${profesorId}`;
         }
     });
 }
@@ -366,87 +363,24 @@ function inicializarValidacionesEdicion() {
 }
 
 // ============================================
-// BÚSQUEDA Y FILTRADO
+// ELIMINAR PROFESOR
 // ============================================
 
-// Función para buscar profesores por nombre
-function buscarProfesor() {
-    const searchInput = document.querySelector('.search-box input');
-    const tableRows = document.querySelectorAll('.data-table tbody tr');
-    const searchTerm = searchInput.value.toLowerCase().trim();
-
-    tableRows.forEach(row => {
-        // Saltar la fila de "No hay profesores registrados"
-        if (row.cells.length === 1) return;
-
-        const nombreCompleto = row.cells[0].textContent.toLowerCase();
-        
-        if (nombreCompleto.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
+function eliminarProfesor(profesorId) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminarlo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `/deleteProfe/${profesorId}`;
         }
     });
-}
-
-// Función para limpiar la búsqueda y mostrar todos los registros
-function limpiarBusqueda() {
-    const searchInput = document.querySelector('.search-box input');
-    const tableRows = document.querySelectorAll('.data-table tbody tr');
-    
-    searchInput.value = '';
-    
-    tableRows.forEach(row => {
-        row.style.display = '';
-    });
-}
-
-// Búsqueda avanzada en múltiples campos
-function buscarProfesorAvanzado() {
-    const searchInput = document.querySelector('.search-box input');
-    const tableRows = document.querySelectorAll('.data-table tbody tr');
-    const searchTerm = searchInput.value.toLowerCase().trim();
-
-    tableRows.forEach(row => {
-        if (row.cells.length === 1) return;
-
-        const nombreCompleto = row.cells[0].textContent.toLowerCase();
-        const cedula = row.cells[1].textContent.toLowerCase();
-        const especialidad = row.cells[2].textContent.toLowerCase();
-        const email = row.cells[3].textContent.toLowerCase();
-        
-        // Buscar en múltiples campos
-        if (nombreCompleto.includes(searchTerm) || 
-            cedula.includes(searchTerm) || 
-            especialidad.includes(searchTerm) || 
-            email.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-}
-
-function inicializarBusqueda() {
-    const searchInput = document.querySelector('.search-box input');
-    
-    if (!searchInput) return;
-
-    // Búsqueda mientras se escribe
-    searchInput.addEventListener('input', buscarProfesor);
-    
-    // Búsqueda al presionar Enter
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            buscarProfesor();
-        }
-    });
-    
-    // Evento click al ícono de búsqueda
-    const searchIcon = document.querySelector('.search-box .fa-search');
-    if (searchIcon) {
-        searchIcon.addEventListener('click', buscarProfesor);
-    }
 }
 
 // ============================================
@@ -581,12 +515,92 @@ function inicializarBotonesVer() {
 }
 
 // ============================================
-// PAGINACIÓN
+// BÚSQUEDA Y FILTRADO
 // ============================================
 
-let currentPage = 1;
-let entriesPerPage = 5;
-let allRows = [];
+// Función para buscar profesores por nombre
+function buscarProfesor() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+
+    tableRows.forEach(row => {
+        // Saltar la fila de "No hay profesores registrados"
+        if (row.cells.length === 1) return;
+
+        const nombreCompleto = row.cells[0].textContent.toLowerCase();
+        
+        if (nombreCompleto.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Función para limpiar la búsqueda y mostrar todos los registros
+function limpiarBusqueda() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    
+    searchInput.value = '';
+    
+    tableRows.forEach(row => {
+        row.style.display = '';
+    });
+}
+
+// Búsqueda avanzada en múltiples campos
+function buscarProfesorAvanzado() {
+    const searchInput = document.querySelector('.search-box input');
+    const tableRows = document.querySelectorAll('.data-table tbody tr');
+    const searchTerm = searchInput.value.toLowerCase().trim();
+
+    tableRows.forEach(row => {
+        if (row.cells.length === 1) return;
+
+        const nombreCompleto = row.cells[0].textContent.toLowerCase();
+        const cedula = row.cells[1].textContent.toLowerCase();
+        const especialidad = row.cells[2].textContent.toLowerCase();
+        const email = row.cells[3].textContent.toLowerCase();
+        
+        // Buscar en múltiples campos
+        if (nombreCompleto.includes(searchTerm) || 
+            cedula.includes(searchTerm) || 
+            especialidad.includes(searchTerm) || 
+            email.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function inicializarBusqueda() {
+    const searchInput = document.querySelector('.search-box input');
+    
+    if (!searchInput) return;
+
+    // Búsqueda mientras se escribe
+    searchInput.addEventListener('input', buscarProfesor);
+    
+    // Búsqueda al presionar Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            buscarProfesor();
+        }
+    });
+    
+    // Evento click al ícono de búsqueda
+    const searchIcon = document.querySelector('.search-box .fa-search');
+    if (searchIcon) {
+        searchIcon.addEventListener('click', buscarProfesor);
+    }
+}
+
+// ============================================
+// PAGINACIÓN
+// ============================================
 
 function inicializarPaginacion() {
     // Guardar todas las filas
@@ -737,6 +751,364 @@ function generatePaginationButtons() {
 }
 
 // ============================================
+// MODAL DE PERMISOS
+// ============================================
+
+function inicializarModalPermisos() {
+    // Agregar event listeners a los botones de permisos
+    const botonesPermisos = document.querySelectorAll('.btn-permi');
+    botonesPermisos.forEach(boton => {
+        boton.addEventListener('click', function() {
+            docenteSeleccionado = {
+                cedula: this.dataset.cedula,
+                nombre: this.dataset.nombre,
+                apellido: this.dataset.apellido,
+                especializacion: this.dataset.especializacion,
+                email: this.dataset.email,
+                telf: this.dataset.telf,
+                descripcion: this.dataset.descripcion
+            };
+            
+            abrirModalPermisos();
+        });
+    });
+}
+
+function abrirModalPermisos() {
+    const modal = document.getElementById('modalPermisos');
+    modal.style.display = 'block';
+    
+    // Mostrar información del docente
+    document.getElementById('docenteNombre').textContent = 
+        `${docenteSeleccionado.nombre} ${docenteSeleccionado.apellido}`;
+    document.getElementById('docenteEspecializacion').textContent = 
+        docenteSeleccionado.especializacion || 'No especificada';
+    
+    // Cargar permisos actuales
+    cargarPermisosActuales();
+    
+    // Cargar carreras disponibles
+    cargarCarreras();
+    
+    // Reset selección
+    resetearSeleccion();
+}
+
+function cerrarModalPermisos() {
+    const modal = document.getElementById('modalPermisos');
+    modal.style.display = 'none';
+    docenteSeleccionado = null;
+    resetearSeleccion();
+}
+
+// ============================================
+// CARGAR PERMISOS ACTUALES
+// ============================================
+
+async function cargarPermisosActuales() {
+    const container = document.getElementById('listaPermisosActuales');
+    container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i><p>Cargando permisos...</p></div>';
+    
+    try {
+        const response = await fetch(`/api/admin/permisos/${docenteSeleccionado.cedula}`);
+        const permisos = await response.json();
+        
+        if (permisos.length === 0) {
+            container.innerHTML = '<div class="empty-message">No hay permisos asignados</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        permisos.forEach(permiso => {
+            const permisoElement = document.createElement('div');
+            permisoElement.className = 'permiso-item';
+            permisoElement.innerHTML = `
+                <div class="permiso-info">
+                    <strong>${permiso.carrera_nombre}</strong>
+                    <small>Sem ${permiso.semestre} - ${permiso.materia_nombre} - ${permiso.seccion_codigo}</small>
+                </div>
+                <button class="btn-eliminar-permiso" onclick="eliminarPermiso(${permiso.id})">
+                    <i class="fa fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(permisoElement);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="empty-message">Error al cargar permisos</div>';
+    }
+}
+
+// ============================================
+// CARGAR CARRERAS
+// ============================================
+
+async function cargarCarreras() {
+    const container = document.getElementById('carrerasContainer');
+    container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
+    
+    try {
+        const response = await fetch('/api/admin/carreras');
+        const carreras = await response.json();
+        
+        container.innerHTML = '';
+        carreras.forEach(carrera => {
+            const card = crearCard(carrera.codigo, carrera.nombre, '', 'carrera');
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="empty-message">Error al cargar carreras</div>';
+    }
+}
+
+// ============================================
+// CARGAR SEMESTRES
+// ============================================
+
+async function cargarSemestres(carreraCode) {
+    const container = document.getElementById('semestresContainer');
+    const pasoSemestre = document.getElementById('pasoSemestre');
+    
+    container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
+    pasoSemestre.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/admin/semestres/${carreraCode}`);
+        const semestres = await response.json();
+        
+        container.innerHTML = '';
+        semestres.forEach(sem => {
+            const card = crearCard(sem, `Semestre ${sem}`, '', 'semestre');
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="empty-message">Error al cargar semestres</div>';
+    }
+}
+
+// ============================================
+// CARGAR MATERIAS
+// ============================================
+
+async function cargarMaterias(carreraCode, semestre) {
+    const container = document.getElementById('materiasContainer');
+    const pasoMateria = document.getElementById('pasoMateria');
+    
+    container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
+    pasoMateria.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/admin/materias/${carreraCode}/${semestre}`);
+        const materias = await response.json();
+        
+        container.innerHTML = '';
+        materias.forEach(materia => {
+            const card = crearCard(materia.codigo, materia.nombre, `${materia.creditos} créditos`, 'materia');
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="empty-message">Error al cargar materias</div>';
+    }
+}
+
+// ============================================
+// CARGAR SECCIONES
+// ============================================
+
+async function cargarSecciones(materiaCode) {
+    const container = document.getElementById('seccionesContainer');
+    const pasoSeccion = document.getElementById('pasoSeccion');
+    
+    container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
+    pasoSeccion.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/admin/secciones/${materiaCode}`);
+        const secciones = await response.json();
+        
+        container.innerHTML = '';
+        secciones.forEach(seccion => {
+            const card = crearCard(
+                seccion.id, 
+                seccion.codigo, 
+                `${seccion.lapso_academico}${seccion.horario ? ' - ' + seccion.horario : ''}`, 
+                'seccion'
+            );
+            container.appendChild(card);
+        });
+        
+        document.getElementById('accionesGuardar').style.display = 'flex';
+    } catch (error) {
+        console.error('Error:', error);
+        container.innerHTML = '<div class="empty-message">Error al cargar secciones</div>';
+    }
+}
+
+// ============================================
+// CREAR TARJETA DE SELECCIÓN
+// ============================================
+
+function crearCard(value, title, subtitle, type) {
+    const card = document.createElement('div');
+    card.className = 'card-option';
+    card.innerHTML = `
+        <input type="radio" name="${type}" value="${value}" id="${type}_${value}">
+        <div class="card-title">${title}</div>
+        ${subtitle ? `<div class="card-subtitle">${subtitle}</div>` : ''}
+    `;
+    
+    card.addEventListener('click', function() {
+        // Remover selección anterior
+        document.querySelectorAll(`.card-option[data-type="${type}"]`).forEach(c => {
+            c.classList.remove('selected');
+        });
+        
+        // Marcar como seleccionado
+        card.classList.add('selected');
+        card.querySelector('input').checked = true;
+        
+        // Guardar selección
+        permisoSeleccionado[type] = value;
+        
+        // Cargar siguiente paso
+        if (type === 'carrera') {
+            cargarSemestres(value);
+            // Ocultar pasos siguientes
+            document.getElementById('pasoMateria').style.display = 'none';
+            document.getElementById('pasoSeccion').style.display = 'none';
+            document.getElementById('accionesGuardar').style.display = 'none';
+        } else if (type === 'semestre') {
+            cargarMaterias(permisoSeleccionado.carrera, value);
+            // Ocultar pasos siguientes
+            document.getElementById('pasoSeccion').style.display = 'none';
+            document.getElementById('accionesGuardar').style.display = 'none';
+        } else if (type === 'materia') {
+            cargarSecciones(value);
+        }
+    });
+    
+    card.dataset.type = type;
+    return card;
+}
+
+// ============================================
+// GUARDAR PERMISO
+// ============================================
+
+async function guardarPermiso() {
+    // Validar que todo esté seleccionado
+    if (!permisoSeleccionado.carrera || !permisoSeleccionado.semestre || 
+        !permisoSeleccionado.materia || !permisoSeleccionado.seccion) {
+        Swal.fire('Error', 'Debe completar todos los pasos', 'error');
+        return;
+    }
+    
+    try {
+        Swal.fire({
+            title: 'Guardando permiso...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const response = await fetch('/api/admin/permisos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                docente_cedula: docenteSeleccionado.cedula,
+                carrera_codigo: permisoSeleccionado.carrera,
+                semestre: permisoSeleccionado.semestre,
+                materia_codigo: permisoSeleccionado.materia,
+                seccion_id: permisoSeleccionado.seccion
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Swal.fire('Éxito', 'Permiso guardado correctamente', 'success');
+            cargarPermisosActuales();
+            resetearSeleccion();
+        } else {
+            Swal.fire('Error', result.mensaje || 'No se pudo guardar el permiso', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al guardar el permiso', 'error');
+    }
+}
+
+// ============================================
+// ELIMINAR PERMISO
+// ============================================
+
+async function eliminarPermiso(permisoId) {
+    const result = await Swal.fire({
+        title: '¿Eliminar permiso?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+    
+    if (!result.isConfirmed) return;
+    
+    try {
+        const response = await fetch(`/api/admin/permisos/${permisoId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            Swal.fire('Eliminado', 'Permiso eliminado correctamente', 'success');
+            cargarPermisosActuales();
+        } else {
+            Swal.fire('Error', data.mensaje || 'No se pudo eliminar el permiso', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al eliminar el permiso', 'error');
+    }
+}
+
+// ============================================
+// RESETEAR SELECCIÓN
+// ============================================
+
+function resetearSeleccion() {
+    permisoSeleccionado = {
+        carrera: null,
+        semestre: null,
+        materia: null,
+        seccion: null
+    };
+    
+    // Ocultar pasos
+    document.getElementById('pasoSemestre').style.display = 'none';
+    document.getElementById('pasoMateria').style.display = 'none';
+    document.getElementById('pasoSeccion').style.display = 'none';
+    document.getElementById('accionesGuardar').style.display = 'none';
+    
+    // Limpiar contenedores
+    document.getElementById('semestresContainer').innerHTML = '';
+    document.getElementById('materiasContainer').innerHTML = '';
+    document.getElementById('seccionesContainer').innerHTML = '';
+    
+    // Desmarcar selecciones
+    document.querySelectorAll('.card-option').forEach(card => {
+        card.classList.remove('selected');
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = false;
+    });
+}
+
+// ============================================
 // INICIALIZACIÓN PRINCIPAL
 // ============================================
 
@@ -750,6 +1122,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar modal de editar
     inicializarModalEditar();
     
+    // Inicializar modal de permisos
+    inicializarModalPermisos();
+    
     // Inicializar búsqueda
     inicializarBusqueda();
     
@@ -758,4 +1133,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar paginación
     inicializarPaginacion();
+    
+    // Cerrar modal de permisos al hacer clic fuera
+    const modalPermisos = document.getElementById('modalPermisos');
+    if (modalPermisos) {
+        modalPermisos.addEventListener('click', function(e) {
+            if (e.target === modalPermisos) {
+                cerrarModalPermisos();
+            }
+        });
+    }
 });

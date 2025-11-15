@@ -77,7 +77,6 @@ app.use(require('./controllers/updateRubricas'));
 app.use(require('./routers/admin'));
 app.use(require('./routers/rubricasAdmin'));
 app.use(require('./routers/crearRubricaAdmin'));
-app.use(require('./routers/permisosAdmin'));
 app.use(require('./routers/evaluacionAdmin'));
 app.use(require('./routers/profeAdmin'));
 app.use(require('./routers/reportesAdmin'));
