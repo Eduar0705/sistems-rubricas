@@ -177,14 +177,20 @@ if (cedulaInput) {
             loginContainer.style.transition = 'all 0.5s ease';
             loginContainer.style.opacity = '1';
             loginContainer.style.transform = 'translateY(0)';
+            
+            // Auto-focus en el primer campo después de la animación
+            const cedulaInput = document.getElementById("cedula");
+            if (cedulaInput && !cedulaInput.value) {
+                cedulaInput.focus();
+            }
         }, 100);
+    } else {
+        // If loginContainer is not found, still try to focus if cedulaInput exists
+        const cedulaInput = document.getElementById("cedula");
+        if (cedulaInput && !cedulaInput.value) {
+            cedulaInput.focus();
+        }
     }
-
-    // Auto-focus en el primer campo
-    if (cedulaInput && !cedulaInput.value) {
-        cedulaInput.focus();
-    }
-
 });
 
 // Función global para resetear el botón de login (útil si hay error de servidor)

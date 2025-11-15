@@ -1,12 +1,25 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.2
+-- https://www.phpmyadmin.net/
+--
+-- Host: mysql-sistems.alwaysdata.net
+-- Generation Time: Nov 15, 2025 at 09:02 PM
+-- Server version: 10.11.14-MariaDB
+-- PHP Version: 7.4.33
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
 --
 -- Database: `sistems_rubricas`
 --
-CREATE DATABASE IF NOT EXISTS `sistems_rubricas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `sistems_rubricas`;
 
 -- --------------------------------------------------------
 
@@ -14,7 +27,6 @@ USE `sistems_rubricas`;
 -- Table structure for table `carrera`
 --
 
-DROP TABLE IF EXISTS `carrera`;
 CREATE TABLE `carrera` (
   `codigo` varchar(10) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -43,7 +55,6 @@ INSERT INTO `carrera` (`codigo`, `nombre`, `descripcion`, `duracion_semestres`, 
 -- Table structure for table `criterio_evaluacion`
 --
 
-DROP TABLE IF EXISTS `criterio_evaluacion`;
 CREATE TABLE `criterio_evaluacion` (
   `id` int(11) NOT NULL,
   `rubrica_id` int(11) NOT NULL,
@@ -64,7 +75,12 @@ INSERT INTO `criterio_evaluacion` (`id`, `rubrica_id`, `descripcion`, `puntaje_m
 (44, 29, 'SOLDADURA INICIAL', 10.00, 1),
 (45, 29, 'QUEDO LIMPIO', 10.00, 2),
 (46, 30, 'Ndndnsbsnsbb', 10.00, 1),
-(47, 31, 'mdlknlkgnflksdnglksdnlkfds', 10.00, 1);
+(47, 31, 'mdlknlkgnflksdnglksdnlkfds', 10.00, 1),
+(48, 32, 'fmdskfmosdfojdsoif', 2.50, 1),
+(49, 32, 'kfdnikgmnfjonfowsndokfnojsnfonornefosnor', 2.50, 2),
+(50, 33, 'Djiabd sud skdbw djbsjs s', 1.66, 1),
+(51, 33, 'Ndkw dj s djd qndjw db', 1.66, 2),
+(52, 33, 'S djd sjjf snxjw dnhf w xjs bd', 1.66, 3);
 
 -- --------------------------------------------------------
 
@@ -72,7 +88,6 @@ INSERT INTO `criterio_evaluacion` (`id`, `rubrica_id`, `descripcion`, `puntaje_m
 -- Table structure for table `detalle_evaluacion`
 --
 
-DROP TABLE IF EXISTS `detalle_evaluacion`;
 CREATE TABLE `detalle_evaluacion` (
   `id` int(11) NOT NULL,
   `evaluacion_id` int(11) NOT NULL,
@@ -87,7 +102,6 @@ CREATE TABLE `detalle_evaluacion` (
 -- Table structure for table `docente`
 --
 
-DROP TABLE IF EXISTS `docente`;
 CREATE TABLE `docente` (
   `cedula` varchar(20) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -105,9 +119,9 @@ CREATE TABLE `docente` (
 
 INSERT INTO `docente` (`cedula`, `nombre`, `apellido`, `especializacion`, `email`, `telf`, `descripcion`, `activo`) VALUES
 ('11223344', 'Carlos', 'González', 'Física Teórica', 'carlos.gonzalez@universidad.edu', '0424-5556677', 'Especialista en mecánica cuántica', 1),
-('12345678', 'Juanhunuihnunhu', 'Pérezihjnhjinhjm', 'matematicas', 'juan.perez@universidad.edu', '04121234545', 'Docente especializado en estadística aplicada', 1),
+('12345678', 'Juan', 'Pérez', 'matematicas', 'juan.perez@universidad.edu', '04121234545', 'Docente especializado en estadística aplicada', 1),
 ('123456789', 'Eduardo', 'Venegas', 'informatico', 'eduardovenegas@iujo.edu.ve', '04163598425', 'Redes de Computadoras\r\nMatematicas\r\nArquitectura del computador\r\noperaciones financieras\r\nestadisticas\r\nTIC\r\nIntriductorio', 1),
-('27739757', 'Katerine', 'Suarez', 'historia', 'katerine@gmail.comm', '04140457750', '', 1),
+('27739757', 'Katerine', 'Suarez', 'informatica', 'katerine@gmail.comm', '04140457750', '', 1),
 ('30068297', 'Lorraine', 'Amaro', 'informatico', 'lorraineamaro@gmail.com', '04140445566', '', 1),
 ('30916457', 'Greymar', 'Medina', 'informatico', 'grey@gmail.com', '04145001111', 'CRACK, IDOLA, MAQUINA DE PROGRAMAR', 1),
 ('30987788', 'Franchesca', 'Izquierdo', 'quimica', 'franchesca@gmail.com', '04145007777', 'Franchesca es seda profesora paguen bien que ella da clases de lo que sea tambien raspa a todos hajajajaja', 1),
@@ -126,7 +140,6 @@ INSERT INTO `docente` (`cedula`, `nombre`, `apellido`, `especializacion`, `email
 -- Table structure for table `estudiante`
 --
 
-DROP TABLE IF EXISTS `estudiante`;
 CREATE TABLE `estudiante` (
   `cedula` varchar(20) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -451,7 +464,6 @@ INSERT INTO `estudiante` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `
 -- Table structure for table `evaluacion_estudiante`
 --
 
-DROP TABLE IF EXISTS `evaluacion_estudiante`;
 CREATE TABLE `evaluacion_estudiante` (
   `id` int(11) NOT NULL,
   `rubrica_id` int(11) NOT NULL,
@@ -585,7 +597,62 @@ INSERT INTO `evaluacion_estudiante` (`id`, `rubrica_id`, `estudiante_cedula`, `o
 (127, 31, '8000024', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
 (128, 31, '8000025', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
 (129, 31, '8000028', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(130, 31, '8000026', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25');
+(130, 31, '8000026', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
+(131, 31, '8000011', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(132, 31, '8000005', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(133, 31, '8000007', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(134, 31, '8000002', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(135, 31, '8000006', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(136, 31, '8000004', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(137, 31, '8000001', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(138, 31, '8000009', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(139, 31, '8000003', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(140, 31, '8000008', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(141, 31, '8000010', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
+(142, 27, '8000032', NULL, NULL, '2025-11-14 19:21:05'),
+(143, 27, '8000033', NULL, NULL, '2025-11-14 19:21:05'),
+(144, 27, '8000030', NULL, NULL, '2025-11-14 19:21:05'),
+(145, 27, '8000031', NULL, NULL, '2025-11-14 19:21:05'),
+(146, 27, '8000027', NULL, NULL, '2025-11-14 19:21:05'),
+(147, 27, '8000023', NULL, NULL, '2025-11-14 19:21:05'),
+(148, 27, '8000029', NULL, NULL, '2025-11-14 19:21:05'),
+(149, 27, '8000024', NULL, NULL, '2025-11-14 19:21:05'),
+(150, 27, '8000025', NULL, NULL, '2025-11-14 19:21:05'),
+(151, 27, '8000028', NULL, NULL, '2025-11-14 19:21:05'),
+(152, 27, '8000026', NULL, NULL, '2025-11-14 19:21:05'),
+(153, 32, '9000011', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(154, 32, '9000006', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(155, 32, '9000009', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(156, 32, '9000001', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(157, 32, '9000005', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(158, 32, '9000010', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(159, 32, '9000008', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(160, 32, '9000003', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(161, 32, '9000002', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(162, 32, '9000007', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(163, 32, '9000004', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
+(164, 33, '12000001', NULL, NULL, '2025-11-14 23:24:03'),
+(165, 33, '12000008', NULL, NULL, '2025-11-14 23:24:03'),
+(166, 33, '12000007', NULL, NULL, '2025-11-14 23:24:03'),
+(167, 33, '12000004', NULL, NULL, '2025-11-14 23:24:03'),
+(168, 33, '12000003', NULL, NULL, '2025-11-14 23:24:03'),
+(169, 33, '12000010', NULL, NULL, '2025-11-14 23:24:03'),
+(170, 33, '12000005', NULL, NULL, '2025-11-14 23:24:03'),
+(171, 33, '12000011', NULL, NULL, '2025-11-14 23:24:03'),
+(172, 33, '12000009', NULL, NULL, '2025-11-14 23:24:03'),
+(173, 33, '12000006', NULL, NULL, '2025-11-14 23:24:03'),
+(174, 33, '12000002', NULL, NULL, '2025-11-14 23:24:03'),
+(175, 26, '13000012', NULL, NULL, '2025-11-15 14:13:56'),
+(176, 26, '13000019', NULL, NULL, '2025-11-15 14:13:56'),
+(177, 26, '13000018', NULL, NULL, '2025-11-15 14:13:56'),
+(178, 26, '13000015', NULL, NULL, '2025-11-15 14:13:56'),
+(179, 26, '13000014', NULL, NULL, '2025-11-15 14:13:56'),
+(180, 26, '13000021', NULL, NULL, '2025-11-15 14:13:56'),
+(181, 26, '13000016', NULL, NULL, '2025-11-15 14:13:56'),
+(182, 26, '13000022', NULL, NULL, '2025-11-15 14:13:56'),
+(183, 26, '13000020', NULL, NULL, '2025-11-15 14:13:56'),
+(184, 26, '13000017', NULL, NULL, '2025-11-15 14:13:56'),
+(185, 26, '13000013', NULL, NULL, '2025-11-15 14:13:56');
 
 -- --------------------------------------------------------
 
@@ -593,7 +660,6 @@ INSERT INTO `evaluacion_estudiante` (`id`, `rubrica_id`, `estudiante_cedula`, `o
 -- Table structure for table `id_rol`
 --
 
-DROP TABLE IF EXISTS `id_rol`;
 CREATE TABLE `id_rol` (
   `id` int(11) NOT NULL,
   `nombre` varchar(50) NOT NULL,
@@ -616,7 +682,6 @@ INSERT INTO `id_rol` (`id`, `nombre`, `descripcion`, `activo`) VALUES
 -- Table structure for table `inscripcion_seccion`
 --
 
-DROP TABLE IF EXISTS `inscripcion_seccion`;
 CREATE TABLE `inscripcion_seccion` (
   `id` int(11) NOT NULL,
   `estudiante_cedula` varchar(20) NOT NULL,
@@ -939,7 +1004,6 @@ INSERT INTO `inscripcion_seccion` (`id`, `estudiante_cedula`, `seccion_id`, `fec
 -- Table structure for table `materia`
 --
 
-DROP TABLE IF EXISTS `materia`;
 CREATE TABLE `materia` (
   `codigo` varchar(10) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -993,7 +1057,6 @@ INSERT INTO `materia` (`codigo`, `nombre`, `descripcion`, `creditos`, `semestre`
 -- Table structure for table `nivel_desempeno`
 --
 
-DROP TABLE IF EXISTS `nivel_desempeno`;
 CREATE TABLE `nivel_desempeno` (
   `id` int(11) NOT NULL,
   `criterio_id` int(11) NOT NULL,
@@ -1039,20 +1102,85 @@ INSERT INTO `nivel_desempeno` (`id`, `criterio_id`, `nombre_nivel`, `descripcion
 (169, 47, 'Sobresaliente', 'fdskngflksdnflknsdklgnfdglksdnf', 10.00, 1),
 (170, 47, 'Notable', 'dlksnflksdnglknsdlkfnskdf', 8.00, 2),
 (171, 47, 'Aprobado', 'dfklnsdlkfnlksdnflksdnflksd', 6.00, 3),
-(172, 47, 'Insuficiente', 'lkdslkfndslkfnklsdnflksdngkdflknsdflkndsfknsdfjoisdjf', 4.00, 4);
+(172, 47, 'Insuficiente', 'lkdslkfndslkfnklsdnflksdngkdflknsdflkndsfknsdfjoisdjf', 4.00, 4),
+(173, 48, 'Sobresaliente', 'jkdsnfjksndlkfndsjnfodsnlkngfisdng', 2.50, 1),
+(174, 48, 'Notable', 'kfdmlknflkd gjkndlkngkldnfoinrofnldskngnfjisgn', 1.88, 2),
+(175, 48, 'Aprobado', 'dkofmlksdgmfoidngkfdsmnoifnrnfgoisdnfois', 1.25, 3),
+(176, 48, 'Insuficiente', 'dkmflkmdgkmndosnfoernfksdfmoikfnmgodksfnmondsoinfrnsofdn', 0.63, 4),
+(177, 49, 'Sobresaliente', 'fjkndskdgnfoknskdnfovnfogjnsokcnrejfnjisnvjsdnfjw', 2.50, 1),
+(178, 49, 'Notable', 'kmrflknsdlkfnwrnfgjrnfjnwriofgnrjifnsjrnf', 1.88, 2),
+(179, 49, 'Aprobado', 'krmgkfnmsdofkrignsdofnronsfoidfnoekwnroifnoserae', 1.25, 3),
+(180, 49, 'Insuficiente', 'ksneflkngrjknfjkwnfijrenfjsdfnjkw;bnksjfnajkgbakjlgnjkangfiasnf', 0.63, 4),
+(181, 50, 'Sobresaliente', 'Bsjz sjx skxbdjx sjx sjxbsjxb snzbw dkf s', 1.66, 1),
+(182, 50, 'Notable', 'Bsjz wkf skf dkx wkd fks fue djd wb', 1.24, 2),
+(183, 50, 'Aprobado', 'Nskx sjx skxbd kxbdnsif e zkbf skfbw dkf', 0.83, 3),
+(184, 50, 'Insuficiente', 'Xnkd sjx skz wbfkw bfiz wjd end', 0.42, 4),
+(185, 51, 'Sobresaliente', 'Sjx sjx skz skx skzns ks djsnd wjd w', 1.66, 1),
+(186, 51, 'Notable', 'Nskx sjx wkd sjx wkd sjx sjx snx wkd bf', 1.24, 2),
+(187, 51, 'Aprobado', 'Bwdj wkdkq fks ekfj skx wbfkwnf iw fywu fjd s', 0.83, 3),
+(188, 51, 'Insuficiente', 'Sbkd wkf wkf end ddkbdhfkw fks wkc end kw fuwbfb s', 0.42, 4),
+(189, 52, 'Sobresaliente', 'Sjf w xjs xjsn wjdjw dnxbw nsnx s z. F s', 1.66, 1),
+(190, 52, 'Notable', 'Dbdb wdn s djd w fjs. Djd w fjs dj w dbd w bf', 1.24, 2),
+(191, 52, 'Aprobado', 'Ksnx snzjw zkdvkwkd dnsif wndi wndbf w d', 0.83, 3),
+(192, 52, 'Insuficiente', 'Wbdb s djd s djw bdbd wbdh', 0.42, 4);
 
------------------------------------------------------------
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `permisos`
 --
 
-DROP TABLE IF EXISTS `permisos`;
 CREATE TABLE `permisos` (
-  `id_permiso` int(100) NOT NULL,
-  `codigo_materia` int(100) NOT NULL,
-  `codigo_seccion` int(100) NOT NULL
+  `id` int(11) NOT NULL,
+  `docente_cedula` varchar(20) NOT NULL,
+  `carrera_codigo` varchar(10) NOT NULL,
+  `semestre` int(11) NOT NULL,
+  `materia_codigo` varchar(10) NOT NULL,
+  `seccion_id` int(11) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  `fecha_creacion` timestamp NULL DEFAULT current_timestamp(),
+  `fecha_modificacion` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `permisos`
+--
+
+INSERT INTO `permisos` (`id`, `docente_cedula`, `carrera_codigo`, `semestre`, `materia_codigo`, `seccion_id`, `activo`, `fecha_creacion`, `fecha_modificacion`) VALUES
+(1, '12345678', 'ADM', 1, 'ADM101', 1, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(2, '12345678', 'ADM', 1, 'ADM101', 2, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(3, '12345678', 'ADM', 1, 'ADM101', 3, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(4, '12345678', 'ADM', 1, 'ADM101', 4, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(5, '12345678', 'EDU', 1, 'EDU101', 25, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(6, '12345678', 'EDU', 1, 'EDU101', 26, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(7, '12345678', 'EDU', 1, 'EDU101', 27, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(8, '12345678', 'EDU', 1, 'EDU101', 28, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(9, '55667788', 'INF', 1, 'INF101', 5, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(10, '55667788', 'INF', 1, 'INF101', 6, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(11, '55667788', 'INF', 1, 'INF101', 7, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(12, '55667788', 'INF', 1, 'INF101', 8, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(13, '11223344', 'ELE', 1, 'ELE101', 9, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(14, '11223344', 'ELE', 1, 'ELE101', 10, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(15, '11223344', 'ELE', 1, 'ELE101', 11, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(16, '11223344', 'ELE', 1, 'ELE101', 12, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(17, '33445566', 'ELN', 1, 'ELN101', 13, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(18, '33445566', 'ELN', 1, 'ELN101', 14, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(19, '33445566', 'ELN', 1, 'ELN101', 15, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(20, '33445566', 'ELN', 1, 'ELN101', 16, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(21, '87654321', 'MEC', 1, 'MEC101', 17, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(22, '87654321', 'MEC', 1, 'MEC101', 18, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(23, '87654321', 'MEC', 1, 'MEC101', 19, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(24, '87654321', 'MEC', 1, 'MEC101', 20, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(25, '99887766', 'CON', 1, 'CON101', 21, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(26, '99887766', 'CON', 1, 'CON101', 22, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(27, '99887766', 'CON', 1, 'CON101', 23, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(28, '99887766', 'CON', 1, 'CON101', 24, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(29, '31466704', 'INF', 3, 'INF201', 6, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(30, '31466704', 'CON', 4, 'CON202', 1, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(31, '31466704', 'ADM', 3, 'ADM201', 22, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(32, '31466704', 'MEC', 2, 'MEC102', 20, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(33, '27739757', 'CON', 4, 'CON202', 24, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(34, '27739757', 'CON', 2, 'CON102', 14, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16');
 
 -- --------------------------------------------------------
 
@@ -1060,7 +1188,6 @@ CREATE TABLE `permisos` (
 -- Table structure for table `rubrica_evaluacion`
 --
 
-DROP TABLE IF EXISTS `rubrica_evaluacion`;
 CREATE TABLE `rubrica_evaluacion` (
   `id` int(11) NOT NULL,
   `nombre_rubrica` varchar(200) NOT NULL,
@@ -1083,12 +1210,14 @@ CREATE TABLE `rubrica_evaluacion` (
 --
 
 INSERT INTO `rubrica_evaluacion` (`id`, `nombre_rubrica`, `docente_cedula`, `materia_codigo`, `seccion_id`, `fecha_evaluacion`, `porcentaje_evaluacion`, `tipo_evaluacion`, `competencias`, `instrucciones`, `activo`, `fecha_creacion`, `modalidad`, `cantidad_personas`) VALUES
-(26, 'Evaluacion de Programar', '31466704', 'INF201', 6, '2025-11-17', 10.00, 'Individual', 'HACER UN SQL QUE SIRVA', 'HAZ UNA BASE DE DATOS PARA GUARDAR INFROMACION DE UN LOGIN ', 1, '2025-11-12 14:53:48', 'Individual', 1),
+(26, 'Evaluacion de Programar', '31466704', 'ADM102', 6, '2025-11-17', 10.00, 'Individual', 'HACER UN SQL QUE SIRVA', 'HAZ UNA BASE DE DATOS PARA GUARDAR INFROMACION DE UN LOGIN ', 1, '2025-11-12 14:53:48', 'Individual', 1),
 (27, 'Evaluacion de Administracion', '31466704', 'CON202', 1, '2025-11-14', 10.00, 'Grupal', 'Hacer una evaluacion de unos costos fiscales', 'dada los siguientes costos resolver', 1, '2025-11-12 15:12:52', 'Individual', 1),
 (28, 'Evaluacion docente', '31466704', 'ADM201', 22, '2025-11-07', 10.00, 'Individual', 'biurbnisdnktdnrig darjignidfngid fkjgnafj gjdalrjgi fduignadkfj brdnglkzx fjb vjkdzflgnkfd vbjkfd bg', 'gfngjfksd gjk rgfjk dfjtngakdf gsdingkjfd ngknadsk fbkjdafgnka fjksnfkg dfjkgnasdgad', 1, '2025-11-12 15:21:45', 'Individual', 1),
 (29, 'EVALUACION DE PRUEBA', '31466704', 'MEC102', 20, '2025-11-20', 20.00, 'Presentacion', 'HACER UNAS SOLDADURAS CON EXITO', 'HACER UNAS CILLAS DE HIERRO TOTALMENTE SOLDADAS Y NOSE DE MECANICA JAJAJ', 1, '2025-11-13 00:11:17', 'Individual', 1),
 (30, 'NOMBRE', '27739757', 'CON202', 24, '2025-11-18', 10.00, 'Presentacion', 'Jwjwjsbzbsbznjsbsjabdjsbwnsjsb', 'Bsbdbsbsndbsnsbdnwnwn', 1, '2025-11-13 12:56:43', 'Individual', 1),
-(31, 'Eduar', '27739757', 'CON102', 14, '2025-11-01', 10.00, 'Individual', 'kfdnsfnknglksdnlkfnsdlk', 'dklnsflknsdlkfnsdgflksdmn', 1, '2025-11-13 19:04:37', 'Individual', 1);
+(31, 'Eduar', '27739757', 'CON102', 14, '2025-11-01', 10.00, 'Individual', 'kfdnsfnknglksdnlkfnsdlk', 'dklnsflknsdlkfnsdgflksdmn', 1, '2025-11-13 19:04:37', 'Individual', 1),
+(32, 'Nueba prueba', '31466704', 'INF101', 7, '2025-11-15', 5.00, 'Presentacion', 'fkmodifmsdoifmnoidnigsndoifnoidsnoifndoifnoigfndsoignoisdf', 'fdksnmflksndmkgfndsifnodnfoid', 1, '2025-11-14 22:51:18', 'Individual', 1),
+(33, 'HOLA MUNDO AQUI HACIENDO PRUEVAS', '31466704', 'MEC101', 18, '2025-11-25', 5.00, 'Taller', 'Jdiqndiw dj wkf wjd wjd akjdw sjbd sbs', 'Ndkzba zks jfjw fksnxkw ndkw djwndjw djw ', 1, '2025-11-14 23:21:30', 'Individual', 1);
 
 -- --------------------------------------------------------
 
@@ -1096,7 +1225,6 @@ INSERT INTO `rubrica_evaluacion` (`id`, `nombre_rubrica`, `docente_cedula`, `mat
 -- Table structure for table `seccion`
 --
 
-DROP TABLE IF EXISTS `seccion`;
 CREATE TABLE `seccion` (
   `id` int(11) NOT NULL,
   `codigo` varchar(10) NOT NULL,
@@ -1150,7 +1278,6 @@ INSERT INTO `seccion` (`id`, `codigo`, `materia_codigo`, `docente_cedula`, `laps
 -- Table structure for table `usuario`
 --
 
-DROP TABLE IF EXISTS `usuario`;
 CREATE TABLE `usuario` (
   `cedula` varchar(20) NOT NULL,
   `username` varchar(50) NOT NULL,
@@ -1253,7 +1380,12 @@ ALTER TABLE `nivel_desempeno`
 -- Indexes for table `permisos`
 --
 ALTER TABLE `permisos`
-  ADD PRIMARY KEY (`id_permiso`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_permiso` (`docente_cedula`,`carrera_codigo`,`semestre`,`materia_codigo`,`seccion_id`),
+  ADD KEY `idx_docente` (`docente_cedula`),
+  ADD KEY `idx_carrera` (`carrera_codigo`),
+  ADD KEY `idx_materia` (`materia_codigo`),
+  ADD KEY `idx_seccion` (`seccion_id`);
 
 --
 -- Indexes for table `rubrica_evaluacion`
@@ -1289,7 +1421,7 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT for table `criterio_evaluacion`
 --
 ALTER TABLE `criterio_evaluacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=48;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `detalle_evaluacion`
@@ -1301,7 +1433,7 @@ ALTER TABLE `detalle_evaluacion`
 -- AUTO_INCREMENT for table `evaluacion_estudiante`
 --
 ALTER TABLE `evaluacion_estudiante`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=131;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=186;
 
 --
 -- AUTO_INCREMENT for table `id_rol`
@@ -1319,19 +1451,19 @@ ALTER TABLE `inscripcion_seccion`
 -- AUTO_INCREMENT for table `nivel_desempeno`
 --
 ALTER TABLE `nivel_desempeno`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=173;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
 
 --
 -- AUTO_INCREMENT for table `permisos`
 --
 ALTER TABLE `permisos`
-  MODIFY `id_permiso` int(100) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT for table `rubrica_evaluacion`
 --
 ALTER TABLE `rubrica_evaluacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT for table `seccion`
@@ -1390,6 +1522,15 @@ ALTER TABLE `nivel_desempeno`
   ADD CONSTRAINT `nivel_desempeno_ibfk_1` FOREIGN KEY (`criterio_id`) REFERENCES `criterio_evaluacion` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `permisos`
+--
+ALTER TABLE `permisos`
+  ADD CONSTRAINT `fk_permisos_carrera` FOREIGN KEY (`carrera_codigo`) REFERENCES `carrera` (`codigo`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_permisos_docente` FOREIGN KEY (`docente_cedula`) REFERENCES `docente` (`cedula`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_permisos_materia` FOREIGN KEY (`materia_codigo`) REFERENCES `materia` (`codigo`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_permisos_seccion` FOREIGN KEY (`seccion_id`) REFERENCES `seccion` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `rubrica_evaluacion`
 --
 ALTER TABLE `rubrica_evaluacion`
@@ -1410,3 +1551,7 @@ ALTER TABLE `seccion`
 ALTER TABLE `usuario`
   ADD CONSTRAINT `usuario_ibfk_1` FOREIGN KEY (`id_rol`) REFERENCES `id_rol` (`id`);
 COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

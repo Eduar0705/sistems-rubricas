@@ -369,15 +369,36 @@ function inicializarValidacionesEdicion() {
 function eliminarProfesor(profesorId) {
     Swal.fire({
         title: '¿Estás seguro?',
-        text: "¡No podrás revertir esto!",
+        html: `
+            <p>Esta acción eliminará al profesor de forma permanente.</p>
+            <p class="text-sm text-gray-600 mt-2">
+                <i class="fa fa-exclamation-triangle text-orange-500"></i>
+                <strong>Nota:</strong> Si el profesor tiene secciones asignadas, no podrá ser eliminado.
+            </p>
+        `,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminarlo',
-        cancelButtonText: 'Cancelar'
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fa fa-trash"></i> Sí, eliminarlo',
+        cancelButtonText: '<i class="fa fa-times"></i> Cancelar',
+        customClass: {
+            confirmButton: 'btn-eliminar-confirm',
+            cancelButton: 'btn-eliminar-cancel'
+        }
     }).then((result) => {
         if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando profesor...',
+                html: 'Por favor espere',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Redirigir para eliminar
             window.location.href = `/deleteProfe/${profesorId}`;
         }
     });
@@ -810,7 +831,7 @@ async function cargarPermisosActuales() {
     container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i><p>Cargando permisos...</p></div>';
     
     try {
-        const response = await fetch(`/api/admin/permisos/${docenteSeleccionado.cedula}`);
+        const response = await fetch(`/api/permisos/docente/${docenteSeleccionado.cedula}`);
         const permisos = await response.json();
         
         if (permisos.length === 0) {
@@ -846,11 +867,27 @@ async function cargarPermisosActuales() {
 async function cargarCarreras() {
     const container = document.getElementById('carrerasContainer');
     container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
-    
+
     try {
-        const response = await fetch('/api/admin/carreras');
-        const carreras = await response.json();
-        
+        const response = await fetch('/api/carreras');
+        const data = await response.json();
+
+        console.log('Response from /api/carreras:', data);
+
+        // Handle different response structures
+        let carreras = [];
+        if (Array.isArray(data)) {
+            carreras = data;
+        } else if (data.carreras && Array.isArray(data.carreras)) {
+            carreras = data.carreras;
+        } else if (data.data && Array.isArray(data.data)) {
+            carreras = data.data;
+        } else {
+            console.error('Unexpected response structure:', data);
+            container.innerHTML = '<div class="empty-message">Error: Formato de respuesta inesperado</div>';
+            return;
+        }
+
         container.innerHTML = '';
         carreras.forEach(carrera => {
             const card = crearCard(carrera.codigo, carrera.nombre, '', 'carrera');
@@ -869,14 +906,14 @@ async function cargarCarreras() {
 async function cargarSemestres(carreraCode) {
     const container = document.getElementById('semestresContainer');
     const pasoSemestre = document.getElementById('pasoSemestre');
-    
+
     container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
     pasoSemestre.style.display = 'block';
-    
+
     try {
-        const response = await fetch(`/api/admin/semestres/${carreraCode}`);
+        const response = await fetch(`/api/semestres/${carreraCode}`);
         const semestres = await response.json();
-        
+
         container.innerHTML = '';
         semestres.forEach(sem => {
             const card = crearCard(sem, `Semestre ${sem}`, '', 'semestre');
@@ -895,14 +932,14 @@ async function cargarSemestres(carreraCode) {
 async function cargarMaterias(carreraCode, semestre) {
     const container = document.getElementById('materiasContainer');
     const pasoMateria = document.getElementById('pasoMateria');
-    
+
     container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
     pasoMateria.style.display = 'block';
-    
+
     try {
-        const response = await fetch(`/api/admin/materias/${carreraCode}/${semestre}`);
+        const response = await fetch(`/api/materias/${carreraCode}/${semestre}`);
         const materias = await response.json();
-        
+
         container.innerHTML = '';
         materias.forEach(materia => {
             const card = crearCard(materia.codigo, materia.nombre, `${materia.creditos} créditos`, 'materia');
@@ -921,25 +958,25 @@ async function cargarMaterias(carreraCode, semestre) {
 async function cargarSecciones(materiaCode) {
     const container = document.getElementById('seccionesContainer');
     const pasoSeccion = document.getElementById('pasoSeccion');
-    
+
     container.innerHTML = '<div class="loading-message"><i class="fa fa-spinner fa-spin"></i></div>';
     pasoSeccion.style.display = 'block';
-    
+
     try {
-        const response = await fetch(`/api/admin/secciones/${materiaCode}`);
+        const response = await fetch(`/api/secciones/${materiaCode}`);
         const secciones = await response.json();
-        
+
         container.innerHTML = '';
         secciones.forEach(seccion => {
             const card = crearCard(
-                seccion.id, 
-                seccion.codigo, 
-                `${seccion.lapso_academico}${seccion.horario ? ' - ' + seccion.horario : ''}`, 
+                seccion.id,
+                seccion.codigo,
+                `${seccion.lapso_academico}${seccion.horario ? ' - ' + seccion.horario : ''}`,
                 'seccion'
             );
             container.appendChild(card);
         });
-        
+
         document.getElementById('accionesGuardar').style.display = 'flex';
     } catch (error) {
         console.error('Error:', error);
@@ -1013,7 +1050,7 @@ async function guardarPermiso() {
             didOpen: () => Swal.showLoading()
         });
         
-        const response = await fetch('/api/admin/permisos', {
+        const response = await fetch('/api/permisos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1059,7 +1096,7 @@ async function eliminarPermiso(permisoId) {
     if (!result.isConfirmed) return;
     
     try {
-        const response = await fetch(`/api/admin/permisos/${permisoId}`, {
+        const response = await fetch(`/api/permisos/${permisoId}`, {
             method: 'DELETE'
         });
         

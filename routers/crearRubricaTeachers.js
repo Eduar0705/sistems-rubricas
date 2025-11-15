@@ -12,15 +12,33 @@ router.get('/teacher/createrubricas', (req, res) => {
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
     
-    // Query para obtener carreras activas
-    const queryCarreras = `
-        SELECT codigo, nombre, duracion_semestres 
-        FROM carrera 
-        WHERE activo = TRUE 
-        ORDER BY nombre
-    `;
+    const esAdmin = req.session.id_rol === 1;
+    const docenteCedula = req.session.cedula;
+
+    let queryCarreras;
+    let queryParams = [];
+
+    if (esAdmin) {
+        queryCarreras = `
+            SELECT codigo, nombre, duracion_semestres 
+            FROM carrera 
+            WHERE activo = TRUE 
+            ORDER BY nombre
+        `;
+    } else {
+        queryCarreras = `
+            SELECT DISTINCT c.codigo, c.nombre, c.duracion_semestres
+            FROM carrera c
+            INNER JOIN permisos p ON c.codigo = p.carrera_codigo
+            WHERE c.activo = TRUE
+            AND p.docente_cedula = ?
+            AND p.activo = TRUE
+            ORDER BY c.nombre
+        `;
+        queryParams = [docenteCedula];
+    }
     
-    connection.query(queryCarreras, (error, carreras) => {
+    connection.query(queryCarreras, queryParams, (error, carreras) => {
         if(error) {
             console.error('Error al obtener carreras:', error);
             return res.render("teacher/crearRubrica", {
