@@ -11,27 +11,27 @@
         </div>
 
         <nav class="sidebar-nav">
-            <a href="/teacher" class="nav-item active" data-external="true">
+            <a href="/teacher" class="nav-item <%= currentPage === 'home' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-chart-line"></i>
                 <span>Panel Principal</span>
             </a>
-            <a href="/teacher/rubricas" class="nav-item" data-external="true">
+            <a href="/teacher/rubricas" class="nav-item <%= currentPage === 'rubricas' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-table"></i>
                 <span>Mis Rúbricas</span>
             </a>
-            <a href="/teacher/createrubricas" class="nav-item" data-external="true">
+            <a href="/teacher/createrubricas" class="nav-item <%= currentPage === 'createrubricas' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-plus-circle"></i>
                 <span>Crear Rúbrica</span>
             </a>
-            <a href="/teacher/evaluacion" class="nav-item" data-external="true">
+            <a href="/teacher/evaluacion" class="nav-item <%= currentPage === 'evaluaciones' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-clipboard-check"></i>
                 <span>Evaluaciones</span>
             </a>
-            <a href="/teacher/students" class="nav-item" data-external="true">
+            <a href="/teacher/students" class="nav-item <%= currentPage === 'student' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-users"></i>
                 <span>Estudiantes</span>
             </a>
-            <a href="/teacher/report" class="nav-item" data-external="true">
+            <a href="/teacher/report" class="nav-item <%= currentPage === 'reportes' ? 'active' : '' %>" data-external="true">
                 <i class="fas fa-file-alt"></i>
                 <span>Reportes</span>
             </a>
@@ -47,9 +47,6 @@
                     <div class="user-role"><%= datos.id_rol === 1 ? 'Administrador' : 'Docente' %></div>
                 </div>
             </div>
-            <button class="header-btn" onclick="Exit()" aria-label="Salir">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
         </div>
     </aside>
     <script>
@@ -83,27 +80,31 @@
                     var navItems = Array.prototype.slice.call(doc.querySelectorAll('.nav-item'));
                     var target = normalizePath(page || win.location.pathname || '/');
 
-                    // compute best match: prefer longest matching href path
-                    var best = { score: -1, node: null };
-                    navItems.forEach(function (item) {
-                        item.classList.remove('active');
-                        try {
-                            var href = item.getAttribute('href') || '';
-                            var hpath = normalizePath(href);
-                            // treat match if target starts with hpath or viceversa (covers root/parent cases)
-                            var match = (hpath === '/' && target === '/') ||
-                                        (hpath !== '/' && (target === hpath || target.indexOf(hpath + '/') === 0 || hpath.indexOf(target + '/') === 0 || hpath.indexOf(target) === 0));
-                            if (match) {
-                                var score = hpath.length;
-                                if (score > best.score) {
-                                    best.score = score;
-                                    best.node = item;
-                                }
-                            }
-                        } catch (e) {
-                            // ignore invalid attributes
+            // compute best match: prefer exact match, then parent, then child, then partial
+            var best = { score: -1, node: null };
+            navItems.forEach(function (item) {
+                item.classList.remove('active');
+                try {
+                    var href = item.getAttribute('href') || '';
+                    var hpath = normalizePath(href);
+                    // treat match if target starts with hpath or viceversa (covers root/parent cases)
+                    var match = (hpath === '/' && target === '/') ||
+                                (hpath !== '/' && (target === hpath || target.indexOf(hpath + '/') === 0 || hpath.indexOf(target + '/') === 0 || hpath.indexOf(target) === 0));
+                    if (match) {
+                        var score = hpath.length;
+                        if (target === hpath) score += 1000; // exact match
+                        else if (target.indexOf(hpath + '/') === 0) score += 100; // parent
+                        else if (hpath.indexOf(target + '/') === 0) score += 10; // child
+                        else if (hpath.indexOf(target) === 0) score += 1; // starts with
+                        if (score > best.score) {
+                            best.score = score;
+                            best.node = item;
                         }
-                    });
+                    }
+                } catch (e) {
+                    // ignore invalid attributes
+                }
+            });
                     if (best.node) best.node.classList.add('active');
                 };
             }

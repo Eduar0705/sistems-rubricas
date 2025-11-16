@@ -91,7 +91,8 @@ router.get('/teacher/students', async function(req, res){
             res.render("teacher/estudiantes", {
                 datos: req.session,
                 title: 'SGR - Estudiantes',
-                estudiantes: estudiantes
+                estudiantes: estudiantes,
+                currentPage: 'student'
             });
         });
 
@@ -142,7 +143,7 @@ router.get('/teacher/students/:cedula', async function(req, res){
                 console.error('Error:', error);
                 return res.status(500).json({error: 'Error del servidor'});
             }
-            
+
             if (resultados.length === 0) {
                 return res.status(404).json({error: 'Estudiante no encontrado'});
             }

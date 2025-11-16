@@ -66,7 +66,9 @@ router.get("/teacher", function(req, res) {
                 datos: req.session,
                 totalRubricas: totalRubricas,
                 totalEstudiantes: totalEstudiantes,
-                totalEvaluaciones: totalEvaluaciones
+                totalEvaluaciones: totalEvaluaciones,
+                title: 'Sistema de Gestion de Rubricas',
+                currentPage: 'home'
             });
         })
         .catch(error => {

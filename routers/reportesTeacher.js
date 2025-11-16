@@ -7,7 +7,7 @@ router.get('/teacher/report', function(req, res){
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
 
-    res.render("teacher/reportes", {datos: req.session, title: 'SGR - Reportes'});
+    res.render("teacher/reportes", {datos: req.session, title: 'SGR - Reportes', currentPage: 'reportes'});
 });
 
 module.exports = router;
