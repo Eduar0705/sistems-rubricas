@@ -1,105 +1,9 @@
 // ============================================================
-// VALIDACIÓN DE CRITERIOS Y NIVELES
+// VARIABLES GLOBALES PARA EDICIÓN
 // ============================================================
-
-function validarEstructuraCriterios(criterios) {
-    if (!Array.isArray(criterios)) {
-        return { valido: false, mensaje: 'Los criterios deben ser un array' };
-    }
-    
-    for (let i = 0; i < criterios.length; i++) {
-        const criterio = criterios[i];
-        
-        if (!criterio.description || criterio.description.trim() === '') {
-            return { valido: false, mensaje: `El criterio ${i + 1} necesita descripción` };
-        }
-        
-        if (!criterio.maxScore || criterio.maxScore <= 0) {
-            return { valido: false, mensaje: `El criterio ${i + 1} necesita puntaje máximo válido` };
-        }
-        
-        if (!criterio.niveles || !Array.isArray(criterio.niveles) || criterio.niveles.length === 0) {
-            return { valido: false, mensaje: `El criterio ${i + 1} necesita al menos un nivel` };
-        }
-        
-        for (let j = 0; j < criterio.niveles.length; j++) {
-            const nivel = criterio.niveles[j];
-            
-            if (!nivel.nombre_nivel || nivel.nombre_nivel.trim() === '') {
-                return { valido: false, mensaje: `El nivel ${j + 1} del criterio ${i + 1} necesita nombre` };
-            }
-            
-            if (nivel.puntaje === undefined || nivel.puntaje === null) {
-                return { valido: false, mensaje: `El nivel ${j + 1} del criterio ${i + 1} necesita puntaje` };
-            }
-            
-            if (parseFloat(nivel.puntaje) > parseFloat(criterio.maxScore)) {
-                return { valido: false, mensaje: `El puntaje del nivel "${nivel.nombre_nivel}" (${nivel.puntaje}) excede el puntaje máximo del criterio (${criterio.maxScore})` };
-            }
-        }
-    }
-    
-    return { valido: true };
-}
-
-function validarPuntajesEdicion() {
-    const porcentajeEvaluacion = parseFloat(document.getElementById('evalPercent')?.value) || 0;
-    const criterios = document.querySelectorAll('.criteria-container');
-    let sumaCriterios = 0;
-
-    criterios.forEach((criterioCard) => {
-        const puntajeMaximoInput = criterioCard.querySelector(`input[onchange*="maxScore"]`);
-        const puntajeMaximo = parseFloat(puntajeMaximoInput?.value) || 0;
-        sumaCriterios += puntajeMaximo;
-
-        // Validar niveles del criterio
-        const puntajesNiveles = criterioCard.querySelectorAll(`input[onchange*="puntaje"]`);
-        puntajesNiveles.forEach(puntajeInput => {
-            const puntajeNivel = parseFloat(puntajeInput.value) || 0;
-
-            if (puntajeNivel > puntajeMaximo) {
-                puntajeInput.style.borderColor = '#d32f2f';
-                puntajeInput.title = `El puntaje del nivel no puede exceder ${puntajeMaximo}`;
-            } else {
-                puntajeInput.style.borderColor = '#ddd';
-                puntajeInput.title = '';
-            }
-        });
-    });
-
-    // Validar suma de criterios
-    const evalPercentInput = document.getElementById('evalPercent');
-    if (evalPercentInput) {
-        if (sumaCriterios > porcentajeEvaluacion) {
-            evalPercentInput.style.borderColor = '#d32f2f';
-            evalPercentInput.title = `La suma de criterios (${sumaCriterios}) excede el porcentaje (${porcentajeEvaluacion})`;
-        } else {
-            evalPercentInput.style.borderColor = '#ddd';
-            evalPercentInput.title = '';
-        }
-    }
-}
-
-function agregarValidacionTiempoRealEdicion() {
-    const evalPercent = document.getElementById('evalPercent');
-    if (evalPercent) {
-        evalPercent.addEventListener('input', validarPuntajesEdicion);
-    }
-
-    // Observer para detectar cambios en el DOM
-    const observer = new MutationObserver(function() {
-        validarPuntajesEdicion();
-    });
-
-    const criteriaContainer = document.getElementById('criteriaContainer');
-    if (criteriaContainer) {
-        observer.observe(criteriaContainer, { 
-            childList: true, 
-            subtree: true,
-            attributes: false
-        });
-    }
-}
+let criterioCountEdit = 0;
+let porcentajeEvaluacionEdit = 10;
+let carrerasDataEdit = [];
 
 // ============================================================
 // BÚSQUEDA Y FILTROS
@@ -107,22 +11,34 @@ function agregarValidacionTiempoRealEdicion() {
 
 function aplicarFiltros() {
     try {
-        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
         const selectedProfessor = document.getElementById('professorFilter')?.value.toLowerCase() || '';
         const tbody = document.getElementById('rubricasTableBody');
-        
+
         if (!tbody) return;
-        
+
         const rows = tbody.querySelectorAll('tr');
         let visibleCount = 0;
 
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
+            // Obtener el nombre de la rúbrica específicamente (primera columna)
+            const rubricNameCell = row.querySelector('td:first-child .table-cell-main');
+            const rubricName = rubricNameCell ? rubricNameCell.textContent.toLowerCase().trim() : '';
             const professorName = row.getAttribute('data-professor')?.toLowerCase() || '';
-            
-            const matchesSearch = searchTerm === '' || text.includes(searchTerm);
+
+            // Filtrado más preciso: buscar en el nombre de la rúbrica específicamente
+            let matchesSearch = true;
+            if (searchTerm !== '') {
+                // Si hay término de búsqueda, debe coincidir exactamente con el nombre de la rúbrica
+                // o al menos contener las palabras completas del término de búsqueda
+                const searchWords = searchTerm.split(' ').filter(word => word.length > 0);
+                matchesSearch = searchWords.every(word =>
+                    rubricName.includes(word) || rubricName === searchTerm
+                );
+            }
+
             const matchesProfessor = selectedProfessor === '' || professorName.includes(selectedProfessor);
-            
+
             const isVisible = matchesSearch && matchesProfessor;
             row.style.display = isVisible ? '' : 'none';
             if (isVisible) visibleCount++;
@@ -132,6 +48,17 @@ function aplicarFiltros() {
         allRows = Array.from(rows).filter(row => row.style.display !== 'none');
         currentPage = 1;
         updatePagination();
+
+        // Actualizar el contador de entradas mostradas
+        const infoEntries = document.getElementById('infoEntries');
+        if (infoEntries) {
+            if (visibleCount === 0 && (searchTerm !== '' || selectedProfessor !== '')) {
+                infoEntries.textContent = 'No se encontraron rúbricas que coincidan con los filtros aplicados';
+            } else {
+                const totalRows = rows.length;
+                infoEntries.textContent = `Mostrando ${visibleCount} de ${totalRows} rúbricas`;
+            }
+        }
     } catch (error) {
         console.error('Error al aplicar filtros:', error);
     }
@@ -361,7 +288,6 @@ function organizarNivelesPorNombre(criterios) {
         return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
     }
     
-    // Obtener el criterio con más niveles
     const criterioConMasNiveles = criterios.reduce((max, criterio) => {
         const nivelesCount = (criterio.niveles && Array.isArray(criterio.niveles)) ? criterio.niveles.length : 0;
         const maxCount = (max.niveles && Array.isArray(max.niveles)) ? max.niveles.length : 0;
@@ -372,7 +298,6 @@ function organizarNivelesPorNombre(criterios) {
         return { nombres: ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente'] };
     }
     
-    // Ordenar por puntaje descendente
     const nivelesOrdenados = [...criterioConMasNiveles.niveles].sort((a, b) => {
         const puntajeA = parseFloat(a.puntaje) || 0;
         const puntajeB = parseFloat(b.puntaje) || 0;
@@ -479,7 +404,6 @@ function imprimirRubrica(rubrica, criterios) {
     </div>` : ''}
     <div class="student-section">
         <table class="student-table">
-            <!-- Espacio para 6 estudiantes por defecto -->
             ${[1,2,3,4,5,6].map(i => `
                 <tr>
                     <td class="student-label">Nombre :</td>
@@ -539,161 +463,369 @@ function imprimirRubrica(rubrica, criterios) {
 }
 
 // ============================================================
-// MODAL DE EDICIÓN
+// MODAL DE EDICIÓN - ABRIR Y CERRAR
 // ============================================================
-
-let rubricData = { criteria: [] };
 
 function openModal(rubricId) {
     if (rubricId) {
         loadRubricData(rubricId);
     } else {
-        resetModal();
-        const modalOverlay = document.getElementById('modalOverlay');
-        if (modalOverlay) modalOverlay.classList.add('active');
+        resetModalEdit();
     }
+    document.getElementById('modalOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = 'auto';
+    resetModalEdit();
+}
+
+// Cerrar modal al hacer clic en el overlay
+const modalOverlay = document.getElementById('modalOverlay');
+if (modalOverlay) {
+    modalOverlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+}
+
+// ============================================================
+// CARGAR DATOS DE LA RÚBRICA
+// ============================================================
+
 function loadRubricData(rubricId) {
+    Swal.fire({
+        title: 'Cargando...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     fetch(`/admin/rubricas/editar/${rubricId}`)
         .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta');
+            if (!response.ok) throw new Error('Error al cargar');
             return response.json();
         })
         .then(data => {
+            Swal.close();
             if (data.success) {
-                populateModal(data);
-                const modalOverlay = document.getElementById('modalOverlay');
-                if (modalOverlay) modalOverlay.classList.add('active');
+                populateModalEdit(data);
             } else {
-                Swal.fire('Error', data.message || 'Error al cargar', 'error');
+                Swal.fire('Error', data.message || 'Error al cargar la rúbrica', 'error');
             }
         })
         .catch(error => {
+            Swal.close();
             console.error('Error:', error);
             Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
         });
 }
 
-function populateModal(data) {
+function populateModalEdit(data) {
     const rubrica = data.rubrica;
-    const campos = {
-        rubricId: rubrica.id,
-        rubricName: rubrica.nombre_rubrica,
-        evalDate: rubrica.fecha_evaluacion ? rubrica.fecha_evaluacion.split('T')[0] : '',
-        evalPercent: rubrica.porcentaje_evaluacion,
-        evalType: rubrica.tipo_evaluacion,
-        competencies: rubrica.competencias || '',
-        instructions: rubrica.instrucciones || ''
-    };
 
-    Object.keys(campos).forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) elemento.value = campos[id];
+    // Llenar campos básicos
+    document.getElementById('rubricaIdEdit').value = rubrica.id;
+    document.getElementById('nombreRubricaEdit').value = rubrica.nombre_rubrica;
+    document.getElementById('fechaEvaluacionEdit').value = rubrica.fecha_evaluacion ? rubrica.fecha_evaluacion.split('T')[0] : '';
+    document.getElementById('porcentajeEdit').value = rubrica.porcentaje_evaluacion;
+    document.getElementById('tipoEvaluacionEdit').value = rubrica.tipo_evaluacion;
+    document.getElementById('competenciasEdit').value = rubrica.competencias || '';
+    document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
+
+    porcentajeEvaluacionEdit = parseFloat(rubrica.porcentaje_evaluacion) || 10;
+
+    // Cargar carreras y luego seleccionar los valores
+    cargarCarrerasEdit(() => {
+        // Buscar la carrera correspondiente a la materia
+        fetch(`/admin/rubricas/carrera-materia/${rubrica.materia_codigo}`)
+            .then(response => response.json())
+            .then(carreraData => {
+                if (carreraData.success) {
+                    const carreraSelect = document.getElementById('carreraEdit');
+                    carreraSelect.value = carreraData.carrera_codigo;
+                    
+                    // Cargar semestres de esa carrera
+                    cargarSemestresEdit(carreraData.carrera_codigo, () => {
+                        const semestreSelect = document.getElementById('semestreEdit');
+                        semestreSelect.value = carreraData.semestre;
+                        
+                        // Cargar materias de ese semestre
+                        cargarMateriasEdit(carreraData.carrera_codigo, carreraData.semestre, () => {
+                            const materiaSelect = document.getElementById('materiaEdit');
+                            materiaSelect.value = rubrica.materia_codigo;
+                            
+                            // Cargar secciones de esa materia
+                            cargarSeccionesEdit(rubrica.materia_codigo, () => {
+                                const seccionSelect = document.getElementById('seccionEdit');
+                                seccionSelect.value = rubrica.seccion_id;
+                            });
+                        });
+                    });
+                }
+            });
     });
 
-    loadMateriasYSecciones(() => {
-        const subjectSelect = document.getElementById('subject');
-        const sectionSelect = document.getElementById('section');
-        if (subjectSelect) subjectSelect.value = rubrica.materia_codigo;
-        if (sectionSelect) sectionSelect.value = rubrica.seccion_id;
+    // Cargar criterios y niveles
+    criterioCountEdit = 0;
+    document.getElementById('criteriosListEdit').innerHTML = '';
+
+    data.criterios.forEach(criterio => {
+        agregarCriterioEditConDatos(
+            criterio.descripcion,
+            criterio.puntaje_maximo,
+            criterio.orden,
+            criterio.niveles
+        );
     });
 
-    rubricData.criteria = data.criterios.map(criterio => ({
-        id: criterio.id,
-        description: criterio.descripcion,
-        maxScore: criterio.puntaje_maximo,
-        order: criterio.orden,
-        niveles: (criterio.niveles || []).map(nivel => ({
-            nombre_nivel: nivel.nombre_nivel,
-            descripcion: nivel.descripcion,
-            puntaje: nivel.puntaje,
-            orden: nivel.orden
-        }))
-    }));
-
-    renderCriteria();
+    calcularDistribucionAutomaticaEdit();
 }
 
-function loadMateriasYSecciones(callback) {
-    fetch('/admin/opciones')
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar opciones');
-            return response.json();
-        })
+// ============================================================
+// SISTEMA DE SELECCIÓN JERÁRQUICO PARA EDICIÓN
+// ============================================================
+
+function cargarCarrerasEdit(callback) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    fetch(`/${rubroute}/carreras`)
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const materiaSelect = document.getElementById('subject');
-                if (materiaSelect) {
-                    materiaSelect.innerHTML = '<option value="">Seleccionar materia</option>';
-                    data.materias.forEach(materia => {
-                        materiaSelect.innerHTML += `<option value="${materia.codigo}">${materia.nombre}</option>`;
-                    });
-                }
-
-                const seccionSelect = document.getElementById('section');
-                if (seccionSelect) {
-                    seccionSelect.innerHTML = '<option value="">Seleccionar sección</option>';
-                    data.secciones.forEach(seccion => {
-                        seccionSelect.innerHTML += `<option value="${seccion.id}">${seccion.codigo} - ${seccion.materia_codigo}</option>`;
-                    });
-                }
-
+                const carreraSelect = document.getElementById('carreraEdit');
+                carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+                
+                data.carreras.forEach(carrera => {
+                    carreraSelect.innerHTML += `<option value="${carrera.codigo}">${carrera.nombre}</option>`;
+                });
+                
+                carrerasDataEdit = data.carreras;
                 if (callback) callback();
             }
         })
+        .catch(error => console.error('Error:', error));
+}
+
+// En rubricas.js, actualiza estas funciones para usar las rutas correctas:
+
+function cargarSemestresEdit(carreraCode, callback) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const semestreSelect = document.getElementById('semestreEdit');
+    semestreSelect.innerHTML = '<option value="">Cargando...</option>';
+    semestreSelect.disabled = true;
+
+    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
+    fetch(`/api/${rubroute}/semestres/${carreraCode}`)
+        .then(response => response.json())
+        .then(semestres => {
+            semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
+            semestres.forEach(sem => {
+                semestreSelect.innerHTML += `<option value="${sem}">Semestre ${sem}</option>`;
+            });
+            semestreSelect.disabled = false;
+            if (callback) callback();
+        })
         .catch(error => {
             console.error('Error:', error);
-            Swal.fire('Error', 'No se pudieron cargar las opciones', 'error');
+            semestreSelect.innerHTML = '<option value="">Error al cargar</option>';
         });
 }
 
-function resetModal() {
-    const rubricForm = document.getElementById('rubricForm');
-    if (rubricForm) rubricForm.reset();
-    const rubricId = document.getElementById('rubricId');
-    if (rubricId) rubricId.value = '';
-    rubricData.criteria = [];
-    loadMateriasYSecciones();
-    renderCriteria();
+function cargarMateriasEdit(carreraCode, semestre, callback) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const materiaSelect = document.getElementById('materiaEdit');
+    materiaSelect.innerHTML = '<option value="">Cargando...</option>';
+    materiaSelect.disabled = true;
+
+    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
+    fetch(`/api/${rubroute}/materias/${carreraCode}/${semestre}`)
+        .then(response => response.json())
+        .then(materias => {
+            materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+            materias.forEach(mat => {
+                materiaSelect.innerHTML += `<option value="${mat.codigo}">${mat.nombre}</option>`;
+            });
+            materiaSelect.disabled = false;
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            materiaSelect.innerHTML = '<option value="">Error al cargar</option>';
+        });
 }
 
-function closeModal() {
-    const modalOverlay = document.getElementById('modalOverlay');
-    if (modalOverlay) modalOverlay.classList.remove('active');
-}
+function cargarSeccionesEdit(materiaCode, callback) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const seccionSelect = document.getElementById('seccionEdit');
+    seccionSelect.innerHTML = '<option value="">Cargando...</option>';
+    seccionSelect.disabled = true;
 
-const modalOverlay = document.getElementById('modalOverlay');
-if (modalOverlay) {
-    modalOverlay.addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
+    fetch(`/api/${rubroute}/secciones/${materiaCode}`)
+        .then(response => response.json())
+        .then(secciones => {
+            seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+            secciones.forEach(sec => {
+                const info = `${sec.codigo} - ${sec.lapso_academico}${sec.horario ? ' - ' + sec.horario : ''}`;
+                seccionSelect.innerHTML += `<option value="${sec.id}">${info}</option>`;
+            });
+            seccionSelect.disabled = false;
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            seccionSelect.innerHTML = '<option value="">Error al cargar</option>';
+        });
 }
 
 // ============================================================
-// GESTIÓN DE CRITERIOS Y NIVELES
+// GESTIÓN DE CRITERIOS PARA EDICIÓN
 // ============================================================
 
-function addCriteria() {
-    rubricData.criteria.push({
-        id: null,
-        description: '',
-        maxScore: 10,
-        order: rubricData.criteria.length + 1,
-        niveles: [
-            { nombre_nivel: 'Sobresaliente', descripcion: '', puntaje: 10, orden: 1 },
-            { nombre_nivel: 'Notable', descripcion: '', puntaje: 8, orden: 2 },
-            { nombre_nivel: 'Aprobado', descripcion: '', puntaje: 6, orden: 3 },
-            { nombre_nivel: 'Insuficiente', descripcion: '', puntaje: 4, orden: 4 }
-        ]
-    });
-    renderCriteria();
+function agregarCriterioEdit() {
+    criterioCountEdit++;
+    const porcentaje = parseFloat(document.getElementById('porcentajeEdit')?.value) || 10;
+    const numCriteriosActuales = document.querySelectorAll('#criteriosListEdit .criterio-card').length + 1;
+    const puntajeSugerido = Math.max(1, (porcentaje / numCriteriosActuales).toFixed(2));
+    
+    const criterioHTML = `
+        <div class="criterio-card" data-criterio="${criterioCountEdit}">
+            <div class="criterio-header">
+                <div class="form-group">
+                    <input type="text" class="form-input criterio-descripcion" 
+                        placeholder="Descripción del criterio (Ej: Análisis de datos)" required>
+                </div>
+                <button type="button" class="btn-icon" onclick="eliminarCriterioEdit(${criterioCountEdit})" title="Eliminar Criterio">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="criterio-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Puntaje Máximo * (mín: 1)</label>
+                        <input type="number" class="form-input criterio-puntaje" 
+                            min="1" step="0.01" placeholder="${puntajeSugerido}" value="${puntajeSugerido}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" class="form-input criterio-orden" 
+                            value="${criterioCountEdit}" min="1" required>
+                    </div>
+                </div>
+
+                <div class="niveles-section">
+                    <div class="niveles-header">
+                        <h4><i class="fas fa-star"></i> Niveles de Desempeño</h4>
+                        <button type="button" class="btn-add" onclick="agregarNivelEdit(${criterioCountEdit})">
+                            <i class="fas fa-plus"></i> Agregar Nivel
+                        </button>
+                    </div>
+                    <div class="niveles-list" id="niveles-edit-${criterioCountEdit}">
+                        <!-- Niveles se agregan aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('criteriosListEdit').insertAdjacentHTML('beforeend', criterioHTML);
+    
+    // Agregar niveles por defecto
+    const puntajeMaximo = parseFloat(puntajeSugerido);
+    agregarNivelEdit(criterioCountEdit, 'Sobresaliente', puntajeMaximo.toFixed(2), 1);
+    agregarNivelEdit(criterioCountEdit, 'Notable', (puntajeMaximo * 0.8).toFixed(2), 2);
+    agregarNivelEdit(criterioCountEdit, 'Aprobado', (puntajeMaximo * 0.6).toFixed(2), 3);
+    agregarNivelEdit(criterioCountEdit, 'Insuficiente', Math.max(0.25, (puntajeMaximo * 0.4)).toFixed(2), 4);
+    
+    calcularDistribucionAutomaticaEdit();
 }
 
-function deleteCriteria(index) {
+function agregarCriterioEditConDatos(descripcion, puntaje, orden, niveles) {
+    criterioCountEdit++;
+    
+    const criterioHTML = `
+        <div class="criterio-card" data-criterio="${criterioCountEdit}">
+            <div class="criterio-header">
+                <div class="form-group">
+                    <input type="text" class="form-input criterio-descripcion" 
+                        value="${descripcion}" placeholder="Descripción del criterio" required>
+                </div>
+                <button type="button" class="btn-icon" onclick="eliminarCriterioEdit(${criterioCountEdit})" title="Eliminar Criterio">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="criterio-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Puntaje Máximo * (mín: 1)</label>
+                        <input type="number" class="form-input criterio-puntaje" 
+                            min="1" step="0.01" value="${puntaje}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Orden</label>
+                        <input type="number" class="form-input criterio-orden" 
+                            value="${orden}" min="1" required>
+                    </div>
+                </div>
+
+                <div class="niveles-section">
+                    <div class="niveles-header">
+                        <h4><i class="fas fa-star"></i> Niveles de Desempeño</h4>
+                        <button type="button" class="btn-add" onclick="agregarNivelEdit(${criterioCountEdit})">
+                            <i class="fas fa-plus"></i> Agregar Nivel
+                        </button>
+                    </div>
+                    <div class="niveles-list" id="niveles-edit-${criterioCountEdit}">
+                        <!-- Niveles se agregan aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('criteriosListEdit').insertAdjacentHTML('beforeend', criterioHTML);
+    
+    // Agregar los niveles existentes
+    if (niveles && niveles.length > 0) {
+        niveles.forEach(nivel => {
+            agregarNivelEdit(
+                criterioCountEdit,
+                nivel.nombre_nivel,
+                nivel.puntaje,
+                nivel.orden,
+                nivel.descripcion
+            );
+        });
+    }
+}
+
+function eliminarCriterioEdit(id) {
+    const criterioCard = document.querySelector(`#criteriosListEdit [data-criterio="${id}"]`);
+    if (!criterioCard) return;
+    
+    const criteriosRestantes = document.querySelectorAll('#criteriosListEdit .criterio-card').length;
+    
+    if (criteriosRestantes <= 1) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No se puede eliminar',
+            text: 'Debe mantener al menos un criterio de evaluación'
+        });
+        return;
+    }
+    
     Swal.fire({
-        title: '¿Estás seguro?',
-        text: "Se eliminará el criterio y todos sus niveles",
+        title: '¿Eliminar criterio?',
+        text: 'Se eliminarán todos los niveles de este criterio y se redistribuirán los puntajes',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
@@ -702,189 +834,220 @@ function deleteCriteria(index) {
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            rubricData.criteria.splice(index, 1);
-            renderCriteria();
+            criterioCard.remove();
+            calcularDistribucionAutomaticaEdit();
             Swal.fire('Eliminado', 'El criterio ha sido eliminado', 'success');
         }
     });
 }
 
-function renderCriteria() {
-    const container = document.getElementById('criteriaContainer');
-    if (!container) return;
-    
-    if (rubricData.criteria.length === 0) {
-        container.innerHTML = '<p class="placeholder-text">No hay criterios. Haga clic en "Agregar Criterio".</p>';
-        return;
-    }
+// ============================================================
+// GESTIÓN DE NIVELES PARA EDICIÓN
+// ============================================================
 
-    container.innerHTML = rubricData.criteria.map((criteria, index) => `
-        <div class="criteria-container">
-            <div class="criteria-header">
-                <div class="criteria-main">
-                    <div class="form-group">
-                        <label>Descripción del criterio</label>
-                        <input type="text" placeholder="Descripción del criterio"
-                            value="${criteria.description || ''}"
-                            onchange="updateCriteria(${index}, 'description', this.value)">
-                    </div>
-                </div>
-                <button type="button" class="criteria-delete" onclick="deleteCriteria(${index})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="criteria-fields">
-                <div class="form-group">
-                    <label>Puntaje Máximo</label>
-                    <input type="number" value="${criteria.maxScore || 10}" min="1"
-                        onchange="updateCriteria(${index}, 'maxScore', this.value)">
-                </div>
-                <div class="form-group">
-                    <label>Orden</label>
-                    <input type="number" value="${criteria.order || index + 1}" min="1"
-                        onchange="updateCriteria(${index}, 'order', this.value)">
-                </div>
-            </div>
-            
-            <div class="section-title" style="font-size: 14px; margin-top: 15px;">
-                <span class="section-title-icon"><i class="fas fa-star"></i></span>
-                Niveles de Desempeño
-            </div>
-            <div id="niveles-${index}"></div>
-            <div class="add-button-section">
-                <button type="button" class="btn btn-add btn-small" onclick="addNivelToCriteria(${index})">
-                    + Agregar Nivel
-                </button>
-            </div>
-        </div>
-    `).join('');
-
-    rubricData.criteria.forEach((criteria, index) => {
-        renderNivelesDeCriterio(index);
-    });
+function agregarNivelEdit(criterioId, nombreDefault = '', puntajeDefault = '', ordenDefault = '', descripcionDefault = '') {
+    const nivelesContainer = document.getElementById(`niveles-edit-${criterioId}`);
+    if (!nivelesContainer) return;
     
-    setTimeout(validarPuntajesEdicion, 100);
-}
-
-function updateCriteria(index, field, value) {
-    if (!rubricData.criteria[index]) return;
+    const nivelCount = nivelesContainer.querySelectorAll('.nivel-item').length + 1;
+    const orden = ordenDefault || nivelCount;
+    const nombre = nombreDefault || '';
+    const puntaje = puntajeDefault || '0.25';
+    const descripcion = descripcionDefault || '';
     
-    if (field === 'description') {
-        rubricData.criteria[index][field] = value;
-    } else {
-        const numValue = parseInt(value) || 0;
-        rubricData.criteria[index][field] = numValue;
-    }
-    
-    validarPuntajesEdicion();
-}
-
-function addNivelToCriteria(criteriaIndex) {
-    if (!rubricData.criteria[criteriaIndex]) return;
-    
-    if (!rubricData.criteria[criteriaIndex].niveles) {
-        rubricData.criteria[criteriaIndex].niveles = [];
-    }
-
-    const niveles = rubricData.criteria[criteriaIndex].niveles;
-    const defaultNames = ['Sobresaliente', 'Notable', 'Aprobado', 'Insuficiente', 'Reprobado'];
-    const nextName = defaultNames[niveles.length] || `Nivel ${niveles.length + 1}`;
-
-    niveles.push({
-        nombre_nivel: nextName,
-        descripcion: '',
-        puntaje: niveles.length + 1,
-        orden: niveles.length + 1
-    });
-
-    renderNivelesDeCriterio(criteriaIndex);
-}
-
-function deleteNivelFromCriteria(criteriaIndex, nivelIndex) {
-    if (!rubricData.criteria[criteriaIndex] || !rubricData.criteria[criteriaIndex].niveles) return;
-    
-    if (rubricData.criteria[criteriaIndex].niveles.length <= 1) {
-        Swal.fire('Error', 'Debe mantener al menos un nivel por criterio', 'error');
-        return;
-    }
-    
-    rubricData.criteria[criteriaIndex].niveles.splice(nivelIndex, 1);
-    renderNivelesDeCriterio(criteriaIndex);
-}
-
-function renderNivelesDeCriterio(criteriaIndex) {
-    const container = document.getElementById(`niveles-${criteriaIndex}`);
-    if (!container) return;
-    
-    const niveles = rubricData.criteria[criteriaIndex]?.niveles || [];
-    
-    if (niveles.length === 0) {
-        container.innerHTML = '<p class="placeholder-text" style="font-size: 12px; margin: 10px 0;">No hay niveles. Agregue al menos uno.</p>';
-        return;
-    }
-    
-    container.innerHTML = niveles.map((nivel, nivelIndex) => `
-        <div class="performance-level">
-            <div class="performance-header">
-                <div class="form-group">
-                    <input type="text" placeholder="Nombre (ej: Sobresaliente)"
-                        value="${nivel.nombre_nivel || ''}"
-                        onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'nombre_nivel', this.value)">
-                </div>
-                <div class="performance-score">
-                    <label>Puntaje</label>
-                    <input type="number" value="${nivel.puntaje || 0}" min="0"
-                        onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'puntaje', this.value)">
-                </div>
-                <div class="form-group performance-order">
-                    <input type="number" value="${nivel.orden || nivelIndex + 1}" min="1"
-                        onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'orden', this.value)">
-                </div>
-                <button type="button" class="criteria-delete" onclick="deleteNivelFromCriteria(${criteriaIndex}, ${nivelIndex})">
-                    <i class="fas fa-trash"></i>
+    const nivelHTML = `
+        <div class="nivel-item">
+            <div class="nivel-header">
+                <input type="text" class="form-input nivel-nombre" 
+                    placeholder="Nombre del nivel" value="${nombre}" required>
+                <input type="number" class="form-input small-input nivel-puntaje" 
+                    placeholder="Puntaje" value="${puntaje}" min="0.25" step="0.01" required>
+                <input type="number" class="form-input small-input nivel-orden" 
+                    placeholder="Orden" value="${orden}" min="1" required>
+                <button type="button" class="btn-icon" onclick="eliminarNivelEdit(this, ${criterioId})" title="Eliminar Nivel">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="form-group">
-                <label>Descripción del nivel</label>
-                <textarea placeholder="Descripción..."
-                    onchange="updateNivel(${criteriaIndex}, ${nivelIndex}, 'descripcion', this.value)">${nivel.descripcion || ''}</textarea>
+                <textarea class="form-textarea nivel-descripcion" rows="2" 
+                    placeholder="Descripción del nivel de desempeño..." required>${descripcion}</textarea>
             </div>
         </div>
-    `).join('');
+    `;
     
-    setTimeout(validarPuntajesEdicion, 100);
+    nivelesContainer.insertAdjacentHTML('beforeend', nivelHTML);
+    setTimeout(validarPuntajesEdit, 100);
 }
 
-function updateNivel(criteriaIndex, nivelIndex, field, value) {
-    if (!rubricData.criteria[criteriaIndex] || !rubricData.criteria[criteriaIndex].niveles[nivelIndex]) return;
+function eliminarNivelEdit(button, criterioId) {
+    const nivelItem = button.closest('.nivel-item');
+    const nivelesContainer = document.getElementById(`niveles-edit-${criterioId}`);
     
-    const nivel = rubricData.criteria[criteriaIndex].niveles[nivelIndex];
+    if (!nivelItem || !nivelesContainer) return;
     
-    if (field === 'puntaje' || field === 'orden') {
-        nivel[field] = parseInt(value) || 0;
-    } else {
-        nivel[field] = value;
+    const nivelesRestantes = nivelesContainer.querySelectorAll('.nivel-item').length;
+    
+    if (nivelesRestantes <= 1) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No se puede eliminar',
+            text: 'Cada criterio debe tener al menos un nivel de desempeño'
+        });
+        return;
     }
     
-    validarPuntajesEdicion();
+    nivelItem.remove();
+    setTimeout(validarPuntajesEdit, 100);
 }
 
 // ============================================================
-// ENVÍO DEL FORMULARIO
+// DISTRIBUCIÓN Y VALIDACIÓN PARA EDICIÓN
 // ============================================================
 
-const rubricForm = document.getElementById('rubricForm');
-if (rubricForm) {
-    rubricForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+function actualizarPuntajesNivelesEdit(criterioCard, puntajeMaximoCriterio) {
+    const niveles = criterioCard.querySelectorAll('.nivel-item');
+    const numNiveles = niveles.length;
 
+    if (numNiveles === 0) return;
+
+    // Distribuir puntaje entre niveles de manera descendente
+    niveles.forEach((nivelItem, index) => {
+        const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
+        if (puntajeInput) {
+            const factorDistribucion = (numNiveles - index) / numNiveles;
+            let puntaje = puntajeMaximoCriterio * factorDistribucion;
+            puntaje = Math.max(0.25, Math.round(puntaje * 100) / 100);
+            puntajeInput.value = puntaje.toFixed(2);
+        }
+    });
+}
+
+function calcularDistribucionAutomaticaEdit() {
+    const porcentajeInput = document.getElementById('porcentajeEdit');
+    if (!porcentajeInput) return;
+
+    porcentajeEvaluacionEdit = parseFloat(porcentajeInput.value) || 10;
+
+    // Validar porcentaje mínimo
+    if (porcentajeEvaluacionEdit < 5) {
+        porcentajeInput.value = 5;
+        porcentajeEvaluacionEdit = 5;
+    }
+
+    const criterios = document.querySelectorAll('#criteriosListEdit .criterio-card');
+    const numCriterios = criterios.length;
+
+    if (numCriterios === 0) return;
+
+    // Calcular puntaje por criterio (mínimo 1 punto)
+    const puntajePorCriterio = Math.max(1, Math.floor((porcentajeEvaluacionEdit / numCriterios) * 100) / 100);
+
+    // Actualizar puntajes de criterios
+    criterios.forEach((criterioCard, index) => {
+        const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+        if (puntajeInput) {
+            puntajeInput.value = puntajePorCriterio.toFixed(2);
+            actualizarPuntajesNivelesEdit(criterioCard, puntajePorCriterio);
+        }
+    });
+
+    mostrarInfoDistribucionEdit(numCriterios, puntajePorCriterio);
+    validarPuntajesEdit();
+}
+
+function mostrarInfoDistribucionEdit(numCriterios, puntajePorCriterio) {
+    const infoDiv = document.getElementById('distribucionInfoEdit');
+    const textoSpan = document.getElementById('distribucionTextoEdit');
+    
+    if (infoDiv && textoSpan) {
+        const total = (numCriterios * puntajePorCriterio).toFixed(2);
+        textoSpan.textContent = `Distribución automática: ${numCriterios} criterio(s) × ${puntajePorCriterio.toFixed(2)} puntos = ${total} puntos de ${porcentajeEvaluacionEdit}%`;
+        infoDiv.style.display = 'block';
+    }
+}
+
+function validarPuntajesEdit() {
+    const porcentajeInput = document.getElementById('porcentajeEdit');
+    const criterios = document.querySelectorAll('#criteriosListEdit .criterio-card');
+    let sumaCriterios = 0;
+    let hayError = false;
+
+    criterios.forEach((criterioCard) => {
+        const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+        const puntajeMaximo = parseFloat(puntajeInput?.value) || 0;
+        
+        if (puntajeMaximo < 1) {
+            puntajeInput.style.borderColor = '#e74c3c';
+            puntajeInput.title = 'El puntaje mínimo por criterio es 1 punto';
+            hayError = true;
+        } else {
+            sumaCriterios += puntajeMaximo;
+            puntajeInput.style.borderColor = '#e0e0e0';
+            puntajeInput.title = '';
+        }
+
+        const niveles = criterioCard.querySelectorAll('.nivel-item');
+        niveles.forEach(nivelItem => {
+            const puntajeNivelInput = nivelItem.querySelector('.nivel-puntaje');
+            const puntajeNivel = parseFloat(puntajeNivelInput?.value) || 0;
+
+            if (puntajeNivel < 0.25) {
+                puntajeNivelInput.style.borderColor = '#e74c3c';
+                puntajeNivelInput.title = 'El puntaje mínimo por nivel es 0.25';
+                hayError = true;
+            } else if (puntajeNivel > puntajeMaximo) {
+                puntajeNivelInput.style.borderColor = '#e74c3c';
+                puntajeNivelInput.title = `El puntaje del nivel no puede exceder ${puntajeMaximo}`;
+                hayError = true;
+            } else {
+                puntajeNivelInput.style.borderColor = '#e0e0e0';
+                puntajeNivelInput.title = '';
+            }
+        });
+    });
+
+    if (porcentajeInput) {
+        const porcentaje = parseFloat(porcentajeInput.value) || 0;
+        
+        if (porcentaje < 5) {
+            porcentajeInput.style.borderColor = '#e74c3c';
+            porcentajeInput.title = 'El porcentaje mínimo es 5%';
+            hayError = true;
+        } else if (sumaCriterios > porcentaje) {
+            porcentajeInput.style.borderColor = '#e74c3c';
+            porcentajeInput.title = `La suma de puntajes (${sumaCriterios.toFixed(2)}) excede el porcentaje (${porcentaje})`;
+            hayError = true;
+        } else {
+            porcentajeInput.style.borderColor = '#e0e0e0';
+            porcentajeInput.title = '';
+        }
+    }
+
+    return !hayError;
+}
+
+// ============================================================
+// ENVÍO DEL FORMULARIO DE EDICIÓN
+// ============================================================
+
+const rubricaFormEdit = document.getElementById('rubricaFormEdit');
+if (rubricaFormEdit) {
+    rubricaFormEdit.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
         // Validar campos básicos
-        const nombreRubrica = document.getElementById('rubricName')?.value.trim();
-        const materiaId = document.getElementById('subject')?.value;
-        const seccionId = document.getElementById('section')?.value;
-        const fechaEval = document.getElementById('evalDate')?.value;
-        const porcentaje = parseFloat(document.getElementById('evalPercent')?.value);
-        const tipoEval = document.getElementById('evalType')?.value;
+        const id = document.getElementById('rubricaIdEdit')?.value;
+        const nombreRubrica = document.getElementById('nombreRubricaEdit')?.value.trim();
+        const materiaId = document.getElementById('materiaEdit')?.value;
+        const seccionId = document.getElementById('seccionEdit')?.value;
+        const fechaEval = document.getElementById('fechaEvaluacionEdit')?.value;
+        const porcentaje = parseFloat(document.getElementById('porcentajeEdit')?.value);
+        const tipoEval = document.getElementById('tipoEvaluacionEdit')?.value;
+
+        if (!id) {
+            Swal.fire('Error', 'ID de rúbrica no encontrado', 'error');
+            return;
+        }
 
         if (!nombreRubrica) {
             Swal.fire('Error', 'El nombre de la rúbrica es obligatorio', 'error');
@@ -906,8 +1069,8 @@ if (rubricForm) {
             return;
         }
 
-        if (!porcentaje || porcentaje <= 0 || porcentaje > 100) {
-            Swal.fire('Error', 'El porcentaje debe estar entre 1 y 100', 'error');
+        if (!porcentaje || porcentaje < 5 || porcentaje > 100) {
+            Swal.fire('Error', 'El porcentaje debe estar entre 5% y 100%', 'error');
             return;
         }
 
@@ -915,103 +1078,239 @@ if (rubricForm) {
             Swal.fire('Error', 'Debe seleccionar un tipo de evaluación', 'error');
             return;
         }
-
-        // Validar criterios
-        if (!rubricData.criteria || rubricData.criteria.length === 0) {
-            Swal.fire('Error', 'Debe agregar al menos un criterio', 'error');
+        
+        // Validar que haya al menos un criterio
+        const criterios = document.querySelectorAll('#criteriosListEdit .criterio-card');
+        if(criterios.length === 0) {
+            Swal.fire('Error', 'Debe agregar al menos un criterio de evaluación', 'error');
             return;
         }
-
-        // Validar estructura de criterios
-        const validacion = validarEstructuraCriterios(rubricData.criteria);
-        if (!validacion.valido) {
-            Swal.fire('Error', validacion.mensaje, 'error');
-            return;
-        }
-
-        // Validar suma de puntajes
-        const sumaPuntajes = rubricData.criteria.reduce((sum, c) => sum + (parseFloat(c.maxScore) || 0), 0);
-        if (sumaPuntajes > porcentaje) {
-            Swal.fire('Error', 
-                `La suma de puntajes máximos (${sumaPuntajes}) no puede exceder el porcentaje de evaluación (${porcentaje})`, 
-                'error');
-            return;
-        }
-
-        // Preparar datos
-        const criteriosData = rubricData.criteria.map((criterio, index) => ({
-            id: criterio.id,
-            descripcion: criterio.description,
-            puntaje_maximo: parseFloat(criterio.maxScore),
-            orden: criterio.order || index + 1,
-            niveles: (criterio.niveles || []).map((nivel, idx) => ({
-                nombre_nivel: nivel.nombre_nivel,
-                descripcion: nivel.descripcion,
-                puntaje: parseFloat(nivel.puntaje),
-                orden: nivel.orden || idx + 1
-            }))
-        }));
-
-        const formData = new FormData(this);
-        const data = {
-            id: formData.get('id'),
+        
+        // Recopilar datos de la rúbrica
+        const rubricaData = {
+            id: id,
             nombre_rubrica: nombreRubrica,
             materia_codigo: materiaId,
             seccion_id: seccionId,
             fecha_evaluacion: fechaEval,
             porcentaje_evaluacion: porcentaje,
             tipo_evaluacion: tipoEval,
-            competencias: formData.get('competencias') || '',
-            instrucciones: formData.get('instrucciones') || '',
-            criterios: criteriosData
+            competencias: document.getElementById('competenciasEdit')?.value || '',
+            instrucciones: document.getElementById('instruccionesEdit')?.value || '',
+            criterios: []
         };
-
-        // Loading
+        
+        // Recopilar criterios y niveles
+        criterios.forEach((criterioCard) => {
+            const descripcionInput = criterioCard.querySelector('.criterio-descripcion');
+            const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+            const ordenInput = criterioCard.querySelector('.criterio-orden');
+            
+            const criterio = {
+                descripcion: descripcionInput?.value.trim() || '',
+                puntaje_maximo: parseFloat(puntajeInput?.value) || 0,
+                orden: parseInt(ordenInput?.value) || 0,
+                niveles: []
+            };
+            
+            // Recopilar niveles del criterio
+            const niveles = criterioCard.querySelectorAll('.nivel-item');
+            niveles.forEach(nivelItem => {
+                const nombreInput = nivelItem.querySelector('.nivel-nombre');
+                const descripcionInput = nivelItem.querySelector('.nivel-descripcion');
+                const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
+                const ordenInput = nivelItem.querySelector('.nivel-orden');
+                
+                const nivel = {
+                    nombre_nivel: nombreInput?.value.trim() || '',
+                    descripcion: descripcionInput?.value.trim() || '',
+                    puntaje: parseFloat(puntajeInput?.value) || 0,
+                    orden: parseInt(ordenInput?.value) || 0
+                };
+                criterio.niveles.push(nivel);
+            });
+            
+            rubricaData.criterios.push(criterio);
+        });
+        
+        // Validar estructura
+        for (let i = 0; i < rubricaData.criterios.length; i++) {
+            const criterio = rubricaData.criterios[i];
+            
+            if (!criterio.descripcion) {
+                Swal.fire('Error', `El criterio ${i + 1} necesita descripción`, 'error');
+                return;
+            }
+            
+            if (criterio.puntaje_maximo < 1) {
+                Swal.fire('Error', `El criterio ${i + 1} necesita un puntaje mínimo de 1 punto`, 'error');
+                return;
+            }
+            
+            if (!criterio.niveles || criterio.niveles.length === 0) {
+                Swal.fire('Error', `El criterio ${i + 1} necesita al menos un nivel`, 'error');
+                return;
+            }
+            
+            for (let j = 0; j < criterio.niveles.length; j++) {
+                const nivel = criterio.niveles[j];
+                
+                if (!nivel.nombre_nivel) {
+                    Swal.fire('Error', `El nivel ${j + 1} del criterio ${i + 1} necesita nombre`, 'error');
+                    return;
+                }
+                
+                if (!nivel.descripcion) {
+                    Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" necesita descripción`, 'error');
+                    return;
+                }
+                
+                if (nivel.puntaje < 0.25) {
+                    Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" necesita un puntaje mínimo de 0.25`, 'error');
+                    return;
+                }
+                
+                if (nivel.puntaje > criterio.puntaje_maximo) {
+                    Swal.fire('Error', `El puntaje del nivel "${nivel.nombre_nivel}" excede el máximo del criterio`, 'error');
+                    return;
+                }
+            }
+        }
+        
+        // Validar suma de puntajes
+        const sumaPuntajes = rubricaData.criterios.reduce((sum, c) => sum + c.puntaje_maximo, 0);
+        if (sumaPuntajes > porcentaje) {
+            Swal.fire('Error', 
+                `La suma de puntajes (${sumaPuntajes.toFixed(2)}) excede el porcentaje (${porcentaje}%)`, 
+                'error');
+            return;
+        }
+        
+        // Mostrar loading
         Swal.fire({
-            title: 'Actualizando...',
+            title: 'Actualizando rúbrica...',
             text: 'Por favor espere',
             allowOutsideClick: false,
+            allowEscapeKey: false,
             didOpen: () => {
                 Swal.showLoading();
             }
         });
-
-        // Enviar como JSON
-        fetch('/updateRubrica', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => {
-            if (response.redirected) {
-                window.location.href = response.url;
-                return;
-            }
-            return response.json();
-        })
-        .then(result => {
-            if (result && result.success === false) {
-                Swal.fire('Error', result.message || 'No se pudo actualizar la rúbrica', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            Swal.fire('Error', 'No se pudo actualizar la rúbrica. Verifique su conexión.', 'error');
+        
+        // Crear FormData
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/updateRubrica';
+        
+        // Agregar todos los campos
+        Object.keys(rubricaData).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = key === 'criterios' ? JSON.stringify(rubricaData[key]) : rubricaData[key];
+            form.appendChild(input);
         });
+        
+        document.body.appendChild(form);
+        form.submit();
     });
 }
 
 // ============================================================
-// INICIALIZACIÓN
+// RESETEAR MODAL
+// ============================================================
+
+function resetModalEdit() {
+    const form = document.getElementById('rubricaFormEdit');
+    if (form) form.reset();
+    
+    document.getElementById('rubricaIdEdit').value = '';
+    document.getElementById('criteriosListEdit').innerHTML = '';
+    
+    criterioCountEdit = 0;
+    porcentajeEvaluacionEdit = 10;
+    
+    // Resetear selects
+    document.getElementById('semestreEdit').disabled = true;
+    document.getElementById('materiaEdit').disabled = true;
+    document.getElementById('seccionEdit').disabled = true;
+    
+    const distribucionInfo = document.getElementById('distribucionInfoEdit');
+    if (distribucionInfo) {
+        distribucionInfo.style.display = 'none';
+    }
+}
+
+// ============================================================
+// EVENT LISTENERS PARA CASCADA DE SELECTS
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    const carreraEditSelect = document.getElementById('carreraEdit');
+    const semestreEditSelect = document.getElementById('semestreEdit');
+    const materiaEditSelect = document.getElementById('materiaEdit');
+
+    if (carreraEditSelect) {
+        carreraEditSelect.addEventListener('change', function() {
+            const carreraCode = this.value;
+            
+            semestreEditSelect.innerHTML = '<option value="">Primero seleccione una carrera</option>';
+            materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
+            
+            materiaEditSelect.disabled = true;
+            document.getElementById('seccionEdit').disabled = true;
+
+            if (carreraCode) {
+                cargarSemestresEdit(carreraCode);
+            } else {
+                semestreEditSelect.disabled = true;
+            }
+        });
+    }
+
+    if (semestreEditSelect) {
+        semestreEditSelect.addEventListener('change', function() {
+            const carreraCode = carreraEditSelect.value;
+            const semestre = this.value;
+            
+            materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
+            document.getElementById('seccionEdit').disabled = true;
+
+            if (semestre) {
+                cargarMateriasEdit(carreraCode, semestre);
+            } else {
+                materiaEditSelect.disabled = true;
+            }
+        });
+    }
+
+    if (materiaEditSelect) {
+        materiaEditSelect.addEventListener('change', function() {
+            const materiaCode = this.value;
+            
+            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
+
+            if (materiaCode) {
+                cargarSeccionesEdit(materiaCode);
+            } else {
+                document.getElementById('seccionEdit').disabled = true;
+            }
+        });
+    }
+
+    // Listener para calcular distribución
+    const porcentajeEditInput = document.getElementById('porcentajeEdit');
+    if (porcentajeEditInput) {
+        porcentajeEditInput.addEventListener('input', calcularDistribucionAutomaticaEdit);
+    }
+
+    // Inicializar paginación y cargar datos
     try {
         loadProfesores();
         initializePagination();
-        agregarValidacionTiempoRealEdicion();
+        cargarCarrerasEdit();
     } catch (error) {
         console.error('Error en inicialización:', error);
     }

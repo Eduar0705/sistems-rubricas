@@ -381,16 +381,166 @@
 .evaluaciones-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 32px;
+}
+
+/* Contenedor de tarjetas dentro de cada sección */
+.evaluaciones-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* Tarjetas de evaluación */
+.evaluacion-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.evaluacion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    border-color: #667eea;
+}
+
+.evaluacion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.evaluacion-student {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.student-name {
+    font-weight: 600;
+    color: #111827;
+    font-size: 14px;
+}
+
+.student-id {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.badge-status {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-status.completed {
+    background: #ecfdf5;
+    color: #15803d;
+}
+
+.badge-status.pending {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+.evaluacion-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.evaluacion-rubrica {
+    font-size: 13px;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.evaluacion-rubrica i {
+    color: #667eea;
+}
+
+.evaluacion-score {
+    text-align: right;
+}
+
+.evaluacion-score .score-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.evaluacion-score .score-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.evaluacion-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.evaluacion-date {
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-text {
+    background: transparent;
+    border: none;
+    color: #667eea;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-text:hover {
+    background-color: rgba(102, 126, 234, 0.08);
+    color: #4c6edb;
 }
 
 /* Paginación de evaluaciones */
-.evaluaciones-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 16px;
-    min-height: 400px;
-}
 
 .pagination-controls {
     display: flex;
@@ -448,29 +598,35 @@
     font-size: 16px;
 }
 
-.pagination-dots {
+.pagination-pages {
     display: flex;
     gap: 6px;
 }
 
-.pagination-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #d1d5db;
+.pagination-page {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
     cursor: pointer;
-    transition: all 0.3s ease;
+    font-size: 13px;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    transition: all 0.2s ease;
 }
 
-.pagination-dot.active {
+.pagination-page.active {
     background: #667eea;
-    width: 24px;
-    border-radius: 4px;
+    color: #ffffff;
+    border-color: #667eea;
 }
 
-.pagination-dot:hover {
-    background: #667eea;
-    transform: scale(1.2);
+.pagination-page:hover:not(.active) {
+    background: #eef2ff;
 }
 
 /* Animación para cambio de página */
