@@ -161,12 +161,13 @@
         }
 
         // Evento cuando se selecciona una rúbrica
-        document.getElementById('rubrica_id')?.addEventListener('change', function() {
+        document.getElementById('rubrica_id')?.addEventListener('change', async function() {
             const selectedOption = this.options[this.selectedIndex];
             
             if (selectedOption.value) {
                 const rubrica = JSON.parse(selectedOption.dataset.rubrica);
                 mostrarInfoRubrica(rubrica);
+                await aplicarDatosRubricaEnFormulario(rubrica);
             } else {
                 document.getElementById('rubricaInfo').style.display = 'none';
             }
@@ -175,12 +176,86 @@
 
         // Mostrar información de la rúbrica seleccionada
         function mostrarInfoRubrica(rubrica) {
-            document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre;
+            document.getElementById('rubricaCarrera').textContent = rubrica.carrera_nombre || '-';
+
+            const carreraCodigoEl = document.getElementById('rubricaCarreraCodigo');
+            if (carreraCodigoEl) {
+                carreraCodigoEl.textContent = rubrica.carrera_codigo || '-';
+            }
+
+            document.getElementById('rubricaSemestre').textContent = rubrica.semestre ? `Semestre ${rubrica.semestre}` : '-';
+            document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre || '-';
+
+            const materiaCodigoEl = document.getElementById('rubricaMateriaCodigo');
+            if (materiaCodigoEl) {
+                materiaCodigoEl.textContent = rubrica.materia_codigo || '-';
+            }
+
+            document.getElementById('rubricaSeccion').textContent = rubrica.seccion_codigo || '-';
+
+            const lapsoEl = document.getElementById('rubricaLapso');
+            if (lapsoEl) {
+                lapsoEl.textContent = rubrica.seccion_lapso || '-';
+            }
+
+            const docenteEl = document.getElementById('rubricaDocente');
+            if (docenteEl) {
+                if (rubrica.docente_nombre) {
+                    const apellido = rubrica.docente_apellido ? ` ${rubrica.docente_apellido}` : '';
+                    docenteEl.textContent = `${rubrica.docente_nombre}${apellido}`;
+                } else {
+                    docenteEl.textContent = '-';
+                }
+            }
+
             document.getElementById('rubricaTipo').textContent = rubrica.tipo_evaluacion;
             document.getElementById('rubricaPorcentaje').textContent = rubrica.porcentaje_evaluacion + '%';
             document.getElementById('rubricaModalidad').textContent = rubrica.modalidad + 
                 (rubrica.cantidad_personas > 1 ? ` (${rubrica.cantidad_personas} personas)` : '');
             document.getElementById('rubricaInfo').style.display = 'block';
+        }
+
+        // Sincronizar selects de carrera/materia/sección a partir de la rúbrica seleccionada
+        async function aplicarDatosRubricaEnFormulario(rubrica) {
+            const carreraSelect = document.getElementById('carrera_codigo');
+            const materiaSelect = document.getElementById('materia_codigo');
+            const seccionSelect = document.getElementById('seccion_id');
+
+            if (!carreraSelect || !materiaSelect || !seccionSelect) {
+                return;
+            }
+
+            try {
+                // Nos aseguramos de tener las carreras cargadas
+                await cargarCarreras();
+
+                if (rubrica.carrera_codigo) {
+                    carreraSelect.value = rubrica.carrera_codigo;
+                }
+
+                if (rubrica.carrera_codigo) {
+                    materiaSelect.disabled = false;
+                    await cargarMaterias(rubrica.carrera_codigo);
+                    if (rubrica.materia_codigo) {
+                        materiaSelect.value = rubrica.materia_codigo;
+                    }
+                }
+
+                if (rubrica.materia_codigo) {
+                    seccionSelect.disabled = false;
+                    await cargarSecciones(rubrica.materia_codigo);
+                    if (rubrica.seccion_id) {
+                        seccionSelect.value = rubrica.seccion_id;
+                    }
+                }
+
+                // Si ya tenemos sección seleccionada, cargamos los estudiantes asociados
+                if (seccionSelect.value) {
+                    await cargarEstudiantes(seccionSelect.value);
+                }
+            } catch (error) {
+                console.error('Error al aplicar datos de la rúbrica en el formulario:', error);
+            }
         }
 
         // Evento cuando se selecciona una carrera

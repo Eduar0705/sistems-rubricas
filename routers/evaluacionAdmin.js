@@ -198,7 +198,7 @@ router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
     });
 });
 
-// API: Obtener rúbricas activas
+// API: Obtener rúbricas activas con detalle de carrera, materia, sección y docente
 router.get('/api/rubricas/activas', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
@@ -215,10 +215,21 @@ router.get('/api/rubricas/activas', (req, res) => {
             r.seccion_id,
             m.nombre as materia_nombre,
             m.codigo as materia_codigo,
-            s.codigo as seccion_codigo
+            m.semestre,
+            c.codigo as carrera_codigo,
+            c.nombre as carrera_nombre,
+            s.codigo as seccion_codigo,
+            s.horario as seccion_horario,
+            s.aula as seccion_aula,
+            s.lapso_academico as seccion_lapso,
+            d.cedula as docente_cedula,
+            d.nombre as docente_nombre,
+            d.apellido as docente_apellido
         FROM rubrica_evaluacion r
         INNER JOIN materia m ON r.materia_codigo = m.codigo
+        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
         INNER JOIN seccion s ON r.seccion_id = s.id
+        LEFT JOIN docente d ON s.docente_cedula = d.cedula
         WHERE r.activo = 1
         ORDER BY r.nombre_rubrica
     `;
