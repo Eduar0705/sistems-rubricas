@@ -224,7 +224,10 @@
                     </div>
                     <div class="calificacion-total">
                         <span class="calificacion-label">Calificación Final:</span>
-                        <span class="calificacion-final" id="calificacionFinal">0.00</span>
+                        <span class="calificacion-final">
+                            <span id="calificacionFinal">0.00</span>
+                            <small>/100</small>
+                        </span>
                     </div>
                 </div>
 
@@ -458,38 +461,52 @@ const EvaluacionModule = {
     // Guardar evaluación
     async guardar() {
         console.log('Intentando guardar evaluación...');
-        
+
+        // Validar que evaluacionActual existe
+        if (!evaluacionActual || !evaluacionActual.id) {
+            Swal.fire('Error', 'No se pudo obtener la información de la evaluación actual', 'error');
+            return;
+        }
+
         // Validar que todos los criterios estén evaluados
         const criteriosEvaluados = Object.keys(seleccionesNiveles).length;
         const totalCriterios = criteriosData.length;
-        
+
         console.log(`Criterios evaluados: ${criteriosEvaluados}/${totalCriterios}`);
-        
+
         if (criteriosEvaluados < totalCriterios) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Evaluación incompleta',
                 text: `Debe evaluar todos los criterios. Faltan ${totalCriterios - criteriosEvaluados} criterio(s)`,
-                confirmButtonColor: '#667eea'
+                confirmButtonColor: '#667eea',
+                zIndex: 9999
             });
             return;
         }
-        
+
         // Obtener valores
-        const observaciones = document.getElementById('evalObservaciones');
-        const puntajeTotal = parseFloat(document.getElementById('calificacionFinal').textContent);
-        
+        const observacionesElement = document.getElementById('evalObservaciones');
+        const calificacionFinalElement = document.getElementById('calificacionFinal');
+
         // Validar que los elementos existan
-        if (!observaciones) {
+        if (!observacionesElement) {
             Swal.fire('Error', 'No se pudo obtener el campo de observaciones', 'error');
             return;
         }
-        
+
+        if (!calificacionFinalElement) {
+            Swal.fire('Error', 'No se pudo obtener la calificación final', 'error');
+            return;
+        }
+
+        const puntajeTotal = parseFloat(calificacionFinalElement.textContent);
+
         if (isNaN(puntajeTotal)) {
             Swal.fire('Error', 'No se pudo calcular la calificación final', 'error');
             return;
         }
-        
+
         // Confirmar guardado
         const result = await Swal.fire({
             title: '¿Guardar evaluación?',
@@ -528,7 +545,7 @@ const EvaluacionModule = {
             });
             
             const payload = {
-                observaciones: observaciones.value || '',
+                observaciones: observacionesElement.value || '',
                 puntaje_total: puntajeTotal,
                 detalles: detalles
             };

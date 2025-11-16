@@ -38,6 +38,37 @@ router.get("/teacher", function(req, res) {
         WHERE r.docente_cedula = ? AND r.activo = TRUE
     `;
 
+    // Consulta para obtener rúbricas recientes del docente
+    const queryRubricasRecientes = `
+        SELECT id, nombre_rubrica, fecha_evaluacion
+        FROM rubrica_evaluacion
+        WHERE docente_cedula = ? AND activo = TRUE
+        ORDER BY fecha_evaluacion DESC
+        LIMIT 3
+    `;
+
+    // Consulta para obtener actividad reciente (últimos estudiantes evaluados del docente)
+    const queryActividadReciente = `
+        SELECT 
+            ee.id,
+            ee.fecha_evaluacion,
+            ee.puntaje_total,
+            e.nombre AS estudiante_nombre,
+            e.apellido AS estudiante_apellido,
+            r.nombre_rubrica,
+            m.nombre AS materia_nombre
+        FROM evaluacion_estudiante ee
+        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
+        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
+        INNER JOIN materia m ON r.materia_codigo = m.codigo
+        WHERE r.docente_cedula = ? 
+          AND r.activo = TRUE
+          AND e.activo = 1
+          AND ee.puntaje_total IS NOT NULL
+        ORDER BY ee.fecha_evaluacion DESC
+        LIMIT 4
+    `;
+
     // Ejecutar consultas en paralelo
     const queries = [
         new Promise((resolve, reject) => {
@@ -57,16 +88,49 @@ router.get("/teacher", function(req, res) {
                 if (error) reject(error);
                 else resolve(results[0].total_evaluaciones || 0);
             });
+        }),
+        new Promise((resolve, reject) => {
+            conexion.query(queryRubricasRecientes, [cedula], (error, results) => {
+                if (error) reject(error);
+                else resolve(results || []);
+            });
+        }),
+        new Promise((resolve, reject) => {
+            conexion.query(queryActividadReciente, [cedula], (error, results) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    const actividadFormateada = results.map(ev => {
+                        const iniciales = (ev.estudiante_nombre.charAt(0) + ev.estudiante_apellido.charAt(0)).toUpperCase();
+                        const fecha = ev.fecha_evaluacion ? 
+                            new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric'
+                            }) : 'Sin fecha';
+
+                        return {
+                            ...ev,
+                            iniciales,
+                            fecha_formateada: fecha
+                        };
+                    });
+
+                    resolve(actividadFormateada);
+                }
+            });
         })
     ];
 
     Promise.all(queries)
-        .then(([totalRubricas, totalEstudiantes, totalEvaluaciones]) => {
+        .then(([totalRubricas, totalEstudiantes, totalEvaluaciones, rubricasRecientes, actividadReciente]) => {
             res.render("home/teacher", {
                 datos: req.session,
                 totalRubricas: totalRubricas,
                 totalEstudiantes: totalEstudiantes,
                 totalEvaluaciones: totalEvaluaciones,
+                rubricasRecientes: rubricasRecientes,
+                actividadReciente: actividadReciente,
                 title: 'Sistema de Gestion de Rubricas',
                 currentPage: 'home'
             });
@@ -78,7 +142,9 @@ router.get("/teacher", function(req, res) {
                 datos: req.session,
                 totalRubricas: 0,
                 totalEstudiantes: 0,
-                totalEvaluaciones: 0
+                totalEvaluaciones: 0,
+                rubricasRecientes: [],
+                actividadReciente: []
             });
         });
 });

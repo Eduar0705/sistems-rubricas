@@ -1,22 +1,17 @@
-/* Empty state */
-.empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
+/* SweetAlert2 z-index override para mostrar por encima de todo */
+/* SweetAlert2 z-index override para mostrar por encima de todo */
+.swal2-container {
+    z-index: 10000 !important;
 }
-.empty-state i {
-    font-size: 64px;
-    margin-bottom: 20px;
-    opacity: 0.5;
+
+.swal2-modal {
+    z-index: 10001 !important;
 }
-.empty-state h3 {
-    margin-bottom: 10px;
-    color: #495057;
+
+.swal2-popup {
+    z-index: 10002 !important;
 }
-.empty-state p {
-    color: #6c757d;
-}
+
 
 /* Modal Agregar Evaluación */
 .modal-add-evaluacion {

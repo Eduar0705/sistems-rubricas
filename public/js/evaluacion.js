@@ -202,7 +202,7 @@ const ModalAddEvaluacionModule = {
 
     async cargarRubricas() {
         try {
-            const response = await fetch('/api/rubricas/activas');
+            const response = await fetch('/api/teacher/rubricas/activas');
             const data = await response.json();
             
             if (data.success) {
@@ -225,7 +225,7 @@ const ModalAddEvaluacionModule = {
 
     async cargarCarreras() {
         try {
-            const response = await fetch('/api/carreras');
+            const response = await fetch('/api/teacher/carreras');
             const data = await response.json();
             
             if (data.success) {
@@ -256,7 +256,7 @@ const ModalAddEvaluacionModule = {
 
     async cargarMaterias(carreraCodigo) {
         try {
-            const response = await fetch(`/api/carrera/${carreraCodigo}/materias`);
+            const response = await fetch(`/api/teacher/carrera/${carreraCodigo}/materias`);
             const data = await response.json();
             
             const select = document.getElementById('materia_codigo');
@@ -280,7 +280,7 @@ const ModalAddEvaluacionModule = {
 
     async cargarSecciones(materiaCodigo) {
         try {
-            const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
+            const response = await fetch(`/api/teacher/materia/${materiaCodigo}/secciones`);
             const data = await response.json();
             
             const select = document.getElementById('seccion_id');
@@ -307,7 +307,7 @@ const ModalAddEvaluacionModule = {
             '<div class="loading-estudiantes"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>';
         
         try {
-            const response = await fetch(`/api/seccion/${seccionId}/estudiantes`);
+            const response = await fetch(`/api/teacher/seccion/${seccionId}/estudiantes`);
             const data = await response.json();
             
             if (data.success && data.estudiantes.length > 0) {
@@ -362,8 +362,19 @@ const ModalAddEvaluacionModule = {
     },
 
     async guardar() {
-        const rubricaId = document.getElementById('rubrica_id').value;
-        const observaciones = document.getElementById('observaciones').value;
+        const rubricaIdElement = document.getElementById('rubrica_id');
+        if (!rubricaIdElement) {
+            Swal.fire('Error', 'No se pudo obtener el campo de rúbrica', 'error');
+            return;
+        }
+        const rubricaId = rubricaIdElement.value;
+
+        const observacionesElement = document.getElementById('observaciones');
+        if (!observacionesElement) {
+            Swal.fire('Error', 'No se pudo obtener el campo de observaciones', 'error');
+            return;
+        }
+        const observaciones = observacionesElement.value;
 
         if (!rubricaId) {
             Swal.fire('Error', 'Debe seleccionar una rúbrica', 'error');
@@ -382,7 +393,8 @@ const ModalAddEvaluacionModule = {
             showCancelButton: true,
             confirmButtonText: 'Sí, crear',
             cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#667eea'
+            confirmButtonColor: '#667eea',
+            zIndex: 9999
         });
 
         if (!result.isConfirmed) return;
@@ -395,7 +407,7 @@ const ModalAddEvaluacionModule = {
         });
 
         try {
-            const response = await fetch('/api/evaluaciones/crear', {
+            const response = await fetch('/api/teacher/evaluaciones/crear', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -446,9 +458,7 @@ function closeModalEvaluacion() {
     ModalAddEvaluacionModule.close();
 }
 
-function guardarEvaluacion() {
-    ModalAddEvaluacionModule.guardar();
-}
+
 
 // =============================================
 // EVENT LISTENERS

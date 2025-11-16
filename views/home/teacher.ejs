@@ -52,60 +52,35 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Rúbricas Recientes</h2>
-                        <button class="btn-text">Ver todas</button>
+                        <a class="btn-text" href="/teacher/rubricas">Ver todas</a>
                     </div>
                     <div class="card-content">
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Proyecto Final - Ingeniería de Software</div>
-                                <div class="rubrica-meta">Actualizada hace 2 días</div>
-                            </div>
-                            <div class="rubrica-actions">
-                                <button class="btn-icon" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-icon" title="Ver">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Presentación Oral - Metodología</div>
-                                <div class="rubrica-meta">Actualizada hace 5 días</div>
-                            </div>
-                            <div class="rubrica-actions">
-                                <button class="btn-icon" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-icon" title="Ver">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Ensayo Académico - Investigación</div>
-                                <div class="rubrica-meta">Actualizada hace 1 semana</div>
-                            </div>
-                            <div class="rubrica-actions">
-                                <button class="btn-icon" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-icon" title="Ver">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
+                        <% if (rubricasRecientes && rubricasRecientes.length > 0) { %>
+                            <% rubricasRecientes.forEach(function(rubrica) { %>
+                                <div class="rubrica-item">
+                                    <div class="rubrica-icon">
+                                        <i class="fas fa-file-alt"></i>
+                                    </div>
+                                    <div class="rubrica-info">
+                                        <div class="rubrica-name"><%= rubrica.nombre_rubrica %></div>
+                                        <div class="rubrica-meta">
+                                            <% if (rubrica.fecha_evaluacion) { %>
+                                                Evaluación: <%= rubrica.fecha_evaluacion %>
+                                            <% } else { %>
+                                                Sin fecha de evaluación
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <div class="rubrica-actions">
+                                        <a class="btn-icon" title="Ver" href="/teacher/rubricas?rubrica=<%= rubrica.id %>">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <p class="empty-state">Todavía no has creado rúbricas.</p>
+                        <% } %>
                     </div>
                 </div>
 
@@ -114,33 +89,35 @@
                         <h2 class="card-title">Actividad Reciente</h2>
                     </div>
                     <div class="card-content">
-                        <div class="activity-item">
-                            <div class="activity-icon success">
-                                <i class="fas fa-check"></i>
+                        <% if (actividadReciente && actividadReciente.length > 0) { %>
+                            <% actividadReciente.forEach(function(item) { %>
+                                <div class="activity-item">
+                                    <div class="activity-icon success">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="activity-text">
+                                            Evaluación completada para
+                                            <strong><%= item.estudiante_nombre %> <%= item.estudiante_apellido %></strong>
+                                        </div>
+                                        <div class="activity-time">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            <%= item.fecha_formateada %> · <%= item.nombre_rubrica %> - <%= item.materia_nombre %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="activity-item">
+                                <div class="activity-icon warning">
+                                    <i class="fas fa-user-clock"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-text">Aún no has evaluado estudiantes.</div>
+                                    <div class="activity-time">Las últimas 4 evaluaciones aparecerán aquí.</div>
+                                </div>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-text">Evaluación completada para Juan Pérez</div>
-                                <div class="activity-time">Hace 1 hora</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon primary">
-                                <i class="fas fa-plus"></i>
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-text">Nueva rúbrica creada: Trabajo en Equipo</div>
-                                <div class="activity-time">Hace 3 horas</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon warning">
-                                <i class="fas fa-edit"></i>
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-text">Rúbrica modificada: Proyecto Final</div>
-                                <div class="activity-time">Hace 1 día</div>
-                            </div>
-                        </div>
+                        <% } %>
                     </div>
                 </div>
             </div>
