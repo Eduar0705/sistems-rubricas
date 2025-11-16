@@ -593,18 +593,21 @@ function populateModalEdit(data) {
 
 function cargarCarrerasEdit(callback) {
     const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
+
     fetch(`/${rubroute}/carreras`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 const carreraSelect = document.getElementById('carreraEdit');
+                if (!carreraSelect) {
+                    return;
+                }
                 carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
-                
+
                 data.carreras.forEach(carrera => {
                     carreraSelect.innerHTML += `<option value="${carrera.codigo}">${carrera.nombre}</option>`;
                 });
-                
+
                 carrerasDataEdit = data.carreras;
                 if (callback) callback();
             }
@@ -1242,6 +1245,73 @@ function resetModalEdit() {
 }
 
 // ============================================================
+// ELIMINAR RÚBRICA
+// ============================================================
+
+function eliminarRubrica(id) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: 'Esta acción eliminará permanentemente la rúbrica, sus criterios y niveles de desempeño. No se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando rúbrica...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Realizar la petición DELETE
+            fetch(`/admin/deleteRubrica/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Eliminada!',
+                        text: data.message || 'La rúbrica ha sido eliminada correctamente',
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                        // Recargar la página para actualizar la lista
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar la rúbrica'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ocurrió un error al eliminar la rúbrica'
+                });
+            });
+        }
+    });
+}
+
+// ============================================================
 // EVENT LISTENERS PARA CASCADA DE SELECTS
 // ============================================================
 
@@ -1310,7 +1380,6 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         loadProfesores();
         initializePagination();
-        cargarCarrerasEdit();
     } catch (error) {
         console.error('Error en inicialización:', error);
     }
