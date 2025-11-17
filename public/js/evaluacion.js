@@ -443,7 +443,202 @@ const ModalAddEvaluacionModule = {
 // FUNCIONES GLOBALES (Legacy Support)
 // =============================================
 function verDetalles(evaluacionId) {
-    window.location.href = `/admin/evaluacion/${evaluacionId}`;
+    openModalDetalles(evaluacionId);
+}
+
+// Funciones del modal de detalles
+async function openModalDetalles(evaluacionId) {
+    const modal = document.getElementById('modalVerDetalles');
+    const modalBody = modal.querySelector('.modal-body-detalles');
+
+    if (!modal) {
+        console.warn('Modal #modalVerDetalles no encontrado en el DOM');
+        return;
+    }
+
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="loading-detalles">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando detalles de la evaluación...</p>
+        </div>
+    `;
+
+    // Mostrar modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+        const data = await response.json();
+
+        if (data.success) {
+            mostrarDetallesEvaluacion(data);
+        } else {
+            modalBody.innerHTML = `
+                <div class="loading-detalles">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Error: ${data.message}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error al cargar detalles:', error);
+        modalBody.innerHTML = `
+            <div class="loading-detalles">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error al cargar los detalles de la evaluación</p>
+            </div>
+        `;
+    }
+}
+
+function closeModalDetalles() {
+    const modal = document.getElementById('modalVerDetalles');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function mostrarDetallesEvaluacion(data) {
+    const modalBody = document.getElementById('modalVerDetalles').querySelector('.modal-body-detalles');
+
+    const evaluacion = data.evaluacion;
+    const estudiante = data.estudiante;
+    const rubrica = data.rubrica;
+    const criterios = data.criterios;
+
+    // Calcular total de puntos posibles
+    const totalPosible = criterios.reduce((sum, criterio) => sum + criterio.puntaje_maximo, 0);
+
+    let html = `
+        <div class="detalles-evaluacion">
+            <!-- Información del estudiante -->
+            <div class="estudiante-info-detalles">
+                <div class="estudiante-avatar-detalles">
+                    ${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}
+                </div>
+                <div class="estudiante-datos-detalles">
+                    <h3>${estudiante.nombre} ${estudiante.apellido}</h3>
+                    <p><i class="fas fa-id-card"></i> ${estudiante.cedula}</p>
+                    <p><i class="fas fa-envelope"></i> ${estudiante.email}</p>
+                    <div class="badge-carrera-detalles">${estudiante.carrera}</div>
+                </div>
+            </div>
+
+            <!-- Información de la rúbrica -->
+            <div class="rubrica-info-detalles">
+                <div class="rubrica-info-header-detalles">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h4>Información de la Rúbrica</h4>
+                </div>
+                <div class="rubrica-info-details-detalles">
+                    <div class="rubrica-detail-detalles">
+                        <div class="detail-label-detalles">Rúbrica</div>
+                        <div class="detail-value-detalles">${rubrica.nombre_rubrica}</div>
+                    </div>
+                    <div class="rubrica-detail-detalles">
+                        <div class="detail-label-detalles">Materia</div>
+                        <div class="detail-value-detalles">${rubrica.materia}</div>
+                    </div>
+                    <div class="rubrica-detail-detalles">
+                        <div class="detail-label-detalles">Tipo</div>
+                        <div class="detail-value-detalles">${rubrica.tipo_evaluacion}</div>
+                    </div>
+                    <div class="rubrica-detail-detalles">
+                        <div class="detail-label-detalles">Porcentaje</div>
+                        <div class="detail-value-detalles">${rubrica.porcentaje_evaluacion}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Criterios evaluados -->
+            <div class="criterios-evaluados">
+                <div class="criterios-title-detalles">
+                    <i class="fas fa-tasks"></i>
+                    <h4>Criterios Evaluados</h4>
+                </div>
+    `;
+
+    criterios.forEach(criterio => {
+        const nivelSeleccionado = criterio.niveles.find(n => n.seleccionado);
+        const puntajeObtenido = nivelSeleccionado ? nivelSeleccionado.puntaje : 0;
+
+        html += `
+            <div class="criterio-card-detalles">
+                <div class="criterio-header-detalles">
+                    <div class="criterio-info-detalles">
+                        <h5>${criterio.nombre}</h5>
+                    </div>
+                    <div class="criterio-puntaje-detalles">
+                        ${puntajeObtenido} / ${criterio.puntaje_maximo} pts
+                    </div>
+                </div>
+        `;
+
+        if (nivelSeleccionado) {
+            html += `
+                <div class="nivel-seleccionado">
+                    <div class="nivel-nombre-detalles">
+                        <strong>${nivelSeleccionado.nombre}</strong>
+                        <div class="nivel-puntaje-detalles">${nivelSeleccionado.puntaje} pts</div>
+                    </div>
+                    <div class="nivel-descripcion-detalles">${nivelSeleccionado.descripcion}</div>
+                </div>
+            `;
+        }
+
+        html += `</div>`;
+    });
+
+    html += `
+            </div>
+
+            <!-- Resumen de calificación -->
+            <div class="calificacion-resumen-detalles">
+                <div class="calificacion-item-detalles">
+                    <span class="calificacion-label-detalles">Puntuación Total:</span>
+                    <span class="calificacion-value-detalles">${evaluacion.puntaje_total} / ${totalPosible} puntos</span>
+                </div>
+                <div class="calificacion-total-detalles">
+                    <span class="calificacion-label-detalles">Calificación Final:</span>
+                    <span class="calificacion-final-detalles">${evaluacion.puntaje_total}</span>
+                </div>
+            </div>
+    `;
+
+    // Observaciones si existen
+    if (evaluacion.observaciones && evaluacion.observaciones.trim()) {
+        html += `
+            <div class="observaciones-detalles">
+                <div class="observaciones-header-detalles">
+                    <i class="fas fa-comment"></i>
+                    <h4>Observaciones</h4>
+                </div>
+                <div class="observaciones-text-detalles">${evaluacion.observaciones}</div>
+            </div>
+        `;
+    }
+
+    // Fecha de evaluación
+    if (evaluacion.fecha_evaluacion) {
+        const fecha = new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        html += `
+            <div class="fecha-evaluacion-detalles">
+                <i class="fas fa-calendar"></i>
+                Evaluación realizada el ${fecha}
+            </div>
+        `;
+    }
+
+    html += `</div>`;
+
+    modalBody.innerHTML = html;
 }
 
 function evaluar(evaluacionId) {

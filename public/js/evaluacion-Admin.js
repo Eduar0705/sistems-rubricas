@@ -86,7 +86,7 @@
 
         // Funciones para los botones
         function verDetalles(evaluacionId) {
-            window.location.href = `/admin/evaluacion/${evaluacionId}`;
+            openModalDetalles(evaluacionId);
         }
 
         function evaluar(evaluacionId) {
@@ -514,6 +514,198 @@
         document.getElementById('modalAddEvaluacion')?.addEventListener('click', function(event) {
             if (event.target === this) {
                 closeModalEvaluacion();
+            }
+        });
+
+        // Funciones del modal de detalles
+        async function openModalDetalles(evaluacionId) {
+            const modal = document.getElementById('modalVerDetalles');
+            const modalBody = modal.querySelector('.modal-body-detalles');
+
+            // Mostrar loading
+            modalBody.innerHTML = `
+                <div class="loading-detalles">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <h3>Cargando detalles...</h3>
+                    <p>Por favor espere</p>
+                </div>
+            `;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            try {
+                const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+                const data = await response.json();
+
+                if (data.success) {
+                    mostrarDetallesEvaluacion(data);
+                } else {
+                    modalBody.innerHTML = `
+                        <div class="loading-detalles">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Error al cargar detalles</h3>
+                            <p>${data.message || 'No se pudieron cargar los detalles de la evaluación'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error al cargar detalles:', error);
+                modalBody.innerHTML = `
+                    <div class="loading-detalles">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error de conexión</h3>
+                        <p>No se pudieron cargar los detalles de la evaluación</p>
+                    </div>
+                `;
+            }
+        }
+
+        function closeModalDetalles() {
+            document.getElementById('modalVerDetalles').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function mostrarDetallesEvaluacion(data) {
+            const modalBody = document.getElementById('modalVerDetalles').querySelector('.modal-body-detalles');
+
+            const evaluacion = data.evaluacion;
+            const estudiante = data.estudiante;
+            const rubrica = data.rubrica;
+            const criterios = data.criterios;
+
+            // Información del estudiante
+            const estudianteIniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
+
+            // Calcular calificación total
+            let calificacionTotal = 0;
+            let criteriosHtml = '';
+
+            if (criterios && criterios.length > 0) {
+                criterios.forEach(criterio => {
+                    const nivelSeleccionado = criterio.niveles.find(n => n.seleccionado);
+                    const puntaje = nivelSeleccionado ? nivelSeleccionado.puntaje : 0;
+                    calificacionTotal += puntaje;
+
+                    criteriosHtml += `
+                        <div class="criterio-card-detalles">
+                            <div class="criterio-header-detalles">
+                                <div class="criterio-info-detalles">
+                                    <h5>${criterio.nombre}</h5>
+                                    <div class="criterio-puntaje-detalles">${puntaje} pts</div>
+                                </div>
+                            </div>
+                            ${nivelSeleccionado ? `
+                                <div class="nivel-seleccionado">
+                                    <div class="nivel-nombre-detalles">
+                                        <strong>${nivelSeleccionado.nombre}</strong>
+                                        <div class="nivel-puntaje-detalles">${nivelSeleccionado.puntaje} pts</div>
+                                    </div>
+                                    <div class="nivel-descripcion-detalles">${nivelSeleccionado.descripcion}</div>
+                                </div>
+                            ` : '<p class="text-muted">No evaluado</p>'}
+                        </div>
+                    `;
+                });
+            }
+
+            const html = `
+                <div class="detalles-evaluacion">
+                    <!-- Información del estudiante -->
+                    <div class="estudiante-info-detalles">
+                        <div class="estudiante-avatar-detalles">${estudianteIniciales}</div>
+                        <div class="estudiante-datos-detalles">
+                            <h3>${estudiante.nombre} ${estudiante.apellido}</h3>
+                            <p>CI: ${estudiante.cedula}</p>
+                            <div class="badge-carrera-detalles">${estudiante.carrera}</div>
+                        </div>
+                    </div>
+
+                    <!-- Información de la rúbrica -->
+                    <div class="rubrica-info-detalles">
+                        <div class="rubrica-info-header-detalles">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h4>${rubrica.nombre_rubrica}</h4>
+                        </div>
+                        <div class="rubrica-info-details-detalles">
+                            <div class="rubrica-detail-detalles">
+                                <div class="detail-label-detalles">Materia</div>
+                                <div class="detail-value-detalles">${rubrica.materia}</div>
+                            </div>
+                            <div class="rubrica-detail-detalles">
+                                <div class="detail-label-detalles">Tipo de Evaluación</div>
+                                <div class="detail-value-detalles">${rubrica.tipo_evaluacion}</div>
+                            </div>
+                            <div class="rubrica-detail-detalles">
+                                <div class="detail-label-detalles">Porcentaje</div>
+                                <div class="detail-value-detalles">${rubrica.porcentaje_evaluacion}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Criterios evaluados -->
+                    <div class="criterios-evaluados">
+                        <div class="criterios-title-detalles">
+                            <i class="fas fa-tasks"></i>
+                            <span>Criterios Evaluados</span>
+                        </div>
+                        ${criteriosHtml}
+                    </div>
+
+                    <!-- Resumen de calificación -->
+                    <div class="calificacion-resumen-detalles">
+                        <div class="calificacion-item-detalles">
+                            <div class="calificacion-label-detalles">Calificación Total</div>
+                            <div class="calificacion-value-detalles">${evaluacion.puntaje_total} puntos</div>
+                        </div>
+                        <div class="calificacion-total-detalles">
+                            <div class="calificacion-label-detalles">Porcentaje</div>
+                            <div class="calificacion-final-detalles">${rubrica.porcentaje_evaluacion}%</div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    ${evaluacion.observaciones ? `
+                        <div class="observaciones-detalles">
+                            <div class="observaciones-header-detalles">
+                                <i class="fas fa-comment"></i>
+                                <h4>Observaciones</h4>
+                            </div>
+                            <div class="observaciones-text-detalles">${evaluacion.observaciones}</div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Fecha de evaluación -->
+                    <div class="fecha-evaluacion-detalles">
+                        <i class="fas fa-calendar-alt"></i>
+                        Evaluado el ${new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </div>
+                </div>
+            `;
+
+            modalBody.innerHTML = html;
+        }
+
+        // Cerrar modal de detalles con ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modalDetalles = document.getElementById('modalVerDetalles');
+                if (modalDetalles.classList.contains('active')) {
+                    closeModalDetalles();
+                }
+            }
+        });
+
+        // Cerrar modal de detalles al hacer clic fuera
+        document.getElementById('modalVerDetalles')?.addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModalDetalles();
             }
         });
 

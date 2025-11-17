@@ -100,18 +100,18 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
                     });
                 }
 
-                // Obtener niveles de desempeño para cada criterio
+                    // Obtener niveles de desempeño para cada criterio
                 const criteriosIds = resultCriterios.map(c => c.id);
-                
+
                 if (criteriosIds.length === 0) {
-                    return res.json({ 
-                        success: false, 
-                        message: 'No hay criterios de evaluación configurados' 
+                    return res.json({
+                        success: false,
+                        message: 'No hay criterios de evaluación configurados'
                     });
                 }
 
                 const queryNiveles = `
-                    SELECT 
+                    SELECT
                         nd.id,
                         nd.criterio_id,
                         nd.nombre_nivel,
@@ -126,58 +126,95 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
                 conexion.query(queryNiveles, [criteriosIds], (err, resultNiveles) => {
                     if (err) {
                         console.error('Error al obtener niveles:', err);
-                        return res.json({ 
-                            success: false, 
-                            message: 'Error al obtener niveles de desempeño' 
+                        return res.json({
+                            success: false,
+                            message: 'Error al obtener niveles de desempeño'
                         });
                     }
 
-                    // Agrupar niveles por criterio
-                    const criteriosConNiveles = resultCriterios.map(criterio => {
-                        const niveles = resultNiveles.filter(
-                            nivel => nivel.criterio_id === criterio.id
-                        );
+                    // Obtener detalles de evaluación para saber qué niveles fueron seleccionados
+                    const queryDetalles = `
+                        SELECT
+                            de.criterio_id,
+                            de.nivel_seleccionado,
+                            de.puntaje_obtenido
+                        FROM detalle_evaluacion de
+                        WHERE de.evaluacion_id = ?
+                    `;
 
-                        return {
-                            id: criterio.id,
-                            descripcion: criterio.descripcion,
-                            puntaje_maximo: criterio.puntaje_maximo,
-                            orden: criterio.orden,
-                            niveles: niveles
+                    conexion.query(queryDetalles, [evaluacionId], (err, resultDetalles) => {
+                        if (err) {
+                            console.error('Error al obtener detalles de evaluación:', err);
+                            return res.json({
+                                success: false,
+                                message: 'Error al obtener detalles de evaluación'
+                            });
+                        }
+
+                        // Crear mapa de detalles por criterio
+                        const detallesMap = {};
+                        resultDetalles.forEach(detalle => {
+                            detallesMap[detalle.criterio_id] = {
+                                nivel_seleccionado: detalle.nivel_seleccionado,
+                                puntaje_obtenido: detalle.puntaje_obtenido
+                            };
+                        });
+
+                        // Agrupar niveles por criterio y marcar seleccionado
+                        const criteriosConNiveles = resultCriterios.map(criterio => {
+                            const niveles = resultNiveles.filter(
+                                nivel => nivel.criterio_id === criterio.id
+                            ).map(nivel => ({
+                                id: nivel.id,
+                                nombre: nivel.nombre_nivel,
+                                descripcion: nivel.descripcion,
+                                puntaje: nivel.puntaje,
+                                orden: nivel.orden,
+                                seleccionado: detallesMap[criterio.id] ? detallesMap[criterio.id].nivel_seleccionado === nivel.id : false
+                            }));
+
+                            return {
+                                id: criterio.id,
+                                nombre: criterio.descripcion,
+                                descripcion: criterio.descripcion,
+                                puntaje_maximo: criterio.puntaje_maximo,
+                                orden: criterio.orden,
+                                niveles: niveles
+                            };
+                        });
+
+                        // Preparar respuesta
+                        const response = {
+                            success: true,
+                            evaluacion: {
+                                id: evaluacion.id,
+                                rubrica_id: evaluacion.rubrica_id,
+                                estudiante_cedula: evaluacion.estudiante_cedula,
+                                observaciones: evaluacion.observaciones,
+                                puntaje_total: evaluacion.puntaje_total,
+                                fecha_evaluacion: evaluacion.fecha_evaluacion
+                            },
+                            estudiante: {
+                                cedula: estudiante.cedula,
+                                nombre: estudiante.nombre,
+                                apellido: estudiante.apellido,
+                                email: estudiante.email,
+                                carrera: estudiante.carrera
+                            },
+                            rubrica: {
+                                nombre_rubrica: evaluacion.nombre_rubrica,
+                                tipo_evaluacion: evaluacion.tipo_evaluacion,
+                                porcentaje_evaluacion: evaluacion.porcentaje_evaluacion,
+                                instrucciones: evaluacion.instrucciones,
+                                competencias: evaluacion.competencias,
+                                materia: evaluacion.materia_nombre,
+                                materia_codigo: evaluacion.materia_codigo
+                            },
+                            criterios: criteriosConNiveles
                         };
+
+                        res.json(response);
                     });
-
-                    // Preparar respuesta
-                    const response = {
-                        success: true,
-                        evaluacion: {
-                            id: evaluacion.id,
-                            rubrica_id: evaluacion.rubrica_id,
-                            estudiante_cedula: evaluacion.estudiante_cedula,
-                            observaciones: evaluacion.observaciones,
-                            puntaje_total: evaluacion.puntaje_total,
-                            fecha_evaluacion: evaluacion.fecha_evaluacion
-                        },
-                        estudiante: {
-                            cedula: estudiante.cedula,
-                            nombre: estudiante.nombre,
-                            apellido: estudiante.apellido,
-                            email: estudiante.email,
-                            carrera: estudiante.carrera
-                        },
-                        rubrica: {
-                            nombre_rubrica: evaluacion.nombre_rubrica,
-                            tipo_evaluacion: evaluacion.tipo_evaluacion,
-                            porcentaje_evaluacion: evaluacion.porcentaje_evaluacion,
-                            instrucciones: evaluacion.instrucciones,
-                            competencias: evaluacion.competencias,
-                            materia: evaluacion.materia_nombre,
-                            materia_codigo: evaluacion.materia_codigo
-                        },
-                        criterios: criteriosConNiveles
-                    };
-
-                    res.json(response);
                 });
             });
         });

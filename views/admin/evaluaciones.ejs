@@ -300,6 +300,33 @@
         </div>
     </div>
 
+    <!-- Modal Ver Detalles de Evaluación -->
+    <div class="modal-verdetalles" id="modalVerDetalles">
+        <div class="modal-content-detalles">
+            <div class="modal-header-detalles">
+                <h2><i class="fas fa-eye"></i> Detalles de Evaluación</h2>
+                <button class="modal-close" onclick="closeModalDetalles()" aria-label="Cerrar modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body-detalles" id="modalBodyDetalles">
+                <!-- Contenido se carga dinámicamente -->
+                <div class="loading-detalles">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Cargando detalles...</p>
+                </div>
+            </div>
+
+            <div class="modal-footer-detalles">
+                <button type="button" class="btn-secondary" onclick="closeModalDetalles()">
+                    <i class="fas fa-times"></i>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/home.js"></script>
     <script src="../js/evaluacion-Admin.js"></script>
