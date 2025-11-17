@@ -255,6 +255,8 @@ function loadProfesores() {
 // ============================================================
 
 function verRubrica(id) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+
     Swal.fire({
         title: 'Cargando rúbrica...',
         allowOutsideClick: false,
@@ -263,7 +265,7 @@ function verRubrica(id) {
         }
     });
 
-    fetch(`/admin/rubricas/detalle/${id}`)
+    fetch(`/${rubroute}/rubricas/detalle/${id}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Error al cargar la rúbrica');
@@ -274,13 +276,25 @@ function verRubrica(id) {
             if(data.success) {
                 imprimirRubrica(data.rubrica, data.criterios);
             } else {
-                Swal.fire('Error', data.message || 'No se pudo cargar la rúbrica', 'error');
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo cargar la rúbrica',
+                    icon: 'error'
+                });
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+            Swal.fire({
+                title: 'Error',
+                text: 'No se pudo cargar la rúbrica',
+                icon: 'error'
+            });
         });
+}
+
+function editarRubrica(id) {
+    openModal(id);
 }
 
 function organizarNivelesPorNombre(criterios) {
@@ -501,6 +515,7 @@ function loadRubricData(rubricId) {
         title: 'Cargando...',
         text: 'Por favor espere',
         allowOutsideClick: false,
+        zIndex: 9999,
         didOpen: () => {
             Swal.showLoading();
         }
