@@ -205,7 +205,7 @@ router.get('/api/rubricas/activas', (req, res) => {
     }
 
     const query = `
-        SELECT 
+        SELECT
             r.id,
             r.nombre_rubrica,
             r.tipo_evaluacion,
@@ -229,8 +229,11 @@ router.get('/api/rubricas/activas', (req, res) => {
         INNER JOIN materia m ON r.materia_codigo = m.codigo
         INNER JOIN carrera c ON m.carrera_codigo = c.codigo
         INNER JOIN seccion s ON r.seccion_id = s.id
-        LEFT JOIN docente d ON s.docente_cedula = d.cedula
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
         WHERE r.activo = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM evaluacion_estudiante ee WHERE ee.rubrica_id = r.id
+        )
         ORDER BY r.nombre_rubrica
     `;
 

@@ -535,6 +535,7 @@ function populateModalEdit(data) {
     document.getElementById('fechaEvaluacionEdit').value = rubrica.fecha_evaluacion ? rubrica.fecha_evaluacion.split('T')[0] : '';
     document.getElementById('porcentajeEdit').value = rubrica.porcentaje_evaluacion;
     document.getElementById('tipoEvaluacionEdit').value = rubrica.tipo_evaluacion;
+    document.getElementById('docenteCreadorEdit').value = rubrica.docente_nombre || '';
     document.getElementById('competenciasEdit').value = rubrica.competencias || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
 

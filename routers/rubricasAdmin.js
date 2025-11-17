@@ -23,11 +23,11 @@ router.get("/admin/rubricas", function(req, res) {
             m.nombre as materia_nombre,
             m.codigo as materia_codigo,
             s.codigo as seccion_codigo,
-            CONCAT(d.nombre, ' ', d.apellido) as docente_nombre
+            IFNULL(CONCAT(d.nombre, ' ', d.apellido), 'Docente no encontrado') as docente_nombre
         FROM rubrica_evaluacion r
         INNER JOIN materia m ON r.materia_codigo = m.codigo
         INNER JOIN seccion s ON r.seccion_id = s.id
-        INNER JOIN docente d ON r.docente_cedula = d.cedula
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
         WHERE r.activo = TRUE
         ORDER BY r.fecha_creacion DESC
     `;
@@ -69,11 +69,11 @@ router.get("/admin/rubricas/detalle/:id", function(req, res) {
             s.codigo as seccion_codigo,
             s.lapso_academico,
             c.nombre as carrera_nombre,
-            CONCAT(d.nombre, ' ', d.apellido) as docente_nombre
+            IFNULL(CONCAT(d.nombre, ' ', d.apellido), 'Docente no encontrado') as docente_nombre
         FROM rubrica_evaluacion r
         INNER JOIN materia m ON r.materia_codigo = m.codigo
         INNER JOIN seccion s ON r.seccion_id = s.id
-        INNER JOIN docente d ON r.docente_cedula = d.cedula
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
         INNER JOIN carrera c ON m.carrera_codigo = c.codigo
         WHERE r.id = ?
     `;
@@ -150,20 +150,24 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
     
     if(esAdmin) {
         queryRubrica = `
-            SELECT r.*, m.nombre as materia_nombre, s.codigo as seccion_codigo
+            SELECT r.*, m.nombre as materia_nombre, s.codigo as seccion_codigo,
+                   IFNULL(CONCAT(d.nombre, ' ', d.apellido), 'Docente no encontrado') as docente_nombre
             FROM rubrica_evaluacion r
             INNER JOIN materia m ON r.materia_codigo = m.codigo
             INNER JOIN seccion s ON r.seccion_id = s.id
+            LEFT JOIN docente d ON r.docente_cedula = d.cedula
             WHERE r.id = ? AND r.activo = TRUE
         `;
         paramsRubrica = [id];
     } else {
         queryRubrica = `
-            SELECT r.*, m.nombre as materia_nombre, s.codigo as seccion_codigo
+            SELECT r.*, m.nombre as materia_nombre, s.codigo as seccion_codigo,
+                   IFNULL(CONCAT(d.nombre, ' ', d.apellido), 'Docente no encontrado') as docente_nombre
             FROM rubrica_evaluacion r
             INNER JOIN materia m ON r.materia_codigo = m.codigo
             INNER JOIN seccion s ON r.seccion_id = s.id
-            WHERE r.id = ? 
+            LEFT JOIN docente d ON r.docente_cedula = d.cedula
+            WHERE r.id = ?
             AND r.docente_cedula = ?
             AND r.activo = TRUE
         `;
@@ -404,9 +408,9 @@ router.get("/admin/rubricas/profesores", function(req, res) {
     }
 
     const query = `
-        SELECT DISTINCT CONCAT(d.nombre, ' ', d.apellido) as docente_nombre
+        SELECT DISTINCT IFNULL(CONCAT(d.nombre, ' ', d.apellido), 'Docente no encontrado') as docente_nombre
         FROM rubrica_evaluacion r
-        INNER JOIN docente d ON r.docente_cedula = d.cedula
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
         WHERE r.activo = TRUE
         ORDER BY docente_nombre
     `;

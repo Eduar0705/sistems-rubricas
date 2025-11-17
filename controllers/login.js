@@ -89,11 +89,12 @@ function configurarSesionUsuario(req, user, sesionesActivas) {
     req.session.activo = user.activo;
     req.session.ultimaActividad = Date.now();
     req.session.tipo = 'usuario';
+    console.log('\n============================================')
     console.log('Usuario autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
     console.log('Rol:', req.session.id_rol === 1 ? 'Administrador' : req.session.id_rol === 2 ? 'Profesor' : 'Desconocido');
+    console.log('============================================')
 
-    // Registrar sesión activa para evitar inicios de sesión simultáneos
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
         sesionesActivas.set(req.session.cedula, {
             inicioSesion: Date.now(),
@@ -115,10 +116,11 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     req.session.activo = estudiante.activo;
     req.session.ultimaActividad = Date.now();
     req.session.tipo = 'estudiante';
+    console.log('\n============================================')
     console.log('Estudiante autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
+    console.log('============================================')
 
-    // Registrar sesión activa para evitar inicios de sesión simultáneos (igual que usuario)
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
         sesionesActivas.set(req.session.cedula, {
             inicioSesion: Date.now(),
