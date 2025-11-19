@@ -24,8 +24,8 @@ function crearConexion() {
 
     conexion.on('error', (err) => {
         console.log('Error MySQL:', err.code);
-        if (err.code === 'PROTOCOL_CONNECTION_LOST' || 
-            err.code === 'ECONNRESET' || 
+        if (err.code === 'PROTOCOL_CONNECTION_LOST' ||
+            err.code === 'ECONNRESET' ||
             err.code === 'ETIMEDOUT') {
             console.log('Reconectando...');
             crearConexion();

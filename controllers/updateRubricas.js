@@ -3,7 +3,39 @@ const router = express.Router();
 const connection = require('../models/conetion');
 
 // ============================================================
-// ACTUALIZAR RÚBRICA
+// RUTA: VERIFICAR SI UNA RÚBRICA TIENE EVALUACIONES
+// ============================================================
+
+router.get('/rubricas/tiene-evaluaciones/:id', (req, res) => {
+    const rubricaId = req.params.id;
+    
+    if (!rubricaId) {
+        return res.json({ success: false, message: 'ID de rúbrica no proporcionado' });
+    }
+    
+    const query = `
+        SELECT COUNT(*) as count 
+        FROM evaluacion_estudiante
+        WHERE rubrica_id = ?
+    `;
+    
+    connection.query(query, [rubricaId], (error, results) => {
+        if(error) {
+            console.error('Error al verificar evaluaciones:', error);
+            return res.json({ success: false, error: error.message });
+        }
+        
+        const tieneEvaluaciones = results[0].count > 0;
+        res.json({ 
+            success: true, 
+            tieneEvaluaciones,
+            cantidadEvaluaciones: results[0].count
+        });
+    });
+});
+
+// ============================================================
+// RUTA: ACTUALIZAR RÚBRICA (POST)
 // ============================================================
 
 router.post('/updateRubrica', (req, res) => {
@@ -11,11 +43,18 @@ router.post('/updateRubrica', (req, res) => {
     
     let mensaje;
 
-    // Validar sesión
+    // ============================================================
+    // 1. VALIDAR SESIÓN
+    // ============================================================
+    
     if(!req.session || !req.session.cedula) {
         mensaje = 'Sesión no válida. Por favor, inicie sesión nuevamente.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
+
+    // ============================================================
+    // 2. EXTRAER Y PARSEAR DATOS
+    // ============================================================
 
     const { 
         id, 
@@ -27,29 +66,40 @@ router.post('/updateRubrica', (req, res) => {
         tipo_evaluacion, 
         competencias, 
         instrucciones, 
-        criterios
+        criterios,
+        solo_basico // Indica si solo se editan campos básicos
     } = req.body;
 
-    console.log('Datos recibidos:', { id, nombre_rubrica, materia_codigo, seccion_id });
-    console.log('Criterios recibidos:', criterios);
+    console.log('📊 Datos recibidos:', { 
+        id, 
+        nombre_rubrica, 
+        materia_codigo, 
+        seccion_id, 
+        solo_basico: solo_basico || 'false' 
+    });
 
     // Parse criterios si viene como string
-    let criteriosParsed = criterios;
-    if(typeof criterios === 'string') {
-        try {
-            criteriosParsed = JSON.parse(criterios);
-        } catch(e) {
-            console.error('Error al parsear criterios:', e);
-            mensaje = 'Error: Formato de criterios inválido';
-            return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+    let criteriosParsed = null;
+    if(criterios) {
+        if(typeof criterios === 'string') {
+            try {
+                criteriosParsed = JSON.parse(criterios);
+            } catch(e) {
+                console.error('❌ Error al parsear criterios:', e);
+                mensaje = 'Error: Formato de criterios inválido';
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+        } else {
+            criteriosParsed = criterios;
         }
     }
 
+    console.log('📋 Criterios recibidos:', criteriosParsed ? criteriosParsed.length : 0);
+
     // ============================================================
-    // VALIDACIONES DEL SERVIDOR
+    // 3. VALIDACIONES BÁSICAS
     // ============================================================
 
-    // Validar campos requeridos
     if(!id || !nombre_rubrica || !materia_codigo || !seccion_id || !fecha_evaluacion || 
        !porcentaje_evaluacion || !tipo_evaluacion) {
         mensaje = 'Error: Todos los campos obligatorios deben estar completos';
@@ -63,68 +113,79 @@ router.post('/updateRubrica', (req, res) => {
         return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
     }
 
-    // Validar criterios
-    if(!criteriosParsed || !Array.isArray(criteriosParsed) || criteriosParsed.length === 0) {
-        mensaje = 'Error: Debe agregar al menos un criterio de evaluación';
-        return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-    }
+    // ============================================================
+    // 4. VALIDAR CRITERIOS (SOLO SI NO ES EDICIÓN BÁSICA)
+    // ============================================================
 
-    // Validar estructura de criterios y niveles
-    let sumaPuntajes = 0;
-    for(let i = 0; i < criteriosParsed.length; i++) {
-        const criterio = criteriosParsed[i];
-        
-        if(!criterio.descripcion || criterio.descripcion.trim() === '') {
-            mensaje = `Error: El criterio ${i + 1} necesita una descripción`;
+    if(solo_basico !== 'true') {
+        if(!criteriosParsed || !Array.isArray(criteriosParsed) || criteriosParsed.length === 0) {
+            mensaje = 'Error: Debe agregar al menos un criterio de evaluación';
             return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
         }
-        
-        const puntajeCriterio = parseFloat(criterio.puntaje_maximo);
-        if(isNaN(puntajeCriterio) || puntajeCriterio < 1) {
-            mensaje = `Error: El criterio ${i + 1} debe tener un puntaje mínimo de 1 punto`;
-            return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-        }
-        
-        sumaPuntajes += puntajeCriterio;
-        
-        if(!criterio.niveles || !Array.isArray(criterio.niveles) || criterio.niveles.length === 0) {
-            mensaje = `Error: El criterio ${i + 1} debe tener al menos un nivel de desempeño`;
-            return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-        }
-        
-        for(let j = 0; j < criterio.niveles.length; j++) {
-            const nivel = criterio.niveles[j];
-            
-            if(!nivel.nombre_nivel || nivel.nombre_nivel.trim() === '') {
-                mensaje = `Error: El nivel ${j + 1} del criterio ${i + 1} necesita un nombre`;
-                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-            }
-            
-            if(!nivel.descripcion || nivel.descripcion.trim() === '') {
-                mensaje = `Error: El nivel "${nivel.nombre_nivel}" necesita una descripción`;
-                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-            }
-            
-            const puntajeNivel = parseFloat(nivel.puntaje);
-            if(isNaN(puntajeNivel) || puntajeNivel < 0.25) {
-                mensaje = `Error: El nivel "${nivel.nombre_nivel}" debe tener un puntaje mínimo de 0.25 puntos`;
-                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-            }
-            
-            if(puntajeNivel > puntajeCriterio) {
-                mensaje = `Error: El puntaje del nivel "${nivel.nombre_nivel}" (${puntajeNivel}) excede el puntaje máximo del criterio (${puntajeCriterio})`;
-                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-            }
-        }
-    }
 
-    if(sumaPuntajes > porcentaje) {
-        mensaje = `Error: La suma de puntajes de los criterios (${sumaPuntajes.toFixed(2)}) excede el porcentaje de evaluación (${porcentaje}%)`;
-        return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+        // Validar estructura de criterios y niveles
+        let sumaPuntajes = 0;
+        
+        for(let i = 0; i < criteriosParsed.length; i++) {
+            const criterio = criteriosParsed[i];
+            
+            // Validar descripción
+            if(!criterio.descripcion || criterio.descripcion.trim() === '') {
+                mensaje = `Error: El criterio ${i + 1} necesita una descripción`;
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+            
+            // Validar puntaje del criterio
+            const puntajeCriterio = parseFloat(criterio.puntaje_maximo);
+            if(isNaN(puntajeCriterio) || puntajeCriterio < 1) {
+                mensaje = `Error: El criterio ${i + 1} debe tener un puntaje mínimo de 1 punto`;
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+            
+            sumaPuntajes += puntajeCriterio;
+            
+            // Validar que tenga niveles
+            if(!criterio.niveles || !Array.isArray(criterio.niveles) || criterio.niveles.length === 0) {
+                mensaje = `Error: El criterio ${i + 1} debe tener al menos un nivel de desempeño`;
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+            
+            // Validar cada nivel
+            for(let j = 0; j < criterio.niveles.length; j++) {
+                const nivel = criterio.niveles[j];
+                
+                if(!nivel.nombre_nivel || nivel.nombre_nivel.trim() === '') {
+                    mensaje = `Error: El nivel ${j + 1} del criterio ${i + 1} necesita un nombre`;
+                    return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                }
+                
+                if(!nivel.descripcion || nivel.descripcion.trim() === '') {
+                    mensaje = `Error: El nivel "${nivel.nombre_nivel}" necesita una descripción`;
+                    return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                }
+                
+                const puntajeNivel = parseFloat(nivel.puntaje);
+                if(isNaN(puntajeNivel) || puntajeNivel < 0.25) {
+                    mensaje = `Error: El nivel "${nivel.nombre_nivel}" debe tener un puntaje mínimo de 0.25 puntos`;
+                    return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                }
+                
+                if(puntajeNivel > puntajeCriterio) {
+                    mensaje = `Error: El puntaje del nivel "${nivel.nombre_nivel}" (${puntajeNivel}) excede el puntaje máximo del criterio (${puntajeCriterio})`;
+                    return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                }
+            }
+        }
+
+        // Validar suma total de puntajes
+        if(sumaPuntajes > porcentaje) {
+            mensaje = `Error: La suma de puntajes de los criterios (${sumaPuntajes.toFixed(2)}) excede el porcentaje de evaluación (${porcentaje}%)`;
+            return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+        }
     }
 
     // ============================================================
-    // VERIFICAR PERMISOS SEGÚN EL ROL
+    // 5. VERIFICAR PERMISOS SEGÚN EL ROL
     // ============================================================
     
     const esAdmin = req.session.id_rol === 1;
@@ -154,7 +215,7 @@ router.post('/updateRubrica', (req, res) => {
 
     connection.query(queryVerificar, paramsVerificar, (error, results) => {
         if(error) {
-            console.error('Error al verificar permisos:', error);
+            console.error('❌ Error al verificar permisos:', error);
             mensaje = 'Error al verificar permisos';
             return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
         }
@@ -164,47 +225,146 @@ router.post('/updateRubrica', (req, res) => {
             return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
         }
 
-        actualizarRubrica();
+        console.log('✅ Permisos verificados');
+        
+        // Continuar con la verificación y actualización
+        verificarEvaluacionesYActualizar();
     });
 
     // ============================================================
-    // FUNCIÓN PARA ACTUALIZAR LA RÚBRICA
+    // 6. VERIFICAR SI TIENE EVALUACIONES Y ACTUALIZAR
     // ============================================================
 
-    function actualizarRubrica() {
+    function verificarEvaluacionesYActualizar() {
+        const queryVerificarEvaluaciones = `
+            SELECT COUNT(*) as count 
+            FROM evaluacion_estudiante
+            WHERE rubrica_id = ?
+        `;
+
+        connection.query(queryVerificarEvaluaciones, [id], (error, results) => {
+            if(error) {
+                console.error('❌ Error al verificar evaluaciones:', error);
+                mensaje = 'Error al verificar evaluaciones';
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+
+            const tieneEvaluaciones = results[0].count > 0;
+            console.log(`📊 Rúbrica tiene ${results[0].count} evaluaciones registradas`);
+
+            // Si tiene evaluaciones pero se intenta editar criterios, denegar
+            if(tieneEvaluaciones && solo_basico !== 'true') {
+                mensaje = 'Error: Esta rúbrica tiene evaluaciones registradas. Solo puede editar información básica (nombre, fecha, competencias, etc.).';
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+
+            // Decidir tipo de actualización
+            if(solo_basico === 'true' || tieneEvaluaciones) {
+                console.log('🔧 Modo: Actualización de información básica');
+                actualizarInformacionBasica();
+            } else {
+                console.log('🔧 Modo: Actualización completa (incluyendo criterios)');
+                actualizarRubricaCompleta();
+            }
+        });
+    }
+
+    // ============================================================
+    // 7. ACTUALIZAR SOLO INFORMACIÓN BÁSICA
+    // ============================================================
+
+    function actualizarInformacionBasica() {
+        const queryUpdateBasico = `
+            UPDATE rubrica_evaluacion
+            SET nombre_rubrica = ?, 
+                materia_codigo = ?, 
+                seccion_id = ?, 
+                fecha_evaluacion = ?,
+                porcentaje_evaluacion = ?, 
+                tipo_evaluacion = ?, 
+                competencias = ?, 
+                instrucciones = ?
+            WHERE id = ?
+        `;
+
+        const valuesUpdateBasico = [
+            nombre_rubrica.trim(),
+            materia_codigo,
+            seccion_id,
+            fecha_evaluacion,
+            porcentaje_evaluacion,
+            tipo_evaluacion,
+            competencias ? competencias.trim() : null,
+            instrucciones ? instrucciones.trim() : null,
+            id
+        ];
+
+        connection.query(queryUpdateBasico, valuesUpdateBasico, (error, result) => {
+            if(error) {
+                console.error('❌ Error al actualizar información básica:', error);
+                mensaje = 'Error al actualizar la rúbrica';
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+
+            if(result.affectedRows === 0) {
+                mensaje = 'Rúbrica no encontrada';
+                return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+            }
+
+            console.log('✅ Información básica actualizada exitosamente');
+            mensaje = '¡Información básica actualizada exitosamente! Los criterios no se modificaron porque la rúbrica tiene evaluaciones registradas.';
+            res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+        });
+    }
+
+    // ============================================================
+    // 8. ACTUALIZAR RÚBRICA COMPLETA (SIN EVALUACIONES)
+    // ============================================================
+
+    function actualizarRubricaCompleta() {
         const totalCriterios = criteriosParsed.length;
+        let sumaPuntajes = 0;
+        criteriosParsed.forEach(c => sumaPuntajes += parseFloat(c.puntaje_maximo));
 
         connection.beginTransaction((err) => {
             if(err) {
-                console.error('Error al iniciar transacción:', err);
+                console.error('❌ Error al iniciar transacción:', err);
                 mensaje = 'Error del servidor al iniciar transacción';
                 return res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
             }
 
-            // 1. Actualizar la rúbrica principal
+            console.log('🔄 Transacción iniciada');
+
+            // PASO 1: Actualizar la rúbrica principal
             const queryUpdateRubrica = `
                 UPDATE rubrica_evaluacion
-                SET nombre_rubrica = ?, materia_codigo = ?, seccion_id = ?, fecha_evaluacion = ?,
-                    porcentaje_evaluacion = ?, tipo_evaluacion = ?, competencias = ?, instrucciones = ?
+                SET nombre_rubrica = ?, 
+                    materia_codigo = ?, 
+                    seccion_id = ?, 
+                    fecha_evaluacion = ?,
+                    porcentaje_evaluacion = ?, 
+                    tipo_evaluacion = ?, 
+                    competencias = ?, 
+                    instrucciones = ?
                 WHERE id = ?
             `;
 
             const valuesUpdateRubrica = [
-                nombre_rubrica,
+                nombre_rubrica.trim(),
                 materia_codigo,
                 seccion_id,
                 fecha_evaluacion,
                 porcentaje_evaluacion,
                 tipo_evaluacion,
-                competencias || null,
-                instrucciones || null,
+                competencias ? competencias.trim() : null,
+                instrucciones ? instrucciones.trim() : null,
                 id
             ];
 
             connection.query(queryUpdateRubrica, valuesUpdateRubrica, (error, resultRubrica) => {
                 if(error) {
                     return connection.rollback(() => {
-                        console.error('Error al actualizar rúbrica:', error);
+                        console.error('❌ Error al actualizar rúbrica:', error);
                         mensaje = 'Error al actualizar la rúbrica';
                         res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
                     });
@@ -219,7 +379,7 @@ router.post('/updateRubrica', (req, res) => {
 
                 console.log('✅ Rúbrica principal actualizada');
 
-                // 2. Eliminar todos los criterios y niveles existentes
+                // PASO 2: Eliminar niveles existentes
                 const queryDeleteNiveles = `
                     DELETE nd FROM nivel_desempeno nd
                     INNER JOIN criterio_evaluacion ce ON nd.criterio_id = ce.id
@@ -229,7 +389,7 @@ router.post('/updateRubrica', (req, res) => {
                 connection.query(queryDeleteNiveles, [id], (error) => {
                     if(error) {
                         return connection.rollback(() => {
-                            console.error('Error al eliminar niveles:', error);
+                            console.error('❌ Error al eliminar niveles:', error);
                             mensaje = 'Error al eliminar niveles existentes';
                             res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
                         });
@@ -237,12 +397,16 @@ router.post('/updateRubrica', (req, res) => {
 
                     console.log('✅ Niveles eliminados');
 
-                    const queryDeleteCriterios = `DELETE FROM criterio_evaluacion WHERE rubrica_id = ?`;
+                    // PASO 3: Eliminar criterios existentes
+                    const queryDeleteCriterios = `
+                        DELETE FROM criterio_evaluacion 
+                        WHERE rubrica_id = ?
+                    `;
 
                     connection.query(queryDeleteCriterios, [id], (error) => {
                         if(error) {
                             return connection.rollback(() => {
-                                console.error('Error al eliminar criterios:', error);
+                                console.error('❌ Error al eliminar criterios:', error);
                                 mensaje = 'Error al eliminar criterios existentes';
                                 res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
                             });
@@ -250,119 +414,136 @@ router.post('/updateRubrica', (req, res) => {
 
                         console.log('✅ Criterios eliminados');
 
-                        // 3. Insertar nuevos criterios y niveles
-                        let criteriosCompletados = 0;
-                        const totalCriterios = criteriosParsed.length;
-                        let hayError = false;
-
-                        criteriosParsed.forEach((criterio, indexCriterio) => {
-                            if(hayError) return;
-
-                            const queryCriterio = `
-                                INSERT INTO criterio_evaluacion
-                                (rubrica_id, descripcion, puntaje_maximo, orden)
-                                VALUES (?, ?, ?, ?)
-                            `;
-
-                            const valuesCriterio = [
-                                id,
-                                criterio.descripcion.trim(),
-                                parseFloat(criterio.puntaje_maximo),
-                                parseInt(criterio.orden) || (indexCriterio + 1)
-                            ];
-
-                            connection.query(queryCriterio, valuesCriterio, (error, resultCriterio) => {
-                                if(hayError) return;
-
-                                if(error) {
-                                    hayError = true;
-                                    return connection.rollback(() => {
-                                        console.error('Error al insertar criterio:', error);
-                                        mensaje = `Error al guardar el criterio: ${criterio.descripcion}`;
-                                        res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                    });
-                                }
-
-                                const criterioId = resultCriterio.insertId;
-                                console.log('✅ Criterio insertado con ID:', criterioId);
-
-                                if(criterio.niveles && criterio.niveles.length > 0) {
-                                    let nivelesCompletados = 0;
-                                    const totalNiveles = criterio.niveles.length;
-
-                                    criterio.niveles.forEach((nivel, indexNivel) => {
-                                        if(hayError) return;
-
-                                        const queryNivel = `
-                                            INSERT INTO nivel_desempeno
-                                            (criterio_id, nombre_nivel, descripcion, puntaje, orden)
-                                            VALUES (?, ?, ?, ?, ?)
-                                        `;
-
-                                        const valuesNivel = [
-                                            criterioId,
-                                            nivel.nombre_nivel.trim(),
-                                            nivel.descripcion.trim(),
-                                            parseFloat(nivel.puntaje),
-                                            parseInt(nivel.orden) || (indexNivel + 1)
-                                        ];
-
-                                        connection.query(queryNivel, valuesNivel, (error) => {
-                                            if(hayError) return;
-
-                                            if(error) {
-                                                hayError = true;
-                                                return connection.rollback(() => {
-                                                    console.error('Error al insertar nivel:', error);
-                                                    mensaje = `Error al guardar el nivel: ${nivel.nombre_nivel}`;
-                                                    res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
-                                                });
-                                            }
-
-                                            console.log('✅ Nivel insertado:', nivel.nombre_nivel);
-                                            nivelesCompletados++;
-
-                                            if(nivelesCompletados === totalNiveles) {
-                                                criteriosCompletados++;
-                                                console.log(`Criterio ${criteriosCompletados}/${totalCriterios} completado`);
-
-                                                if(criteriosCompletados === totalCriterios && !hayError) {
-                                                    finalizarTransaccion();
-                                                }
-                                            }
-                                        });
-                                    });
-                                } else {
-                                    criteriosCompletados++;
-
-                                    if(criteriosCompletados === totalCriterios && !hayError) {
-                                        finalizarTransaccion();
-                                    }
-                                }
-                            });
-                        });
+                        // PASO 4: Insertar nuevos criterios y niveles
+                        insertarNuevosCriteriosYNiveles();
                     });
                 });
             });
 
             // ============================================================
-            // FUNCIÓN PARA FINALIZAR LA TRANSACCIÓN
+            // FUNCIÓN: INSERTAR NUEVOS CRITERIOS Y NIVELES
+            // ============================================================
+
+            function insertarNuevosCriteriosYNiveles() {
+                let criteriosCompletados = 0;
+                let hayError = false;
+
+                if(criteriosParsed.length === 0) {
+                    return finalizarTransaccion();
+                }
+
+                criteriosParsed.forEach((criterio, indexCriterio) => {
+                    if(hayError) return;
+
+                    const queryCriterio = `
+                        INSERT INTO criterio_evaluacion
+                        (rubrica_id, descripcion, puntaje_maximo, orden)
+                        VALUES (?, ?, ?, ?)
+                    `;
+
+                    const valuesCriterio = [
+                        id,
+                        criterio.descripcion.trim(),
+                        parseFloat(criterio.puntaje_maximo),
+                        parseInt(criterio.orden) || (indexCriterio + 1)
+                    ];
+
+                    connection.query(queryCriterio, valuesCriterio, (error, resultCriterio) => {
+                        if(hayError) return;
+
+                        if(error) {
+                            hayError = true;
+                            return connection.rollback(() => {
+                                console.error('❌ Error al insertar criterio:', error);
+                                mensaje = `Error al guardar el criterio: ${criterio.descripcion}`;
+                                res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                            });
+                        }
+
+                        const criterioId = resultCriterio.insertId;
+                        console.log(`✅ Criterio ${indexCriterio + 1} insertado con ID: ${criterioId}`);
+
+                        // Insertar niveles del criterio
+                        if(criterio.niveles && criterio.niveles.length > 0) {
+                            let nivelesCompletados = 0;
+                            const totalNiveles = criterio.niveles.length;
+
+                            criterio.niveles.forEach((nivel, indexNivel) => {
+                                if(hayError) return;
+
+                                const queryNivel = `
+                                    INSERT INTO nivel_desempeno
+                                    (criterio_id, nombre_nivel, descripcion, puntaje, orden)
+                                    VALUES (?, ?, ?, ?, ?)
+                                `;
+
+                                const valuesNivel = [
+                                    criterioId,
+                                    nivel.nombre_nivel.trim(),
+                                    nivel.descripcion.trim(),
+                                    parseFloat(nivel.puntaje),
+                                    parseInt(nivel.orden) || (indexNivel + 1)
+                                ];
+
+                                connection.query(queryNivel, valuesNivel, (error) => {
+                                    if(hayError) return;
+
+                                    if(error) {
+                                        hayError = true;
+                                        return connection.rollback(() => {
+                                            console.error('❌ Error al insertar nivel:', error);
+                                            mensaje = `Error al guardar el nivel: ${nivel.nombre_nivel}`;
+                                            res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                                        });
+                                    }
+
+                                    console.log(`  ✅ Nivel "${nivel.nombre_nivel}" insertado`);
+                                    nivelesCompletados++;
+
+                                    if(nivelesCompletados === totalNiveles) {
+                                        criteriosCompletados++;
+                                        console.log(`📊 Progreso: ${criteriosCompletados}/${totalCriterios} criterios completados`);
+
+                                        if(criteriosCompletados === totalCriterios && !hayError) {
+                                            finalizarTransaccion();
+                                        }
+                                    }
+                                });
+                            });
+                        } else {
+                            // Criterio sin niveles (no debería pasar por validación)
+                            criteriosCompletados++;
+
+                            if(criteriosCompletados === totalCriterios && !hayError) {
+                                finalizarTransaccion();
+                            }
+                        }
+                    });
+                });
+            }
+
+            // ============================================================
+            // FUNCIÓN: FINALIZAR TRANSACCIÓN
             // ============================================================
 
             function finalizarTransaccion() {
                 connection.commit((err) => {
                     if(err) {
                         return connection.rollback(() => {
-                            console.error('Error al confirmar transacción:', err);
+                            console.error('❌ Error al confirmar transacción:', err);
                             mensaje = 'Error al confirmar la transacción';
                             res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
                         });
                     }
 
-                    console.log('✅ Rúbrica actualizada exitosamente con ID:', id);
-                    console.log('   - Rol del usuario:', esAdmin ? 'Admin' : 'Docente');
-                    console.log('   - Criterios:', totalCriterios);
-                    console.log('   - Puntajes:', sumaPuntajes.toFixed(2));
+                    console.log('====================================');
+                    console.log('✅ RÚBRICA ACTUALIZADA EXITOSAMENTE');
+                    console.log('====================================');
+                    console.log(`   📝 ID: ${id}`);
+                    console.log(`   👤 Usuario: ${esAdmin ? 'Administrador' : 'Docente'}`);
+                    console.log(`   📊 Criterios: ${totalCriterios}`);
+                    console.log(`   💯 Puntaje total: ${sumaPuntajes.toFixed(2)}/${porcentaje}%`);
+                    console.log('====================================');
 
                     mensaje = '¡Rúbrica actualizada exitosamente!';
                     res.redirect('/admin/rubricas?mensaje=' + encodeURIComponent(mensaje));
