@@ -3,203 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Rúbricas - Estudiante</title>
+    <title>Evaluaciones del Estudiante</title>
     <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/evaluacionsStudents.css">
     <link rel="shortcut icon" href="./img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
-    <%- include("../inc/menuStudents.ejs") %>
-
-    <!-- Main Content -->
+    <%- include('../inc/menuStudents') %>
     <main class="main-content">
-        <!-- Header -->
-        <%- include('../inc/headerStudents.ejs') %>
+        <%- include('../inc/headerStudents') %>
 
-        <!-- Evaluaciones View -->
-        <div class="view active" id="evaluaciones">
-            <div class="filters-bar">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchEvaluaciones" placeholder="Buscar evaluaciones...">
+        <div class="container">
+            <h1>Evaluaciones del Estudiante</h1>
+            <% if (evaluaciones && evaluaciones.length > 0) { %>
+                <div class="evaluaciones-grid">
+                    <% evaluaciones.forEach(evaluacion => { %>
+                        <div class="evaluacion-card">
+                            <h3><%= evaluacion.nombre_rubrica %></h3>
+                            <p><strong>Materia:</strong> <%= evaluacion.materia %></p>
+                            <p><strong>Profesor:</strong> <%= evaluacion.profesor %></p>
+                            <p><strong>Puntaje Total:</strong> <%= evaluacion.puntaje_total %></p>
+                            <p><strong>Fecha de Evaluación:</strong> <%= new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES') %></p>
+                            <p><strong>Tipo de Evaluación:</strong> <%= evaluacion.tipo_evaluacion %></p>
+                            <p><strong>Porcentaje:</strong> <%= evaluacion.porcentaje_evaluacion %>%</p>
+                            <button class="btn-detalles" onclick="verDetallesEvaluacion('<%= evaluacion.evaluacion_id %>')">
+                                <i class="fas fa-eye"></i> Ver Detalles
+                            </button>
+                        </div>
+                    <% }); %>
                 </div>
-                <select class="filter-select" id="filterEstado">
-                    <option value="">Todos los estados</option>
-                    <option value="completada">Completadas</option>
-                    <option value="pendiente">Pendientes</option>
-                </select>
-            </div>
-
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Evaluación</th>
-                            <th>Materia</th>
-                            <th>Fecha</th>
-                            <th>Calificación</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="evaluacionesTable">
-                        <tr>
-                            <td>
-                                <div class="table-cell-content">
-                                    <i class="fas fa-code"></i>
-                                    <span>Proyecto Final</span>
-                                </div>
-                            </td>
-                            <td>Programación Web</td>
-                            <td>15 Ene 2025</td>
-                            <td><span class="score-badge excellent">9.2</span></td>
-                            <td><span class="status-badge completed">Completada</span></td>
-                            <td>
-                                <button class="btn-icon" onclick="verEvaluacion(1)" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn-icon" onclick="descargarEvaluacion(1)" title="Descargar">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-content">
-                                    <i class="fas fa-book-open"></i>
-                                    <span>Ensayo Literario</span>
-                                </div>
-                            </td>
-                            <td>Literatura Contemporánea</td>
-                            <td>12 Ene 2025</td>
-                            <td><span class="score-badge good">8.5</span></td>
-                            <td><span class="status-badge completed">Completada</span></td>
-                            <td>
-                                <button class="btn-icon" onclick="verEvaluacion(2)" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn-icon" onclick="descargarEvaluacion(2)" title="Descargar">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-content">
-                                    <i class="fas fa-chart-line"></i>
-                                    <span>Presentación Campaña</span>
-                                </div>
-                            </td>
-                            <td>Marketing Digital</td>
-                            <td>10 Ene 2025</td>
-                            <td><span class="score-badge excellent">9.0</span></td>
-                            <td><span class="status-badge completed">Completada</span></td>
-                            <td>
-                                <button class="btn-icon" onclick="verEvaluacion(3)" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn-icon" onclick="descargarEvaluacion(3)" title="Descargar">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="table-cell-content">
-                                    <i class="fas fa-microscope"></i>
-                                    <span>Trabajo de Investigación</span>
-                                </div>
-                            </td>
-                            <td>Metodología</td>
-                            <td>-</td>
-                            <td><span class="score-badge pending">Pendiente</span></td>
-                            <td><span class="status-badge pending">Pendiente</span></td>
-                            <td>
-                                <button class="btn-icon" disabled title="No disponible">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <% } else { %>
+                <p>No hay evaluaciones disponibles.</p>
+            <% } %>
         </div>
     </main>
 
-    <!-- Modal Ver Evaluacion -->
+    <!-- Modal para detalles de evaluación -->
     <div id="evaluacionModal" class="modal">
-        <div class="modal-content large">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-clipboard-check"></i> Detalle de Evaluación</h2>
-                <button class="modal-close" onclick="cerrarModal('evaluacionModal')">
+                <h2><i class="fas fa-file-alt"></i> Detalles de la Evaluación</h2>
+                <button class="close-btn" onclick="cerrarModal('evaluacionModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="evaluacion-summary">
-                    <h3>Proyecto Final - Desarrollo Web</h3>
-                    <div class="evaluacion-meta">
-                        <span><i class="fas fa-calendar"></i> Evaluado: 15 Ene 2025</span>
-                        <span><i class="fas fa-user"></i> Profesor: Dr. Carlos Martínez</span>
-                    </div>
-                    <div class="evaluacion-score-large">
-                        <span class="score-label">Calificación Final</span>
-                        <span class="score-value">9.2</span>
-                        <span class="score-max">/ 10.0</span>
-                    </div>
-                </div>
-
-                <div class="evaluacion-criterios">
-                    <h4><i class="fas fa-star"></i> Evaluación por Criterios</h4>
-                    <div class="criterio-evaluado">
-                        <div class="criterio-eval-header">
-                            <h5>Funcionalidad</h5>
-                            <span class="criterio-score">24/25</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 96%"></div>
-                        </div>
-                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Excelente implementación de todas las funcionalidades. El sistema funciona de manera fluida y sin errores.</p>
-                    </div>
-
-                    <div class="criterio-evaluado">
-                        <div class="criterio-eval-header">
-                            <h5>Diseño y UX</h5>
-                            <span class="criterio-score">18/20</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 90%"></div>
-                        </div>
-                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Diseño atractivo y profesional. La experiencia de usuario es muy buena. Sugerencia: mejorar el contraste en algunos elementos.</p>
-                    </div>
-
-                    <div class="criterio-evaluado">
-                        <div class="criterio-eval-header">
-                            <h5>Código</h5>
-                            <span class="criterio-score">23/25</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 92%"></div>
-                        </div>
-                        <p class="criterio-feedback"><strong>Retroalimentación:</strong> Código muy bien estructurado y documentado. Buenas prácticas aplicadas consistentemente.</p>
-                    </div>
-                </div>
-
-                <div class="comentarios-generales">
-                    <h4><i class="fas fa-comment"></i> Comentarios Generales</h4>
-                    <p>Excelente trabajo en general. El proyecto demuestra un dominio sólido de los conceptos vistos en clase. La implementación es profesional y cumple con todos los requisitos. Sigue así!</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="cerrarModal('evaluacionModal')">Cerrar</button>
-                <button class="btn-primary" onclick="descargarEvaluacion()">
-                    <i class="fas fa-download"></i> Descargar Reporte
-                </button>
+            <div class="modal-body" id="evaluacionModalBody">
+                <!-- El contenido se cargará dinámicamente -->
             </div>
         </div>
     </div>
 
-    <script src="./js/home.js"></script>
+    <script src="../js/students.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

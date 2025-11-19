@@ -2,7 +2,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="../img/logoiujo.jpg" alt="logo IUJO" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="max-width: 200px; text-align: center;">
-            <button class="sidebar-toggle" id="sidebarToggle">
+            <button class="sidebar-toggle" id="mobileMenuToggle">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -102,7 +102,7 @@
             var sidebar = doc.getElementById('sidebar');
             if (sidebarToggle && sidebar && sidebarToggle.dataset.toggleBound !== '1') {
                 sidebarToggle.addEventListener('click', function () {
-                    sidebar.classList.toggle('collapsed');
+                    sidebar.classList.toggle('active');
                 });
                 sidebarToggle.dataset.toggleBound = '1';
             }

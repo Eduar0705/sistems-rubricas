@@ -8,6 +8,196 @@
     <link rel="shortcut icon" href="./img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+<style>
+/* Estilos adicionales para el dashboard de estudiante */
+
+/* Badges de puntuación */
+.score-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-block;
+    min-width: 50px;
+    text-align: center;
+}
+
+.score-badge.excellent {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.score-badge.good {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.score-badge.acceptable {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.score-badge.insufficient {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Badge pequeño para porcentajes */
+.badge-small {
+    background-color: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+/* Indicadores de urgencia */
+.urgente {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 10px;
+    animation: pulse 2s infinite;
+}
+
+.proximo {
+    display: inline-block;
+    background-color: #ffc107;
+    color: #000;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Meta información de rúbrica */
+.rubrica-meta {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+/* Mejora del activity-time */
+.activity-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.activity-time i {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Responsive para badges */
+@media (max-width: 768px) {
+    .score-badge {
+        font-size: 0.85rem;
+        padding: 4px 10px;
+        min-width: 40px;
+    }
+    
+    .badge-small {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+    
+    .urgente,
+    .proximo {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+}
+
+/* Ajustes para rubrica-item */
+.rubrica-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+.rubrica-item:last-child {
+    border-bottom: none;
+}
+
+.rubrica-item:hover {
+    background-color: #f8f9fa;
+}
+
+.rubrica-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.rubrica-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.rubrica-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rubrica-actions {
+    flex-shrink: 0;
+}
+</style>
 <body>
     <%- include("../inc/menuStudents.ejs") %>
 
@@ -24,7 +214,7 @@
                         <i class="fas fa-file-alt"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">8</div>
+                        <div class="stat-value"><%= stats.rubricasActivas %></div>
                         <div class="stat-label">Rúbricas Activas</div>
                     </div>
                 </div>
@@ -33,7 +223,7 @@
                         <i class="fas fa-clipboard-check"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">12</div>
+                        <div class="stat-value"><%= stats.evaluacionesCompletadas %></div>
                         <div class="stat-label">Evaluaciones Completadas</div>
                     </div>
                 </div>
@@ -42,7 +232,7 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">3</div>
+                        <div class="stat-value"><%= stats.evaluacionesPendientes %></div>
                         <div class="stat-label">Pendientes</div>
                     </div>
                 </div>
@@ -55,42 +245,52 @@
                         <a class="btn-text" href="/student/evaluaciones">Ver todas</a>
                     </div>
                     <div class="card-content">
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-code"></i>
+                        <% if (evaluacionesRecientes.length > 0) { %>
+                            <% evaluacionesRecientes.forEach(evaluacion => { 
+                                // Determinar el icono según el tipo de evaluación
+                                let icono = 'fas fa-file-alt';
+                                if (evaluacion.tipo_evaluacion === 'Proyecto') icono = 'fas fa-code';
+                                if (evaluacion.tipo_evaluacion === 'Taller') icono = 'fas fa-tools';
+                                if (evaluacion.tipo_evaluacion === 'Presentacion') icono = 'fas fa-chart-line';
+                                if (evaluacion.tipo_evaluacion === 'Oral') icono = 'fas fa-microphone';
+                                
+                                // Determinar clase de badge según la nota
+                                let badgeClass = 'insufficient';
+                                if (evaluacion.puntaje_total >= 9) badgeClass = 'excellent';
+                                else if (evaluacion.puntaje_total >= 7) badgeClass = 'good';
+                                else if (evaluacion.puntaje_total >= 5) badgeClass = 'acceptable';
+                                
+                                // Formatear fecha
+                                const fecha = new Date(evaluacion.fecha_evaluacion);
+                                const fechaFormateada = fecha.toLocaleDateString('es-ES', { 
+                                    day: 'numeric', 
+                                    month: 'short', 
+                                    year: 'numeric' 
+                                });
+                            %>
+                            <div class="rubrica-item">
+                                <div class="rubrica-icon">
+                                    <i class="<%= icono %>"></i>
+                                </div>
+                                <div class="rubrica-info">
+                                    <div class="rubrica-name"><%= evaluacion.nombre_rubrica %></div>
+                                    <div class="rubrica-meta">
+                                        <%= evaluacion.materia %> • Evaluado: <%= fechaFormateada %>
+                                    </div>
+                                </div>
+                                <div class="rubrica-actions">
+                                    <span class="score-badge <%= badgeClass %>">
+                                        <%= typeof evaluacion.puntaje_total === 'number' ? evaluacion.puntaje_total.toFixed(1) : parseFloat(evaluacion.puntaje_total).toFixed(1) %>
+                                    </span>
+                                </div>
                             </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Proyecto Final - Programación Web</div>
-                                <div class="rubrica-meta">Evaluado: 15 Ene 2025</div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No tienes evaluaciones recientes</p>
                             </div>
-                            <div class="rubrica-actions">
-                                <span class="score-badge excellent">9.2</span>
-                            </div>
-                        </div>
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-book-open"></i>
-                            </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Ensayo - Literatura Contemporánea</div>
-                                <div class="rubrica-meta">Evaluado: 12 Ene 2025</div>
-                            </div>
-                            <div class="rubrica-actions">
-                                <span class="score-badge good">8.5</span>
-                            </div>
-                        </div>
-                        <div class="rubrica-item">
-                            <div class="rubrica-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="rubrica-info">
-                                <div class="rubrica-name">Presentación - Marketing Digital</div>
-                                <div class="rubrica-meta">Evaluado: 10 Ene 2025</div>
-                            </div>
-                            <div class="rubrica-actions">
-                                <span class="score-badge excellent">9.0</span>
-                            </div>
-                        </div>
+                        <% } %>
                     </div>
                 </div>
 
@@ -99,34 +299,59 @@
                         <h2 class="card-title">Próximas Evaluaciones</h2>
                     </div>
                     <div class="card-content">
-                        <div class="activity-item">
-                            <div class="activity-icon warning">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-text">
-                                    Trabajo de Investigación - Metodología
+                        <% if (proximasEvaluaciones.length > 0) { %>
+                            <% proximasEvaluaciones.forEach(proxima => { 
+                                const fecha = new Date(proxima.fecha_evaluacion);
+                                const fechaFormateada = fecha.toLocaleDateString('es-ES', { 
+                                    day: 'numeric', 
+                                    month: 'short', 
+                                    year: 'numeric' 
+                                });
+                                
+                                // Calcular días restantes
+                                const hoy = new Date();
+                                const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+                                
+                                // Determinar icono y clase según días restantes
+                                let iconClass = 'info';
+                                let icon = 'fas fa-info-circle';
+                                if (diasRestantes <= 3) {
+                                    iconClass = 'warning';
+                                    icon = 'fas fa-exclamation-triangle';
+                                } else if (diasRestantes <= 7) {
+                                    iconClass = 'warning';
+                                    icon = 'fas fa-clock';
+                                }
+                            %>
+                            <div class="activity-item">
+                                <div class="activity-icon <%= iconClass %>">
+                                    <i class="<%= icon %>"></i>
                                 </div>
-                                <div class="activity-time">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    Fecha límite: 20 Ene 2025
+                                <div class="activity-content">
+                                    <div class="activity-text">
+                                        <%= proxima.nombre_rubrica %> - <%= proxima.materia %>
+                                        <span class="badge-small"><%= proxima.porcentaje_evaluacion %>%</span>
+                                    </div>
+                                    <div class="activity-time">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Fecha límite: <%= fechaFormateada %>
+                                        <% if (diasRestantes === 0) { %>
+                                            <span class="urgente">¡Hoy!</span>
+                                        <% } else if (diasRestantes === 1) { %>
+                                            <span class="urgente">Mañana</span>
+                                        <% } else if (diasRestantes <= 7) { %>
+                                            <span class="proximo">En <%= diasRestantes %> días</span>
+                                        <% } %>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon info">
-                                <i class="fas fa-info-circle"></i>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <i class="fas fa-check-circle"></i>
+                                <p>No tienes evaluaciones pendientes próximamente</p>
                             </div>
-                            <div class="activity-content">
-                                <div class="activity-text">
-                                    Examen Final - Bases de Datos
-                                </div>
-                                <div class="activity-time">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    Fecha límite: 25 Ene 2025
-                                </div>
-                            </div>
-                        </div>
+                        <% } %>
                     </div>
                 </div>
             </div>
