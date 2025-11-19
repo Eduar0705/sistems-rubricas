@@ -20,7 +20,7 @@
         <div class="view" id="reportes">
             <div class="view-header">
                 <h2>Reportes y Estadísticas</h2>
-                <button class="btn-primary">
+                <button class="btn-primary" onclick="window.print()">
                     <i class="fas fa-download"></i>
                     Exportar Reporte
                 </button>
@@ -29,13 +29,10 @@
             <div class="content-grid">
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title">Rendimiento por Asignatura</h2>
+                        <h2 class="card-title">Rendimiento por Carrera</h2>
                     </div>
                     <div class="card-content">
-                        <div class="chart-placeholder">
-                            <i class="fas fa-chart-bar"></i>
-                            <p>Gráfico de rendimiento por asignatura</p>
-                        </div>
+                        <canvas id="rendimientoChart"></canvas>
                     </div>
                 </div>
 
@@ -44,40 +41,93 @@
                         <h2 class="card-title">Distribución de Calificaciones</h2>
                     </div>
                     <div class="card-content">
-                        <div class="chart-placeholder">
-                            <i class="fas fa-chart-pie"></i>
-                            <p>Gráfico de distribución de calificaciones</p>
-                        </div>
+                        <canvas id="distribucionChart"></canvas>
                     </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Resumen de Evaluaciones</h2>
+                    <h2 class="card-title">Resumen General</h2>
                 </div>
                 <div class="card-content">
                     <div class="summary-grid">
                         <div class="summary-item">
-                            <div class="summary-label">Total Evaluaciones</div>
-                            <div class="summary-value">156</div>
+                            <div class="summary-label">Total Estudiantes</div>
+                            <div class="summary-value"><%= stats ? stats.totalEstudiantes : 0 %></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Docentes</div>
+                            <div class="summary-value"><%= stats ? stats.totalDocentes : 0 %></div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Rúbricas</div>
+                            <div class="summary-value"><%= stats ? stats.totalRubricas : 0 %></div>
                         </div>
                         <div class="summary-item">
                             <div class="summary-label">Promedio General</div>
-                            <div class="summary-value">8.4</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Tasa de Aprobación</div>
-                            <div class="summary-value">94%</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Pendientes</div>
-                            <div class="summary-value">12</div>
+                            <div class="summary-value"><%= stats ? stats.promedioGeneral : 0 %></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (stats) { 
+                // Rendimiento por Carrera Chart
+                const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
+                const carreras =  JSON.stringify(stats.rendimientoCarrera.map(r => r.nombre)) ;
+                const promedios =  JSON.stringify(stats.rendimientoCarrera.map(r => r.promedio)) ;
+
+                new Chart(rendimientoCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: carreras,
+                        datasets: [{
+                            label: 'Promedio de Calificaciones',
+                            data: promedios,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 20 // Assuming 20 is max grade
+                            }
+                        }
+                    }
+                });
+
+                // Distribución de Notas Chart
+                const distribucionCtx = document.getElementById('distribucionChart').getContext('2d');
+                const rangos =  JSON.stringify(stats.distribucionNotas.map(d => d.rango)) ;
+                const cantidades =  JSON.stringify(stats.distribucionNotas.map(d => d.cantidad)) ;
+
+                new Chart(distribucionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: rangos,
+                        datasets: [{
+                            data: cantidades,
+                            backgroundColor: [
+                                'rgba(75, 192, 192, 0.6)', // Sobresaliente
+                                'rgba(54, 162, 235, 0.6)', // Notable
+                                'rgba(255, 206, 86, 0.6)', // Aprobado
+                                'rgba(255, 99, 132, 0.6)'  // Reprobado
+                            ]
+                        }]
+                    }
+                });
+            }
+        });
+    </script>
     </main>
 
     <script src="../js/home.js"></script>

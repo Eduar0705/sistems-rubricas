@@ -24,7 +24,7 @@
                         <i class="fas fa-graduation-cap"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">8.5</div>
+                        <div class="stat-value"><%= stats.promedioGeneral %></div>
                         <div class="stat-label">Promedio General</div>
                     </div>
                 </div>
@@ -33,7 +33,7 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">12/14</div>
+                        <div class="stat-value"><%= stats.materiasAprobadas %>/<%= stats.totalMaterias %></div>
                         <div class="stat-label">Materias Aprobadas</div>
                     </div>
                 </div>
@@ -42,7 +42,7 @@
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value">85.7%</div>
+                        <div class="stat-value"><%= stats.porcentajeCompletado %>%</div>
                         <div class="stat-label">Completado</div>
                     </div>
                 </div>
@@ -53,51 +53,24 @@
                     <h2 class="card-title">Calificaciones por Materia</h2>
                 </div>
                 <div class="card-content">
-                    <div class="grade-item">
-                        <div class="grade-info">
-                            <h4>Programación Web</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 92%"></div>
+                    <% if (materias.length === 0) { %>
+                        <p class="no-data">No tienes materias inscritas o calificaciones registradas.</p>
+                    <% } else { %>
+                        <% materias.forEach(materia => { %>
+                            <div class="grade-item" onclick="verDetallesMateria('<%= JSON.stringify(materia) %>')">
+                                <div class="grade-info">
+                                    <h4><%= materia.nombre %> <small>(<%= materia.codigo %>)</small></h4>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: <%= materia.porcentaje_acumulado %>%"></div>
+                                    </div>
+                                    <small><%= materia.porcentaje_acumulado %>% Evaluado</small>
+                                </div>
+                                <div class="grade-score <%= materia.promedio >= 10 ? 'excellent' : (materia.promedio >= 6 ? 'good' : 'average') %>">
+                                    <%= materia.promedio %>
+                                </div>
                             </div>
-                        </div>
-                        <div class="grade-score excellent">9.2</div>
-                    </div>
-                    <div class="grade-item">
-                        <div class="grade-info">
-                            <h4>Marketing Digital</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 90%"></div>
-                            </div>
-                        </div>
-                        <div class="grade-score excellent">9.0</div>
-                    </div>
-                    <div class="grade-item">
-                        <div class="grade-info">
-                            <h4>Literatura Contemporánea</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 85%"></div>
-                            </div>
-                        </div>
-                        <div class="grade-score good">8.5</div>
-                    </div>
-                    <div class="grade-item">
-                        <div class="grade-info">
-                            <h4>Bases de Datos</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 82%"></div>
-                            </div>
-                        </div>
-                        <div class="grade-score good">8.2</div>
-                    </div>
-                    <div class="grade-item">
-                        <div class="grade-info">
-                            <h4>Metodología de la Investigación</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: 78%"></div>
-                            </div>
-                        </div>
-                        <div class="grade-score average">7.8</div>
-                    </div>
+                        <% }) %>
+                    <% } %>
                 </div>
             </div>
         </div>
@@ -178,5 +151,110 @@
 
     <script src="./js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function verDetallesMateria(materiaJson) {
+            const materia = JSON.parse(materiaJson);
+            const modal = document.getElementById('evaluacionModal');
+            
+            // Update modal content
+            const modalBody = modal.querySelector('.modal-body');
+            
+            let htmlContent = `
+                <div class="evaluacion-summary">
+                    <h3>${materia.nombre}</h3>
+                    <div class="evaluacion-meta">
+                        <span><i class="fas fa-code"></i> Código: ${materia.codigo}</span>
+                        <span><i class="fas fa-layer-group"></i> Sección: ${materia.seccion}</span>
+                    </div>
+                    <div class="evaluacion-score-large">
+                        <span class="score-label">Calificación Acumulada</span>
+                        <span class="score-value">${materia.promedio}</span>
+                        <span class="score-max">/ ${materia.scale}</span>
+                    </div>
+                </div>
+                
+                <div class="evaluacion-criterios">
+                    <h4><i class="fas fa-list-alt"></i> Evaluaciones (Rúbricas)</h4>
+            `;
+            
+            if (materia.rubricas && materia.rubricas.length > 0) {
+                materia.rubricas.forEach(rubrica => {
+                    const puntaje = rubrica.puntaje_obtenido !== null ? parseFloat(rubrica.puntaje_obtenido).toFixed(2) : '-';
+                    const maximo = parseFloat(rubrica.puntaje_maximo).toFixed(2);
+                    const porcentaje = rubrica.porcentaje;
+                    // Calculate progress width relative to max score if scored, else 0
+                    const progressWidth = rubrica.puntaje_obtenido !== null ? (rubrica.puntaje_obtenido / rubrica.puntaje_maximo) * 100 : 0;
+                    
+                    htmlContent += `
+                        <div class="criterio-evaluado">
+                            <div class="criterio-eval-header">
+                                <h5>${rubrica.nombre} <small>(${porcentaje}%)</small></h5>
+                                <span class="criterio-score">${puntaje}/${maximo}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progressWidth}%"></div>
+                            </div>
+                            ${rubrica.observaciones ? `<p class="criterio-feedback"><strong>Observaciones:</strong> ${rubrica.observaciones}</p>` : ''}
+                            ${rubrica.fecha ? `<p class="criterio-feedback"><small>Fecha: ${new Date(rubrica.fecha).toLocaleDateString()}</small></p>` : ''}
+                        </div>
+                    `;
+                });
+            } else {
+                htmlContent += '<p>No hay evaluaciones registradas para esta materia.</p>';
+            }
+            
+            htmlContent += `</div>`;
+            
+            // Replace content but keep the footer buttons (or recreate them)
+            // Actually, let's just replace the body content
+            // We need to preserve the footer if we want the buttons to work, but the "Descargar Reporte" might need logic too.
+            // For now, let's just update the innerHTML of a container or the whole body.
+            
+            // Let's clear the existing static body content first
+            const summaryDiv = modal.querySelector('.evaluacion-summary');
+            const criteriosDiv = modal.querySelector('.evaluacion-criterios');
+            const comentariosDiv = modal.querySelector('.comentarios-generales');
+            
+            if(summaryDiv) summaryDiv.remove();
+            if(criteriosDiv) criteriosDiv.remove();
+            if(comentariosDiv) comentariosDiv.remove();
+            
+            // Insert new content
+            modalBody.innerHTML = htmlContent + modalBody.innerHTML; // Keep footer if it's inside body? No, footer is sibling.
+            
+            // Wait, the modal structure in the file is:
+            // .modal-content > .modal-header, .modal-body, .modal-footer
+            // So I should just set .modal-body.innerHTML
+            
+            modalBody.innerHTML = htmlContent;
+
+            // Show modal
+            modal.style.display = 'flex';
+            
+            // Close modal logic (already in home.js or inline?)
+            // The close button has onclick="cerrarModal('evaluacionModal')"
+            // We need to ensure closing works.
+        }
+        
+        function cerrarModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        function descargarEvaluacion() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Descargar Reporte',
+                text: 'Esta funcionalidad estará disponible pronto.'
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('evaluacionModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>

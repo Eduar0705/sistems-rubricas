@@ -82,6 +82,7 @@ app.use(require('./routers/profeAdmin'));
 app.use(require('./routers/reportesAdmin'));
 app.use(require('./routers/configAdmin'));
 app.use(require('./controllers/deleteRubrica'))
+app.use(require('./routers/notificaciones'));
 
 //RUTAS TEACHER
 app.use(require('./routers/teacher'));

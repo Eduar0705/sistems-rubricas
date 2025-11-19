@@ -1,0 +1,457 @@
+<!-- Modal de Notificaciones estilo Facebook -->
+<div id="notificacionesModal" class="notification-dropdown">
+    <div class="notification-dropdown-header">
+        <h3>Notificaciones</h3>
+        <button onclick="marcarTodasLeidas()" class="btn-mark-all" title="Marcar todas como leídas">
+            <i class="fas fa-check-double"></i>
+        </button>
+    </div>
+    <div class="notification-dropdown-body">
+        <div id="listaNotificaciones" class="notification-list">
+            <!-- Las notificaciones se cargarán aquí dinámicamente -->
+            <div class="no-notifications">
+                <i class="fas fa-bell-slash"></i>
+                <p>No tienes notificaciones nuevas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Notification Dropdown - Estilo Facebook */
+    .notification-dropdown {
+        display: none;
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        width: 360px;
+        max-height: 500px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+        z-index: 2000;
+        overflow: hidden;
+        animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .notification-dropdown-header {
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid #e4e6eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #fff;
+    }
+
+    .notification-dropdown-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #050505;
+    }
+
+    .btn-mark-all {
+        background: none;
+        border: none;
+        color: #0866ff;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        font-size: 1rem;
+    }
+
+    .btn-mark-all:hover {
+        background-color: #f0f2f5;
+    }
+
+    .notification-dropdown-body {
+        overflow-y: auto;
+        max-height: 440px;
+    }
+
+    .notification-list {
+        padding: 0;
+    }
+    
+    .notification-item {
+        padding: 12px 16px;
+        display: flex;
+        gap: 12px;
+        transition: background-color 0.2s;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f2f5;
+    }
+    
+    .notification-item:hover {
+        background-color: #f0f2f5;
+    }
+
+    .notification-item.unread {
+        background-color: #e7f3ff;
+    }
+
+    .notification-item.unread::before {
+        content: '';
+        position: absolute;
+        left: 16px;
+        width: 8px;
+        height: 8px;
+        background-color: #0866ff;
+        border-radius: 50%;
+        margin-top: 6px;
+    }
+
+    .notification-item.unread {
+        padding-left: 32px;
+        position: relative;
+    }
+    
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .notification-message {
+        margin: 0 0 4px 0;
+        font-size: 0.9375rem;
+        color: #050505;
+        line-height: 1.3333;
+        font-weight: 400;
+    }
+
+    .notification-message strong {
+        font-weight: 600;
+    }
+    
+    .notification-time {
+        font-size: 0.8125rem;
+        color: #65676b;
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .notification-details {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background-color: #f0f2f5;
+        border-radius: 8px;
+        font-size: 0.8125rem;
+    }
+
+    .notification-detail-row {
+        display: flex;
+        margin-bottom: 4px;
+        gap: 8px;
+    }
+
+    .notification-detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .notification-detail-label {
+        font-weight: 600;
+        color: #65676b;
+        min-width: 70px;
+        font-size: 0.8125rem;
+    }
+
+    .notification-detail-value {
+        color: #050505;
+        font-size: 0.8125rem;
+    }
+
+    .btn-view-rubrica {
+        margin-top: 8px;
+        padding: 6px 12px;
+        background-color: #0866ff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: background-color 0.2s;
+        width: 100%;
+    }
+
+    .btn-view-rubrica:hover {
+        background-color: #0952cc;
+    }
+
+    .btn-view-rubrica i {
+        margin-right: 6px;
+    }
+
+    .no-notifications {
+        padding: 40px 20px;
+        text-align: center;
+        color: #65676b;
+    }
+
+    .no-notifications i {
+        font-size: 3rem;
+        color: #bcc0c4;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .no-notifications p {
+        margin: 0;
+        font-size: 1rem;
+        color: #65676b;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #fa383e;
+        color: white;
+        border-radius: 10px;
+        padding: 2px 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        display: none;
+        min-width: 18px;
+        text-align: center;
+    }
+
+    .btn-mark-read {
+        background: none;
+        border: none;
+        color: #0866ff;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-mark-read:hover {
+        background-color: #e7f3ff;
+    }
+</style>
+
+<script>
+    let previousNotificationCount = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Request browser notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('Notificaciones del navegador habilitadas');
+                }
+            });
+        }
+
+        // Cargar notificaciones al iniciar
+        cargarNotificaciones();
+        
+        // Polling cada 30 segundos
+        setInterval(cargarNotificaciones, 30000);
+    });
+
+    function cargarNotificaciones() {
+        fetch('/api/notifications')
+            .then(response => {
+                if (response.status === 401) return null;
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return;
+                
+                // Check if there are new notifications
+                if (data.unreadCount > previousNotificationCount && previousNotificationCount > 0) {
+                    mostrarNotificacionNavegador(data.notifications[0]);
+                }
+                previousNotificationCount = data.unreadCount;
+                
+                actualizarBadge(data.unreadCount);
+                renderizarNotificaciones(data.notifications);
+            })
+            .catch(error => console.error('Error cargando notificaciones:', error));
+    }
+
+    function mostrarNotificacionNavegador(notif) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            const title = 'Nueva Rúbrica Creada';
+            const options = {
+                body: notif.mensaje,
+                icon: '/favicon.ico', // Puedes cambiar esto por tu logo
+                badge: '/favicon.ico',
+                tag: 'rubrica-notification',
+                requireInteraction: false,
+                data: {
+                    rubricaId: notif.rubrica_id
+                }
+            };
+            
+            const notification = new Notification(title, options);
+            
+            notification.onclick = function(event) {
+                event.preventDefault();
+                window.focus();
+                if (notif.rubrica_id) {
+                    window.location.href = `/admin/rubricas?rubrica=${notif.rubrica_id}`;
+                }
+                notification.close();
+            };
+        }
+    }
+
+    function actualizarBadge(count) {
+        const badge = document.getElementById('notificationBadge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    function renderizarNotificaciones(notificaciones) {
+        const contenedor = document.getElementById('listaNotificaciones');
+        if (!contenedor) return;
+
+        if (notificaciones.length === 0) {
+            contenedor.innerHTML = '<p class="no-notifications">No tienes notificaciones nuevas.</p>';
+            return;
+        }
+
+        let html = '';
+        notificaciones.forEach(notif => {
+            const fecha = new Date(notif.fecha).toLocaleString();
+            const claseLeido = notif.leido ? '' : 'unread';
+            
+            // Build details HTML if rubric info exists
+            let detallesHTML = '';
+            if (notif.rubrica_id) {
+                detallesHTML = `
+                    <div class="notification-details">
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Rúbrica:</span>
+                            <span class="notification-detail-value">${notif.nombre_rubrica || 'N/A'}</span>
+                        </div>
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Docente:</span>
+                            <span class="notification-detail-value">${notif.docente_nombre || ''} ${notif.docente_apellido || ''}</span>
+                        </div>
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Materia:</span>
+                            <span class="notification-detail-value">${notif.materia_nombre || 'N/A'} (${notif.materia_codigo || ''})</span>
+                        </div>
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Carrera:</span>
+                            <span class="notification-detail-value">${notif.carrera_nombre || 'N/A'}</span>
+                        </div>
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Sección:</span>
+                            <span class="notification-detail-value">${notif.seccion_id || 'N/A'}</span>
+                        </div>
+                        <div class="notification-detail-row">
+                            <span class="notification-detail-label">Tipo:</span>
+                            <span class="notification-detail-value">${notif.tipo_evaluacion || 'N/A'}</span>
+                        </div>
+                        <button onclick="verRubrica(${notif.rubrica_id})" class="btn-view-rubrica">
+                            <i class="fas fa-eye"></i> Ver Rúbrica
+                        </button>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="notification-item ${claseLeido}" id="notif-${notif.id}">
+                    <div class="notification-content">
+                        <p class="notification-message">${notif.mensaje}</p>
+                        <span class="notification-time">${fecha}</span>
+                        ${detallesHTML}
+                    </div>
+                    ${!notif.leido ? `
+                    <div class="notification-actions">
+                        <button onclick="marcarLeida(${notif.id})" class="btn-mark-read" title="Marcar como leída">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        contenedor.innerHTML = html;
+    }
+
+    function verRubrica(rubricaId) {
+        // Close dropdown and redirect to rubrics page with the specific rubric
+        cerrarModalNotificaciones();
+        window.location.href = `/admin/rubricas?rubrica=${rubricaId}`;
+    }
+
+    function abrirModalNotificaciones() {
+        const dropdown = document.getElementById('notificacionesModal');
+        if (dropdown) {
+            const isVisible = dropdown.style.display === 'block';
+            dropdown.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) {
+                cargarNotificaciones(); // Recargar al abrir
+            }
+        }
+    }
+
+    function cerrarModalNotificaciones() {
+        const dropdown = document.getElementById('notificacionesModal');
+        if (dropdown) {
+            dropdown.style.display = 'none';
+        }
+    }
+
+    function marcarLeida(id) {
+        fetch(`/api/notifications/${id}/read`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    cargarNotificaciones();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function marcarTodasLeidas() {
+        fetch('/api/notifications/read-all', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    cargarNotificaciones();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('notificacionesModal');
+        const notifButton = document.getElementById('notificaciones');
+        
+        if (dropdown && notifButton) {
+            const isClickInside = dropdown.contains(event.target) || notifButton.contains(event.target);
+            
+            if (!isClickInside && dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            }
+        }
+    });
+</script>
+

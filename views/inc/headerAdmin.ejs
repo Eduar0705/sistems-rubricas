@@ -12,11 +12,14 @@
         <button class="header-btn" title="Configuración" onclick="window.location.href = '/admin/config'">
             <i class="fas fa-cog"></i>
         </button>
-        <button class="header-btn" title="Notificaciones" id="notificaciones">
+        <button class="header-btn" title="Notificaciones" id="notificaciones" onclick="abrirModalNotificaciones()" style="position: relative;">
             <i class="fas fa-bell"></i>
+            <span id="notificationBadge" class="notification-badge"></span>
         </button>
         <button class="header-btn" id="salir" title="Salir" onclick="Exit()">
             <i class="fas fa-sign-out-alt"></i>
         </button>
     </div>
 </header>
+
+<%- include('notificaciones') %>

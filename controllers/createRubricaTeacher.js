@@ -167,18 +167,29 @@ router.post('/envioRubricaTeacher', (req, res) => {
 
             // Función para finalizar la transacción
             function finalizarTransaccion() {
-                connection.commit((err) => {
-                    if(err) {
-                        return connection.rollback(() => {
-                            console.error('Error al confirmar transacción:', err);
-                            mensaje = 'Error al confirmar la transacción';
-                            res.redirect('/teacher/createrubricas?mensaje=' + encodeURIComponent(mensaje));
-                        });
+                // Crear notificación para el admin con referencia a la rúbrica
+                const mensajeNotificacion = `El docente ${req.session.nombre || req.session.username || 'Un docente'} ha creado una nueva rúbrica`;
+                const queryNotificacion = `INSERT INTO notificaciones (mensaje, tipo, usuario_destino, rubrica_id) VALUES (?, 'info', 'admin', ?)`;
+                
+                connection.query(queryNotificacion, [mensajeNotificacion, rubricaId], (errNotif) => {
+                    if (errNotif) {
+                        // Si falla la notificación, no detenemos el proceso principal, solo lo logueamos
+                        console.error('Error al crear notificación:', errNotif);
                     }
 
-                    console.log('Rúbrica creada exitosamente con ID:', rubricaId);
-                    mensaje = 'Rúbrica creada exitosamente';
-                    res.redirect('/teacher/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                    connection.commit((err) => {
+                        if(err) {
+                            return connection.rollback(() => {
+                                console.error('Error al confirmar transacción:', err);
+                                mensaje = 'Error al confirmar la transacción';
+                                res.redirect('/teacher/createrubricas?mensaje=' + encodeURIComponent(mensaje));
+                            });
+                        }
+
+                        console.log('Rúbrica creada exitosamente con ID:', rubricaId);
+                        mensaje = 'Rúbrica creada exitosamente';
+                        res.redirect('/teacher/rubricas?mensaje=' + encodeURIComponent(mensaje));
+                    });
                 });
             }
         });
