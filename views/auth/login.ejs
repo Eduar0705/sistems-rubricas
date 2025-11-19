@@ -23,7 +23,40 @@
         <div class="login-right">
             <div class="login-card">
                 <form id="loginForm" class="login-form" method="post" action="/verifLogin">
-                    <% if (typeof mensaje != 'undefined') { %>
+                    <% if (typeof sesionActiva != 'undefined' && sesionActiva) { %>
+                        <input type="hidden" name="cedula" value="<%= cedula %>">
+                        <input type="hidden" name="password" value="<%= password %>">
+                        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                        <script>
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Sesión Activa Detectada',
+                                html: `
+                                    <p>Ya existe una sesión activa para este usuario.</p>
+                                    <p><strong>Tiempo restante:</strong> ~<%= tiempoRestante %> minuto(s)</p>
+                                    <p>¿Deseas cerrar la sesión anterior e iniciar una nueva?</p>
+                                `,
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, cerrar sesión anterior',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#d33',
+                                cancelButtonColor: '#3085d6',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    const form = document.getElementById('loginForm');
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = 'forzarCierre';
+                                    input.value = 'true';
+                                    form.appendChild(input);
+                                    form.submit();
+                                } else {
+                                    window.location.href = '/login';
+                                }
+                            });
+                        </script>
+                    <% } else if (typeof mensaje != 'undefined' && mensaje) { %>
                         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                         <script>
                             Swal.fire({

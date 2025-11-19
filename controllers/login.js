@@ -3,19 +3,39 @@ const routers = express.Router();
 const conexion = require('../models/conetion');
 
 routers.post('/verifLogin', (req, res) => {
-    const { cedula, password } = req.body;
+    const { cedula, password, forzarCierre } = req.body;
+
+    // Validar que cedula y password no estén vacíos
+    if (!cedula || !password) {
+        return res.render('auth/login', { 
+            mensaje: 'Por favor, ingresa tu cédula y contraseña.',
+            sesionActiva: false
+        });
+    }
 
     // Obtener el objeto de sesiones activas
     const sesionesActivas = req.app.locals.sesionesActivas;
 
     // Verificar si ya existe una sesión activa para esta cédula
-    if (sesionesActivas.has(cedula)) {
+    if (sesionesActivas.has(cedula) && !forzarCierre) {
         const sesionExistente = sesionesActivas.get(cedula);
-        const tiempoTranscurrido = Date.now() - sesionExistente.inicioSesion;
+        const tiempoTranscurrido = Date.now() - (sesionExistente.ultimaActividad || sesionExistente.inicioSesion);
         const tiempoRestante = Math.ceil((300000 - tiempoTranscurrido) / 1000 / 60); // en minutos
         
-        const mensaje = `Este usuario ya tiene una sesión activa. Por favor, espera aproximadamente ${tiempoRestante} minuto(s) para poder iniciar sesión nuevamente.`;
-        return res.render('auth/login', { mensaje });
+        // Devolver información para mostrar modal de confirmación
+        return res.render('auth/login', { 
+            sesionActiva: true,
+            cedula: cedula,
+            password: password, // Necesario para reenviar
+            tiempoRestante: tiempoRestante > 0 ? tiempoRestante : 1,
+            mensaje: null
+        });
+    }
+
+    // Si se forzó el cierre, eliminar la sesión anterior
+    if (forzarCierre && sesionesActivas.has(cedula)) {
+        sesionesActivas.delete(cedula);
+        console.log(`🔄 Sesión anterior forzada a cerrar para: ${cedula}`);
     }
 
     // Primero buscar en usuario (profesores, administradores)
@@ -26,7 +46,7 @@ routers.post('/verifLogin', (req, res) => {
         if (err) {
             console.log('Error en la consulta de usuario: ' + err);
             mensaje = 'Error en el servidor. Por favor, inténtalo de nuevo más tarde.';
-            return res.render('auth/login', { mensaje });
+            return res.render('auth/login', { mensaje, sesionActiva: false });
         }
 
         // Si se encuentra en la tabla usuario
@@ -36,7 +56,7 @@ routers.post('/verifLogin', (req, res) => {
             // Verificar contraseña
             if (password !== user.password) {
                 mensaje = 'Contraseña incorrecta. Por favor, inténtalo de nuevo.';
-                return res.render('auth/login', { mensaje });
+                return res.render('auth/login', { mensaje, sesionActiva: false });
             }
 
             // Configurar sesión para usuario
@@ -49,7 +69,7 @@ routers.post('/verifLogin', (req, res) => {
                 return res.redirect('/teacher');
             } else {
                 mensaje = 'Rol de usuario no reconocido.';
-                return res.render('auth/login', { mensaje });
+                return res.render('auth/login', { mensaje, sesionActiva: false });
             }
         } else {
             // Si no se encuentra en usuario, buscar en estudiante
@@ -58,7 +78,7 @@ routers.post('/verifLogin', (req, res) => {
                 if (err) {
                     console.log('Error en la consulta de estudiante: ' + err);
                     mensaje = 'Error en el servidor. Por favor, inténtalo de nuevo más tarde.';
-                    return res.render('auth/login', { mensaje });
+                    return res.render('auth/login', { mensaje, sesionActiva: false });
                 }
 
                 if (resultsEstudiante.length > 0) {
@@ -72,7 +92,7 @@ routers.post('/verifLogin', (req, res) => {
                 } else {
                     // No se encontró en ninguna tabla
                     mensaje = 'Cédula o contraseña incorrecta. Por favor, inténtalo de nuevo.';
-                    return res.render('auth/login', { mensaje });
+                    return res.render('auth/login', { mensaje, sesionActiva: false });
                 }
             });
         }
@@ -81,14 +101,16 @@ routers.post('/verifLogin', (req, res) => {
 
 // Función para configurar sesión de usuario
 function configurarSesionUsuario(req, user, sesionesActivas) {
+    const ahora = Date.now();
     req.session.login = true;
     req.session.username = user.username;
     req.session.cedula = user.cedula;
     req.session.email = user.email;
     req.session.id_rol = user.id_rol;
     req.session.activo = user.activo;
-    req.session.ultimaActividad = Date.now();
+    req.session.ultimaActividad = ahora;
     req.session.tipo = 'usuario';
+    
     console.log('\n============================================')
     console.log('Usuario autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
@@ -97,15 +119,18 @@ function configurarSesionUsuario(req, user, sesionesActivas) {
 
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
         sesionesActivas.set(req.session.cedula, {
-            inicioSesion: Date.now(),
+            inicioSesion: ahora,
+            ultimaActividad: ahora,
             sessionID: req.sessionID,
-            tipo: 'usuario'
+            tipo: 'usuario',
+            username: user.username
         });
     }
 }
 
 // Función para configurar sesión de estudiante
 function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
+    const ahora = Date.now();
     req.session.login = true;
     req.session.username = estudiante.nombre + ' ' + estudiante.apellido;
     req.session.cedula = estudiante.cedula;
@@ -114,8 +139,9 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     req.session.fecha_nacimiento = estudiante.fecha_nacimiento;
     req.session.carrera_codigo = estudiante.carrera_codigo;
     req.session.activo = estudiante.activo;
-    req.session.ultimaActividad = Date.now();
+    req.session.ultimaActividad = ahora;
     req.session.tipo = 'estudiante';
+    
     console.log('\n============================================')
     console.log('Estudiante autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
@@ -123,9 +149,11 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
 
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
         sesionesActivas.set(req.session.cedula, {
-            inicioSesion: Date.now(),
+            inicioSesion: ahora,
+            ultimaActividad: ahora,
             sessionID: req.sessionID,
-            tipo: 'estudiante'
+            tipo: 'estudiante',
+            username: req.session.username
         });
     }
 }

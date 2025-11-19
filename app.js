@@ -7,6 +7,23 @@ const PORT = process.env.PORT || 3008;
 // Objeto para rastrear sesiones activas por usuario
 const sesionesActivas = new Map();
 
+// Función para limpiar sesiones expiradas
+function limpiarSesionesExpiradas() {
+    const ahora = Date.now();
+    const TIMEOUT_SESION = 300000; // 5 minutos
+    
+    for (const [cedula, sesion] of sesionesActivas.entries()) {
+        const tiempoInactivo = ahora - (sesion.ultimaActividad || sesion.inicioSesion);
+        if (tiempoInactivo > TIMEOUT_SESION) {
+            console.log(`🧹 Limpiando sesión expirada de: ${cedula}`);
+            sesionesActivas.delete(cedula);
+        }
+    }
+}
+
+// Limpiar sesiones expiradas cada 1 minuto
+setInterval(limpiarSesionesExpiradas, 60000);
+
 // CONFIGURACIONES
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -26,7 +43,7 @@ app.use(session({
 
 // Middleware para verificar la inactividad de la sesión
 app.use((req, res, next) => {
-    if (req.session && req.session.userId) {
+    if (req.session && req.session.login) {
         const ahora = Date.now();
         const ultimaActividad = req.session.ultimaActividad || ahora;
         const tiempoInactivo = ahora - ultimaActividad;
@@ -41,12 +58,20 @@ app.use((req, res, next) => {
                 // Eliminar la sesión activa del mapa
                 if (cedula) {
                     sesionesActivas.delete(cedula);
+                    console.log(`⏱️ Sesión expirada por inactividad: ${cedula}`);
                 }
-                return res.redirect('/login');
+                return res.redirect('/login?mensaje=' + encodeURIComponent('Tu sesión ha expirado por inactividad.'));
             });
         } else {
-            // Actualizar la última actividad
+            // Actualizar la última actividad en la sesión y en el Map
             req.session.ultimaActividad = ahora;
+            
+            // Actualizar también en el Map de sesiones activas
+            if (req.session.cedula && sesionesActivas.has(req.session.cedula)) {
+                const sesionActiva = sesionesActivas.get(req.session.cedula);
+                sesionActiva.ultimaActividad = ahora;
+            }
+            
             next();
         }
     } else {
