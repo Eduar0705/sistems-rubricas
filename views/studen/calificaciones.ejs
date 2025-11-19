@@ -3,40 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Estudiante - Sistema de Gestión de Rúbricas</title>
-    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <title>Sistema de Gestión de Rúbricas - Estudiante</title>
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="shortcut icon" href="./img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../css/students.css">
 </head>
 <body>
-    <%- include('../inc/menuStudents.ejs') %>
+    <%- include("../inc/menuStudents.ejs") %>
+
+    <!-- Main Content -->
     <main class="main-content">
+        <!-- Header -->
+        <%- include('../inc/headerStudents.ejs') %>
 
-        <!-- Calificaciones Section -->
-        <section id="calificaciones" class="content-section">
-            <div class="page-header">
-                <h1>Mis Calificaciones</h1>
-                <p>Consulta tu historial de calificaciones y progreso académico</p>
-            </div>
-
-            <div class="stats-row">
-                <div class="stat-card-large">
-                    <h3>Promedio General</h3>
-                    <div class="large-score">8.5</div>
-                    <p class="score-label">Excelente desempeño</p>
+        <!-- Calificaciones View -->
+        <div class="view active" id="calificaciones">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">8.5</div>
+                        <div class="stat-label">Promedio General</div>
+                    </div>
                 </div>
-                <div class="stat-card-large">
-                    <h3>Materias Aprobadas</h3>
-                    <div class="large-score">12/14</div>
-                    <p class="score-label">85.7% completado</p>
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">12/14</div>
+                        <div class="stat-label">Materias Aprobadas</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon info">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">85.7%</div>
+                        <div class="stat-label">Completado</div>
+                    </div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-chart-bar"></i> Calificaciones por Materia</h2>
+                    <h2 class="card-title">Calificaciones por Materia</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-content">
                     <div class="grade-item">
                         <div class="grade-info">
                             <h4>Programación Web</h4>
@@ -84,7 +100,7 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
     <!-- Modal Ver Evaluacion -->
@@ -160,26 +176,7 @@
         </div>
     </div>
 
-    <script src="./js/students.js"></script>
+    <script src="./js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        //Funcion para confirmar la salida del programa
-        function Exit(){
-            Swal.fire({
-                icon: 'warning',
-                title: 'Validacion',
-                text: 'Estas seguro que deseas salir?',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Si',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if(result.isConfirmed){
-                    window.location.href = '/logout'
-                }
-            });
-        }
-    </script>
 </body>
 </html>

@@ -7,7 +7,7 @@ router.get('/student/evaluaciones', (req, res) => {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
-    res.render('studen/evaluaciones', {datos : req.session});
+    res.render('studen/evaluaciones', {datos : req.session, currentPage: 'evaluaciones' });
 });
 
 module.exports = router;
