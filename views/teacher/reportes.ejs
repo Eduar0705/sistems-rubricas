@@ -10,18 +10,6 @@
 </head>
 <body>
     <%- include("../inc/menuTeacher.ejs") %>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Rubricas' %></title>
-    <link rel="stylesheet" href="../css/home.css">
-    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
-<body>
-    <%- include("../inc/menuTeacher.ejs") %>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -88,12 +76,16 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Pass stats data from EJS to JavaScript
+        const stats = "<%- stats ? JSON.stringify(stats) : 'null' %>";
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (stats) {
                 // Rendimiento por Materia Chart
                 const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
-                const materias =  JSON.stringify(stats.rendimientoMateria.map(m => m.nombre));
-                const promedios =  JSON.stringify(stats.rendimientoMateria.map(m => m.promedio));
+                const materias = stats.rendimientoMateria.map(m => m.nombre);
+                const promedios = stats.rendimientoMateria.map(m => m.promedio);
 
                 new Chart(rendimientoCtx, {
                     type: 'bar',
@@ -119,8 +111,8 @@
 
                 // Estado de Evaluaciones Chart (Completadas vs Pendientes)
                 const estadoCtx = document.getElementById('estadoChart').getContext('2d');
-                const completadas =  stats.totalEvaluaciones - stats.pendientes ;
-                const pendientes =  stats.pendientes ;
+                const completadas = stats.totalEvaluaciones - stats.pendientes;
+                const pendientes = stats.pendientes;
 
                 new Chart(estadoCtx, {
                     type: 'pie',

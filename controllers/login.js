@@ -20,7 +20,7 @@ routers.post('/verifLogin', (req, res) => {
     if (sesionesActivas.has(cedula) && !forzarCierre) {
         const sesionExistente = sesionesActivas.get(cedula);
         const tiempoTranscurrido = Date.now() - (sesionExistente.ultimaActividad || sesionExistente.inicioSesion);
-        const tiempoRestante = Math.ceil((300000 - tiempoTranscurrido) / 1000 / 60); // en minutos
+        const tiempoRestante = Math.ceil((600000 - tiempoTranscurrido) / 1000 / 60); // en minutos
         
         // Devolver información para mostrar modal de confirmación
         return res.render('auth/login', { 

@@ -136,6 +136,10 @@
 
                             <!-- Botones de Acción -->
                             <div class="form-actions">
+                                <button type="button" class="btn-secondary" onclick="agregarCriterio()">
+                                    <i class="fas fa-plus"></i>
+                                    Agregar Criterio
+                                </button>
                                 <button type="button" class="btn-secondary" onclick="window.location.href='/teacher/rubricas'">
                                     <i class="fas fa-times"></i>
                                     Cancelar
@@ -150,7 +154,7 @@
                 </div>
             </div>
         </div>
-        
+
         <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script>

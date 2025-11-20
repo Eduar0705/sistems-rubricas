@@ -76,12 +76,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Pass stats data from EJS to JavaScript
+        const stats = "<%- stats ? JSON.stringify(stats) : 'null' %>";
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             if (stats) { 
                 // Rendimiento por Carrera Chart
                 const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
-                const carreras =  JSON.stringify(stats.rendimientoCarrera.map(r => r.nombre)) ;
-                const promedios =  JSON.stringify(stats.rendimientoCarrera.map(r => r.promedio)) ;
+                const carreras = stats.rendimientoCarrera.map(r => r.nombre);
+                const promedios = stats.rendimientoCarrera.map(r => r.promedio);
 
                 new Chart(rendimientoCtx, {
                     type: 'bar',
@@ -107,8 +111,8 @@
 
                 // Distribución de Notas Chart
                 const distribucionCtx = document.getElementById('distribucionChart').getContext('2d');
-                const rangos =  JSON.stringify(stats.distribucionNotas.map(d => d.rango)) ;
-                const cantidades =  JSON.stringify(stats.distribucionNotas.map(d => d.cantidad)) ;
+                const rangos = stats.distribucionNotas.map(d => d.rango);
+                const cantidades = stats.distribucionNotas.map(d => d.cantidad);
 
                 new Chart(distribucionCtx, {
                     type: 'doughnut',
@@ -128,7 +132,6 @@
             }
         });
     </script>
-    </main>
 
     <script src="../js/home.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

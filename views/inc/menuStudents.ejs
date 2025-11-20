@@ -97,14 +97,18 @@
             // initial highlight (safe call)
             try { win.currentPageHighlight(); } catch (e) { /* ignore */ }
 
-            // Sidebar toggle: idempotent binding
-            var sidebarToggle = doc.getElementById('sidebarToggle');
+            // Sidebar toggle: idempotent binding for both toggle buttons
+            var mobileMenuToggles = doc.querySelectorAll('#mobileMenuToggle');
             var sidebar = doc.getElementById('sidebar');
-            if (sidebarToggle && sidebar && sidebarToggle.dataset.toggleBound !== '1') {
-                sidebarToggle.addEventListener('click', function () {
-                    sidebar.classList.toggle('active');
+            if (sidebar) {
+                mobileMenuToggles.forEach(function(toggle) {
+                    if (toggle && toggle.dataset.toggleBound !== '1') {
+                        toggle.addEventListener('click', function () {
+                            sidebar.classList.toggle('active');
+                        });
+                        toggle.dataset.toggleBound = '1';
+                    }
                 });
-                sidebarToggle.dataset.toggleBound = '1';
             }
 
             // Exit: define only if not already present. Provide robust logout (POST if possible, fallback to GET),
