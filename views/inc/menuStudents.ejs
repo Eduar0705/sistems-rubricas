@@ -2,7 +2,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="../img/logoiujo.jpg" alt="logo IUJO" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="max-width: 200px; text-align: center;">
-            <button class="sidebar-toggle" id="mobileMenuToggle">
+            <button class="sidebar-toggle" id="sidebarToggle">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -97,19 +97,7 @@
             // initial highlight (safe call)
             try { win.currentPageHighlight(); } catch (e) { /* ignore */ }
 
-            // Sidebar toggle: idempotent binding for both toggle buttons
-            var mobileMenuToggles = doc.querySelectorAll('#mobileMenuToggle');
-            var sidebar = doc.getElementById('sidebar');
-            if (sidebar) {
-                mobileMenuToggles.forEach(function(toggle) {
-                    if (toggle && toggle.dataset.toggleBound !== '1') {
-                        toggle.addEventListener('click', function () {
-                            sidebar.classList.toggle('active');
-                        });
-                        toggle.dataset.toggleBound = '1';
-                    }
-                });
-            }
+            // Sidebar toggle logic removed as it is handled by home.js via the header button
 
             // Exit: define only if not already present. Provide robust logout (POST if possible, fallback to GET),
             // show confirmation dialog if Swal available, but do not override existing Exit implementation.
