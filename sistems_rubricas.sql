@@ -1,3 +1,21 @@
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+--
+-- Database: `sistems_rubricas`
+--
+CREATE DATABASE IF NOT EXISTS `sistems_rubricas` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `sistems_rubricas`;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `carrera`
+--
+
+DROP TABLE IF EXISTS `carrera`;
 CREATE TABLE `carrera` (
   `codigo` varchar(10) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -12,13 +30,13 @@ CREATE TABLE `carrera` (
 --
 
 INSERT INTO `carrera` (`codigo`, `nombre`, `descripcion`, `duracion_semestres`, `activo`, `fecha_creacion`) VALUES
-('ADM', 'Administración de Empresas', 'Carrera de Administración de Empresas', 8, 1, '2025-11-12 14:43:39'),
-('CON', 'Contaduría', 'Carrera de Contaduría Pública', 8, 1, '2025-11-12 14:43:39'),
-('EDU', 'Educación', 'Carrera de Educación', 8, 1, '2025-11-12 14:43:39'),
-('ELE', 'Eléctrica', 'Carrera de Ingeniería Eléctrica', 10, 1, '2025-11-12 14:43:39'),
-('ELN', 'Electrónica', 'Carrera de Ingeniería Electrónica', 10, 1, '2025-11-12 14:43:39'),
-('INF', 'Informática', 'Carrera de Ingeniería en Informática', 10, 1, '2025-11-12 14:43:39'),
-('MEC', 'Mecánica', 'Carrera de Ingeniería Mecánica', 10, 1, '2025-11-12 14:43:39');
+('ADM', 'Administración de Empresas', 'Carrera de Administración de Empresas', 6, 1, '2025-11-12 14:43:39'),
+('CON', 'Contaduría', 'Carrera de Contaduría Pública', 6, 1, '2025-11-12 14:43:39'),
+('EDU', 'Educacion Inicial', 'Carrera de Educación', 6, 1, '2025-11-12 14:43:39'),
+('ELE', 'Electrotecnia', 'Carrera de Electrotecnia', 6, 1, '2025-11-12 14:43:39'),
+('ELN', 'Electronica', 'Carrera de Electrónica', 6, 1, '2025-11-12 14:43:39'),
+('INF', 'Informática', 'Carrera de Informática', 6, 1, '2025-11-12 14:43:39'),
+('MEC', 'Mecánica', 'Carrera de Mecánica', 6, 1, '2025-11-12 14:43:39');
 
 -- --------------------------------------------------------
 
@@ -26,6 +44,7 @@ INSERT INTO `carrera` (`codigo`, `nombre`, `descripcion`, `duracion_semestres`, 
 -- Table structure for table `criterio_evaluacion`
 --
 
+DROP TABLE IF EXISTS `criterio_evaluacion`;
 CREATE TABLE `criterio_evaluacion` (
   `id` int(11) NOT NULL,
   `rubrica_id` int(11) NOT NULL,
@@ -39,19 +58,33 @@ CREATE TABLE `criterio_evaluacion` (
 --
 
 INSERT INTO `criterio_evaluacion` (`id`, `rubrica_id`, `descripcion`, `puntaje_maximo`, `orden`) VALUES
-(40, 26, 'SQL Basico', 10.00, 1),
-(41, 27, 'COSTOS', 10.00, 1),
-(42, 28, 'glknfdksj gkjf gjkdf jkangt', 5.00, 2),
-(43, 28, 'fdlkngkglk;adnfiuaenlgksndfkgnajidgbjksd gkjndfmg', 5.00, 3),
-(44, 29, 'SOLDADURA INICIAL', 10.00, 1),
-(45, 29, 'QUEDO LIMPIO', 10.00, 2),
-(46, 30, 'Ndndnsbsnsbb', 10.00, 1),
-(47, 31, 'mdlknlkgnflksdnglksdnlkfds', 10.00, 1),
-(48, 32, 'fmdskfmosdfojdsoif', 2.50, 1),
-(49, 32, 'kfdnikgmnfjonfowsndokfnojsnfonornefosnor', 2.50, 2),
-(50, 33, 'Djiabd sud skdbw djbsjs s', 1.66, 1),
-(51, 33, 'Ndkw dj s djd qndjw db', 1.66, 2),
-(52, 33, 'S djd sjjf snxjw dnhf w xjs bd', 1.66, 3);
+(23, 4, 'Analisis', 3.00, 1),
+(24, 4, 'desarrollo', 3.00, 2),
+(25, 4, 'procedimiento', 3.00, 3),
+(26, 4, 'nose que poner', 3.00, 4),
+(27, 4, 'nfslkdanfk;nfan', 3.00, 5),
+(30, 7, 'vlkdlksfvfmmdsklf', 5.00, 1),
+(34, 8, 'Desarrolo Grafico', 6.66, 1),
+(35, 8, 'Desarrolo backent', 6.66, 2),
+(36, 8, 'Como cae', 6.66, 3),
+(38, 10, 'fjdnsflk', 10.00, 1),
+(39, 11, 'fjkdnkf', 10.00, 1),
+(41, 12, 'kldsnfkl', 10.00, 1),
+(42, 13, 'Presenta la teoría  relacionada con el  tema  (2ptos)', 2.00, 1),
+(43, 13, 'Presenta  elementos  interactivos  valiosos en su  presentación   ( 2 ptos)', 2.00, 2),
+(44, 13, 'Uso de la  Creatividad  (1ptos)', 1.00, 3),
+(45, 14, 'Reconoce y realiza  los cálculos  correspondientes  los coeficientes e  correlación  (4 ptos)', 3.33, 1),
+(46, 14, 'Realiza análisis de  los resultados  obtenidos  (4 ptos)', 3.33, 2),
+(47, 14, 'Responde a  preguntas  realizadas de  manera teórica  acerca del tema  que se está  evaluando   ( 2 ptos)', 2.00, 3),
+(48, 15, 'Realiza Diagrama de  árbol  (3 ptos)', 2.50, 1),
+(49, 15, 'Extrae elementos  del espacio muestral  perteneciente a  un  diagrama de árbol  realizado  ( 3 pto)', 2.50, 2),
+(50, 15, 'Realiza  interacciones  matemáticas con  eventos  a partir  de  un diagrama de  Venn (análisis  gráfico) ( 2ptos)', 2.50, 3),
+(51, 15, 'Realiza  interacciones  matemáticas con  eventos a partir de  un Espacio muestral  ( análisis escrito) (2  ptos)', 2.50, 4),
+(52, 16, 'Dominio del Tema', 4.00, 1),
+(53, 16, 'Fluidez y Expresión Oral (Sin Lectura)', 2.00, 2),
+(54, 16, 'Ejemplos Acordes y Entendibles', 1.00, 3),
+(55, 16, 'Material de Apoyo y Uso del Tiempo', 2.00, 4),
+(56, 16, 'Atención del público.', 1.00, 5);
 
 -- --------------------------------------------------------
 
@@ -59,6 +92,7 @@ INSERT INTO `criterio_evaluacion` (`id`, `rubrica_id`, `descripcion`, `puntaje_m
 -- Table structure for table `detalle_evaluacion`
 --
 
+DROP TABLE IF EXISTS `detalle_evaluacion`;
 CREATE TABLE `detalle_evaluacion` (
   `id` int(11) NOT NULL,
   `evaluacion_id` int(11) NOT NULL,
@@ -67,12 +101,67 @@ CREATE TABLE `detalle_evaluacion` (
   `puntaje_obtenido` decimal(5,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `detalle_evaluacion`
+--
+
+INSERT INTO `detalle_evaluacion` (`id`, `evaluacion_id`, `criterio_id`, `nivel_seleccionado`, `puntaje_obtenido`) VALUES
+(14, 29, 23, 89, 3.00),
+(15, 29, 24, 94, 2.25),
+(16, 29, 25, 97, 3.00),
+(17, 29, 26, 103, 1.50),
+(18, 29, 27, 105, 3.00),
+(19, 51, 30, 117, 5.00),
+(20, 58, 34, 133, 6.66),
+(21, 58, 35, 138, 5.00),
+(22, 58, 36, 142, 5.00),
+(23, 65, 34, 134, 5.00),
+(24, 65, 35, 139, 3.33),
+(25, 65, 36, 141, 6.66),
+(26, 59, 34, 133, 6.66),
+(27, 59, 35, 140, 1.67),
+(28, 59, 36, 144, 1.67),
+(29, 61, 34, 134, 5.00),
+(30, 61, 35, 138, 5.00),
+(31, 61, 36, 142, 5.00),
+(32, 64, 34, 133, 6.66),
+(33, 64, 35, 139, 3.33),
+(34, 64, 36, 141, 6.66),
+(35, 57, 34, 133, 6.66),
+(36, 57, 35, 138, 5.00),
+(37, 57, 36, 144, 1.67),
+(38, 56, 34, 135, 3.33),
+(39, 56, 35, 139, 3.33),
+(40, 56, 36, 144, 1.67),
+(41, 63, 34, 136, 1.67),
+(42, 63, 35, 139, 3.33),
+(43, 63, 36, 144, 1.67),
+(44, 60, 34, 136, 1.67),
+(45, 60, 35, 140, 1.67),
+(46, 60, 36, 144, 1.67),
+(47, 62, 34, 133, 6.66),
+(48, 62, 35, 137, 6.66),
+(49, 62, 36, 141, 6.66),
+(50, 67, 45, 178, 2.50),
+(51, 67, 46, 182, 2.50),
+(52, 67, 47, 185, 2.00),
+(53, 86, 42, 165, 2.00),
+(54, 86, 43, 169, 2.00),
+(55, 86, 44, 176, 0.25),
+(56, 53, 30, 117, 5.00),
+(57, 48, 30, 118, 3.75),
+(58, 66, 34, 134, 5.00),
+(59, 66, 35, 138, 5.00),
+(60, 66, 36, 142, 5.00),
+(61, 98, 39, 154, 7.50);
+
 -- --------------------------------------------------------
 
 --
 -- Table structure for table `docente`
 --
 
+DROP TABLE IF EXISTS `docente`;
 CREATE TABLE `docente` (
   `cedula` varchar(20) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -103,7 +192,37 @@ INSERT INTO `docente` (`cedula`, `nombre`, `apellido`, `especializacion`, `email
 ('33445566', 'Laura', 'Fernández', 'Redes de Computadoras', 'laura.fernandez@universidad.edu', '0426-3334445', 'Especialista en seguridad de redes', 1),
 ('55667788', 'Ana', 'Martínez', 'Programación', 'ana.martinez@universidad.edu', '0412-4445566', 'Desarrolladora senior con 10 años de experiencia', 1),
 ('87654321', 'María', 'Rodríguez', 'Matemáticas Avanzadas', 'maria.rodriguez@universidad.edu', '0416-9876543', 'Doctora en Matemáticas Aplicadas', 1),
-('99887766', 'Roberto', 'Silva', 'Base de Datos', 'roberto.silva@universidad.edu', '0416-7778889', 'Administrador de bases de datos Oracle', 1);
+('99887766', 'Roberto', 'Silva', 'Base de Datos', 'roberto.silva@universidad.edu', '0416-7778889', 'Administrador de bases de datos Oracle', 1),
+('V-12345678', 'Carlos', 'Martínez', 'Matemáticas Aplicadas', 'carlos.martinez@instituto.edu', '0412-1111111', NULL, 1),
+('V-12345679', 'Ana', 'González', 'Física y Ciencias', 'ana.gonzalez@instituto.edu', '0412-1111112', NULL, 1),
+('V-12345680', 'Roberto', 'Pérez', 'Estadística', 'roberto.perez@instituto.edu', '0412-1111113', NULL, 1),
+('V-12345681', 'María', 'Rodríguez', 'Matemáticas Financieras', 'maria.rodriguez@instituto.edu', '0412-1111114', NULL, 1),
+('V-12345682', 'Luis', 'Hernández', 'Administración General', 'luis.hernandez@instituto.edu', '0412-1111115', NULL, 1),
+('V-12345683', 'Carmen', 'López', 'Contabilidad', 'carmen.lopez@instituto.edu', '0412-1111116', NULL, 1),
+('V-12345684', 'Jorge', 'Díaz', 'Finanzas y Auditoría', 'jorge.diaz@instituto.edu', '0412-1111117', NULL, 1),
+('V-12345685', 'Elena', 'Morales', 'Legislación Comercial', 'elena.morales@instituto.edu', '0412-1111118', NULL, 1),
+('V-12345686', 'Isabel', 'Rojas', 'Pedagogía', 'isabel.rojas@instituto.edu', '0412-1111119', NULL, 1),
+('V-12345687', 'Pedro', 'Castillo', 'Psicología Educativa', 'pedro.castillo@instituto.edu', '0412-1111120', NULL, 1),
+('V-12345688', 'Laura', 'Fernández', 'Didáctica General', 'laura.fernandez@instituto.edu', '0412-1111121', NULL, 1),
+('V-12345689', 'Ricardo', 'Silva', 'Planificación Educativa', 'ricardo.silva@instituto.edu', '0412-1111122', NULL, 1),
+('V-12345690', 'Andrés', 'Mendoza', 'Circuitos Eléctricos', 'andres.mendoza@instituto.edu', '0412-1111123', NULL, 1),
+('V-12345691', 'Patricia', 'Castro', 'Electrónica', 'patricia.castro@instituto.edu', '0412-1111124', NULL, 1),
+('V-12345692', 'Fernando', 'Ortega', 'Sistemas Digitales', 'fernando.ortega@instituto.edu', '0412-1111125', NULL, 1),
+('V-12345693', 'Diana', 'Vargas', 'Instrumentación Electrónica', 'diana.vargas@instituto.edu', '0412-1111126', NULL, 1),
+('V-12345694', 'Gabriel', 'Reyes', 'Máquinas y Herramientas', 'gabriel.reyes@instituto.edu', '0412-1111127', NULL, 1),
+('V-12345695', 'Sandra', 'Navarro', 'Dibujo Industrial', 'sandra.navarro@instituto.edu', '0412-1111128', NULL, 1),
+('V-12345696', 'Raúl', 'Jiménez', 'Control Numérico', 'raul.jimenez@instituto.edu', '0412-1111129', NULL, 1),
+('V-12345697', 'Verónica', 'Molina', 'Automatismos', 'veronica.molina@instituto.edu', '0412-1111130', NULL, 1),
+('V-12345698', 'Miguel', 'Romero', 'Programación', 'miguel.romero@instituto.edu', '0412-1111131', NULL, 1),
+('V-12345699', 'Natalia', 'Suárez', 'Base de Datos', 'natalia.suarez@instituto.edu', '0412-1111132', NULL, 1),
+('V-12345700', 'Diego', 'Paredes', 'Redes de Computadoras', 'diego.paredes@instituto.edu', '0412-1111133', NULL, 1),
+('V-12345701', 'Carolina', 'Ríos', 'Sistemas Operativos', 'carolina.rios@instituto.edu', '0412-1111134', NULL, 1),
+('V-12345702', 'Oscar', 'Miranda', 'Lenguaje y Comunicación', 'oscar.miranda@instituto.edu', '0412-1111135', NULL, 1),
+('V-12345703', 'Teresa', 'Guerrero', 'Inglés Técnico', 'teresa.guerrero@instituto.edu', '0412-1111136', NULL, 1),
+('V-12345704', 'Héctor', 'Rivas', 'Realidad Nacional', 'hector.rivas@instituto.edu', '0412-1111137', NULL, 1),
+('V-12345705', 'Lucía', 'Campos', 'Ética Profesional', 'lucia.campos@instituto.edu', '0412-1111138', NULL, 1),
+('V-12345706', 'Francisco', 'Acosta', 'Metodología de Investigación', 'francisco.acosta@instituto.edu', '0412-1111139', NULL, 1),
+('V-12345707', 'Rosa', 'Medina', 'Formación Humana', 'rosa.medina@instituto.edu', '0412-1111140', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -111,6 +230,7 @@ INSERT INTO `docente` (`cedula`, `nombre`, `apellido`, `especializacion`, `email
 -- Table structure for table `estudiante`
 --
 
+DROP TABLE IF EXISTS `estudiante`;
 CREATE TABLE `estudiante` (
   `cedula` varchar(20) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -435,6 +555,7 @@ INSERT INTO `estudiante` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `
 -- Table structure for table `evaluacion_estudiante`
 --
 
+DROP TABLE IF EXISTS `evaluacion_estudiante`;
 CREATE TABLE `evaluacion_estudiante` (
   `id` int(11) NOT NULL,
   `rubrica_id` int(11) NOT NULL,
@@ -449,181 +570,72 @@ CREATE TABLE `evaluacion_estudiante` (
 --
 
 INSERT INTO `evaluacion_estudiante` (`id`, `rubrica_id`, `estudiante_cedula`, `observaciones`, `puntaje_total`, `fecha_evaluacion`) VALUES
-(11, 26, '9000011', NULL, NULL, '2025-11-12 14:54:39'),
-(12, 26, '9000006', NULL, NULL, '2025-11-12 14:54:39'),
-(13, 26, '9000009', NULL, NULL, '2025-11-12 14:54:39'),
-(14, 26, '9000001', NULL, NULL, '2025-11-12 14:54:39'),
-(15, 26, '9000005', NULL, NULL, '2025-11-12 14:54:39'),
-(16, 26, '9000010', NULL, NULL, '2025-11-12 14:54:39'),
-(17, 26, '9000008', NULL, NULL, '2025-11-12 14:54:39'),
-(18, 26, '9000003', NULL, NULL, '2025-11-12 14:54:39'),
-(19, 26, '9000002', NULL, NULL, '2025-11-12 14:54:39'),
-(20, 26, '9000007', NULL, NULL, '2025-11-12 14:54:39'),
-(21, 26, '9000004', NULL, NULL, '2025-11-12 14:54:39'),
-(22, 26, '9000036', NULL, NULL, '2025-11-12 14:55:04'),
-(23, 26, '9000043', NULL, NULL, '2025-11-12 14:55:04'),
-(24, 26, '9000040', NULL, NULL, '2025-11-12 14:55:04'),
-(25, 26, '9000039', NULL, NULL, '2025-11-12 14:55:04'),
-(26, 26, '9000042', NULL, NULL, '2025-11-12 14:55:04'),
-(27, 26, '9000041', NULL, NULL, '2025-11-12 14:55:04'),
-(28, 26, '9000037', NULL, NULL, '2025-11-12 14:55:04'),
-(29, 26, '9000035', NULL, NULL, '2025-11-12 14:55:04'),
-(30, 26, '9000038', NULL, NULL, '2025-11-12 14:55:04'),
-(31, 26, '9000034', NULL, NULL, '2025-11-12 14:55:04'),
-(32, 26, '8000011', NULL, NULL, '2025-11-12 14:55:29'),
-(33, 26, '8000005', NULL, NULL, '2025-11-12 14:55:29'),
-(34, 26, '8000007', NULL, NULL, '2025-11-12 14:55:29'),
-(35, 26, '8000002', NULL, NULL, '2025-11-12 14:55:29'),
-(36, 26, '8000006', NULL, NULL, '2025-11-12 14:55:29'),
-(37, 26, '8000004', NULL, NULL, '2025-11-12 14:55:29'),
-(38, 26, '8000001', NULL, NULL, '2025-11-12 14:55:29'),
-(39, 26, '8000009', NULL, NULL, '2025-11-12 14:55:29'),
-(40, 26, '8000003', NULL, NULL, '2025-11-12 14:55:29'),
-(41, 26, '8000008', NULL, NULL, '2025-11-12 14:55:29'),
-(42, 26, '8000010', NULL, NULL, '2025-11-12 14:55:29'),
-(43, 27, '13000001', NULL, NULL, '2025-11-12 15:13:41'),
-(44, 27, '13000003', NULL, NULL, '2025-11-12 15:13:41'),
-(45, 27, '13000006', NULL, NULL, '2025-11-12 15:13:41'),
-(46, 27, '13000011', NULL, NULL, '2025-11-12 15:13:41'),
-(47, 27, '13000005', NULL, NULL, '2025-11-12 15:13:41'),
-(48, 27, '13000008', NULL, NULL, '2025-11-12 15:13:41'),
-(49, 27, '13000009', NULL, NULL, '2025-11-12 15:13:41'),
-(50, 27, '13000002', NULL, NULL, '2025-11-12 15:13:41'),
-(51, 27, '13000004', NULL, NULL, '2025-11-12 15:13:41'),
-(52, 27, '13000007', NULL, NULL, '2025-11-12 15:13:41'),
-(53, 27, '13000010', NULL, NULL, '2025-11-12 15:13:41'),
-(54, 27, '8000011', NULL, NULL, '2025-11-12 15:15:24'),
-(55, 27, '8000005', NULL, NULL, '2025-11-12 15:15:24'),
-(56, 27, '8000007', NULL, NULL, '2025-11-12 15:15:24'),
-(57, 27, '8000002', NULL, NULL, '2025-11-12 15:15:24'),
-(58, 27, '8000006', NULL, NULL, '2025-11-12 15:15:24'),
-(59, 27, '8000004', NULL, NULL, '2025-11-12 15:15:24'),
-(60, 27, '8000001', NULL, NULL, '2025-11-12 15:15:24'),
-(61, 27, '8000009', NULL, NULL, '2025-11-12 15:15:24'),
-(62, 27, '8000003', NULL, NULL, '2025-11-12 15:15:24'),
-(63, 27, '8000008', NULL, NULL, '2025-11-12 15:15:24'),
-(64, 27, '8000010', NULL, NULL, '2025-11-12 15:15:24'),
-(65, 27, '14000007', NULL, NULL, '2025-11-12 15:25:47'),
-(66, 27, '14000010', NULL, NULL, '2025-11-12 15:25:47'),
-(67, 27, '14000002', NULL, NULL, '2025-11-12 15:25:47'),
-(68, 27, '14000006', NULL, NULL, '2025-11-12 15:25:47'),
-(69, 27, '14000011', NULL, NULL, '2025-11-12 15:25:47'),
-(70, 27, '14000009', NULL, NULL, '2025-11-12 15:25:47'),
-(71, 27, '14000004', NULL, NULL, '2025-11-12 15:25:47'),
-(72, 27, '14000003', NULL, NULL, '2025-11-12 15:25:47'),
-(73, 27, '14000008', NULL, NULL, '2025-11-12 15:25:47'),
-(74, 27, '14000001', NULL, NULL, '2025-11-12 15:25:47'),
-(75, 27, '14000005', NULL, NULL, '2025-11-12 15:25:47'),
-(76, 28, '8000011', NULL, NULL, '2025-11-12 15:27:08'),
-(77, 28, '8000005', NULL, NULL, '2025-11-12 15:27:08'),
-(78, 28, '8000007', NULL, NULL, '2025-11-12 15:27:08'),
-(79, 28, '8000002', NULL, NULL, '2025-11-12 15:27:08'),
-(80, 28, '8000006', NULL, NULL, '2025-11-12 15:27:08'),
-(81, 28, '8000004', NULL, NULL, '2025-11-12 15:27:08'),
-(82, 28, '8000001', NULL, NULL, '2025-11-12 15:27:08'),
-(83, 28, '8000009', NULL, NULL, '2025-11-12 15:27:08'),
-(84, 28, '8000003', NULL, NULL, '2025-11-12 15:27:08'),
-(85, 28, '8000008', NULL, NULL, '2025-11-12 15:27:08'),
-(86, 28, '8000010', NULL, NULL, '2025-11-12 15:27:08'),
-(87, 29, '12000001', NULL, NULL, '2025-11-13 00:12:09'),
-(88, 29, '12000008', NULL, NULL, '2025-11-13 00:12:09'),
-(89, 29, '12000007', NULL, NULL, '2025-11-13 00:12:09'),
-(90, 29, '12000004', NULL, NULL, '2025-11-13 00:12:09'),
-(91, 29, '12000003', NULL, NULL, '2025-11-13 00:12:09'),
-(92, 29, '12000010', NULL, NULL, '2025-11-13 00:12:09'),
-(93, 29, '12000005', NULL, NULL, '2025-11-13 00:12:09'),
-(94, 29, '12000011', NULL, NULL, '2025-11-13 00:12:09'),
-(95, 29, '12000009', NULL, NULL, '2025-11-13 00:12:09'),
-(96, 29, '12000006', NULL, NULL, '2025-11-13 00:12:09'),
-(97, 29, '12000002', NULL, NULL, '2025-11-13 00:12:09'),
-(98, 29, '12000015', NULL, NULL, '2025-11-13 00:12:48'),
-(99, 29, '12000022', NULL, NULL, '2025-11-13 00:12:48'),
-(100, 29, '12000019', NULL, NULL, '2025-11-13 00:12:48'),
-(101, 29, '12000018', NULL, NULL, '2025-11-13 00:12:48'),
-(102, 29, '12000021', NULL, NULL, '2025-11-13 00:12:48'),
-(103, 29, '12000020', NULL, NULL, '2025-11-13 00:12:48'),
-(104, 29, '12000016', NULL, NULL, '2025-11-13 00:12:48'),
-(105, 29, '12000014', NULL, NULL, '2025-11-13 00:12:48'),
-(106, 29, '12000017', NULL, NULL, '2025-11-13 00:12:48'),
-(107, 29, '12000013', NULL, NULL, '2025-11-13 00:12:48'),
-(108, 29, '12000012', NULL, NULL, '2025-11-13 00:12:48'),
-(109, 30, '8000011', NULL, NULL, '2025-11-13 14:22:16'),
-(110, 30, '8000005', NULL, NULL, '2025-11-13 14:22:16'),
-(111, 30, '8000007', NULL, NULL, '2025-11-13 14:22:16'),
-(112, 30, '8000002', NULL, NULL, '2025-11-13 14:22:16'),
-(113, 30, '8000006', NULL, NULL, '2025-11-13 14:22:16'),
-(114, 30, '8000004', NULL, NULL, '2025-11-13 14:22:16'),
-(115, 30, '8000001', NULL, NULL, '2025-11-13 14:22:16'),
-(116, 30, '8000009', NULL, NULL, '2025-11-13 14:22:16'),
-(117, 30, '8000003', NULL, NULL, '2025-11-13 14:22:16'),
-(118, 30, '8000008', NULL, NULL, '2025-11-13 14:22:16'),
-(119, 30, '8000010', NULL, NULL, '2025-11-13 14:22:16'),
-(120, 31, '8000032', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(121, 31, '8000033', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(122, 31, '8000030', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(123, 31, '8000031', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(124, 31, '8000027', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(125, 31, '8000023', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(126, 31, '8000029', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(127, 31, '8000024', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(128, 31, '8000025', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(129, 31, '8000028', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(130, 31, '8000026', 'cuerda de brutos ya esta lista la evaluacion, no se la pasen con ezequiel', NULL, '2025-11-13 19:06:25'),
-(131, 31, '8000011', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(132, 31, '8000005', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(133, 31, '8000007', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(134, 31, '8000002', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(135, 31, '8000006', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(136, 31, '8000004', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(137, 31, '8000001', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(138, 31, '8000009', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(139, 31, '8000003', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(140, 31, '8000008', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(141, 31, '8000010', 'Ksjnsk2', NULL, '2025-11-14 16:17:40'),
-(142, 27, '8000032', NULL, NULL, '2025-11-14 19:21:05'),
-(143, 27, '8000033', NULL, NULL, '2025-11-14 19:21:05'),
-(144, 27, '8000030', NULL, NULL, '2025-11-14 19:21:05'),
-(145, 27, '8000031', NULL, NULL, '2025-11-14 19:21:05'),
-(146, 27, '8000027', NULL, NULL, '2025-11-14 19:21:05'),
-(147, 27, '8000023', NULL, NULL, '2025-11-14 19:21:05'),
-(148, 27, '8000029', NULL, NULL, '2025-11-14 19:21:05'),
-(149, 27, '8000024', NULL, NULL, '2025-11-14 19:21:05'),
-(150, 27, '8000025', NULL, NULL, '2025-11-14 19:21:05'),
-(151, 27, '8000028', NULL, NULL, '2025-11-14 19:21:05'),
-(152, 27, '8000026', NULL, NULL, '2025-11-14 19:21:05'),
-(153, 32, '9000011', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(154, 32, '9000006', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(155, 32, '9000009', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(156, 32, '9000001', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(157, 32, '9000005', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(158, 32, '9000010', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(159, 32, '9000008', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(160, 32, '9000003', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(161, 32, '9000002', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(162, 32, '9000007', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(163, 32, '9000004', 'fkndslkfnsdlknsdnfjksgdnfoinsirfnionsr', NULL, '2025-11-14 22:51:59'),
-(164, 33, '12000001', NULL, NULL, '2025-11-14 23:24:03'),
-(165, 33, '12000008', NULL, NULL, '2025-11-14 23:24:03'),
-(166, 33, '12000007', NULL, NULL, '2025-11-14 23:24:03'),
-(167, 33, '12000004', NULL, NULL, '2025-11-14 23:24:03'),
-(168, 33, '12000003', NULL, NULL, '2025-11-14 23:24:03'),
-(169, 33, '12000010', NULL, NULL, '2025-11-14 23:24:03'),
-(170, 33, '12000005', NULL, NULL, '2025-11-14 23:24:03'),
-(171, 33, '12000011', NULL, NULL, '2025-11-14 23:24:03'),
-(172, 33, '12000009', NULL, NULL, '2025-11-14 23:24:03'),
-(173, 33, '12000006', NULL, NULL, '2025-11-14 23:24:03'),
-(174, 33, '12000002', NULL, NULL, '2025-11-14 23:24:03'),
-(175, 26, '13000012', NULL, NULL, '2025-11-15 14:13:56'),
-(176, 26, '13000019', NULL, NULL, '2025-11-15 14:13:56'),
-(177, 26, '13000018', NULL, NULL, '2025-11-15 14:13:56'),
-(178, 26, '13000015', NULL, NULL, '2025-11-15 14:13:56'),
-(179, 26, '13000014', NULL, NULL, '2025-11-15 14:13:56'),
-(180, 26, '13000021', NULL, NULL, '2025-11-15 14:13:56'),
-(181, 26, '13000016', NULL, NULL, '2025-11-15 14:13:56'),
-(182, 26, '13000022', NULL, NULL, '2025-11-15 14:13:56'),
-(183, 26, '13000020', NULL, NULL, '2025-11-15 14:13:56'),
-(184, 26, '13000017', NULL, NULL, '2025-11-15 14:13:56'),
-(185, 26, '13000013', NULL, NULL, '2025-11-15 14:13:56');
+(23, 4, '8000011', 'Listo', NULL, '2025-11-17 22:26:58'),
+(24, 4, '8000005', 'Listo', NULL, '2025-11-17 22:26:58'),
+(25, 4, '8000007', 'Listo', NULL, '2025-11-17 22:26:58'),
+(26, 4, '8000002', 'Listo', NULL, '2025-11-17 22:26:58'),
+(27, 4, '8000006', 'Listo', NULL, '2025-11-17 22:26:58'),
+(28, 4, '8000004', 'Listo', NULL, '2025-11-17 22:26:58'),
+(29, 4, '8000001', 'Listo bien echo', 85.00, '2025-11-17 22:26:58'),
+(30, 4, '8000009', 'Listo', NULL, '2025-11-17 22:26:58'),
+(31, 4, '8000003', 'Listo', NULL, '2025-11-17 22:26:58'),
+(32, 4, '8000008', 'Listo', NULL, '2025-11-17 22:26:58'),
+(33, 4, '8000010', 'Listo', NULL, '2025-11-17 22:26:58'),
+(45, 7, '8000011', NULL, NULL, '2025-11-19 16:23:58'),
+(46, 7, '8000005', NULL, NULL, '2025-11-19 16:23:58'),
+(47, 7, '8000007', NULL, NULL, '2025-11-19 16:23:58'),
+(48, 7, '8000002', '', 75.00, '2025-11-19 16:23:58'),
+(49, 7, '8000006', NULL, NULL, '2025-11-19 16:23:58'),
+(50, 7, '8000004', NULL, NULL, '2025-11-19 16:23:58'),
+(51, 7, '8000001', 'bien', 100.00, '2025-11-19 16:23:58'),
+(52, 7, '8000009', NULL, NULL, '2025-11-19 16:23:58'),
+(53, 7, '8000003', '', 100.00, '2025-11-19 16:23:58'),
+(54, 7, '8000008', NULL, NULL, '2025-11-19 16:23:58'),
+(55, 7, '8000010', NULL, NULL, '2025-11-19 16:23:58'),
+(56, 8, '9000029', '', 41.69, '2025-11-19 21:18:05'),
+(57, 8, '9000028', '', 66.72, '2025-11-19 21:18:05'),
+(58, 8, '9000025', '', 83.38, '2025-11-19 21:18:05'),
+(59, 8, '9000024', 'jjajajaj', 50.05, '2025-11-19 21:18:05'),
+(60, 8, '9000031', '', 25.08, '2025-11-19 21:18:05'),
+(61, 8, '9000026', '', 75.08, '2025-11-19 21:18:05'),
+(62, 8, '9000032', '', 100.00, '2025-11-19 21:18:05'),
+(63, 8, '9000030', '', 33.38, '2025-11-19 21:18:05'),
+(64, 8, '9000027', '', 83.33, '2025-11-19 21:18:05'),
+(65, 8, '9000023', '', 75.03, '2025-11-19 21:18:05'),
+(66, 8, '9000033', 'bien ajjajaja', 75.08, '2025-11-19 21:18:05'),
+(67, 14, '9000011', '', 80.83, '2025-11-20 11:57:45'),
+(68, 14, '9000006', NULL, NULL, '2025-11-20 11:57:45'),
+(69, 14, '9000009', NULL, NULL, '2025-11-20 11:57:45'),
+(70, 14, '9000001', NULL, NULL, '2025-11-20 11:57:45'),
+(71, 14, '9000005', NULL, NULL, '2025-11-20 11:57:45'),
+(72, 14, '9000010', NULL, NULL, '2025-11-20 11:57:45'),
+(73, 14, '9000008', NULL, NULL, '2025-11-20 11:57:45'),
+(74, 14, '9000003', NULL, NULL, '2025-11-20 11:57:45'),
+(75, 14, '9000002', NULL, NULL, '2025-11-20 11:57:45'),
+(76, 14, '9000007', NULL, NULL, '2025-11-20 11:57:45'),
+(77, 14, '9000004', NULL, NULL, '2025-11-20 11:57:45'),
+(78, 13, '9000011', NULL, NULL, '2025-11-20 11:58:53'),
+(79, 13, '9000006', NULL, NULL, '2025-11-20 11:58:53'),
+(80, 13, '9000009', NULL, NULL, '2025-11-20 11:58:53'),
+(81, 13, '9000001', NULL, NULL, '2025-11-20 11:58:53'),
+(82, 13, '9000005', NULL, NULL, '2025-11-20 11:58:53'),
+(83, 13, '9000010', NULL, NULL, '2025-11-20 11:58:53'),
+(84, 13, '9000008', NULL, NULL, '2025-11-20 11:58:53'),
+(85, 13, '9000003', NULL, NULL, '2025-11-20 11:58:53'),
+(86, 13, '9000002', '', 85.00, '2025-11-20 11:58:53'),
+(87, 13, '9000007', NULL, NULL, '2025-11-20 11:58:53'),
+(88, 13, '9000004', NULL, NULL, '2025-11-20 11:58:53'),
+(89, 11, '9000029', NULL, NULL, '2025-11-20 18:52:37'),
+(90, 11, '9000028', NULL, NULL, '2025-11-20 18:52:37'),
+(91, 11, '9000025', NULL, NULL, '2025-11-20 18:52:37'),
+(92, 11, '9000024', NULL, NULL, '2025-11-20 18:52:37'),
+(93, 11, '9000031', NULL, NULL, '2025-11-20 18:52:37'),
+(94, 11, '9000026', NULL, NULL, '2025-11-20 18:52:37'),
+(95, 11, '9000032', NULL, NULL, '2025-11-20 18:52:37'),
+(96, 11, '9000030', NULL, NULL, '2025-11-20 18:52:37'),
+(97, 11, '9000027', NULL, NULL, '2025-11-20 18:52:37'),
+(98, 11, '9000023', 'ffrf', 75.00, '2025-11-20 18:52:37'),
+(99, 11, '9000033', NULL, NULL, '2025-11-20 18:52:37');
 
 -- --------------------------------------------------------
 
@@ -631,6 +643,7 @@ INSERT INTO `evaluacion_estudiante` (`id`, `rubrica_id`, `estudiante_cedula`, `o
 -- Table structure for table `id_rol`
 --
 
+DROP TABLE IF EXISTS `id_rol`;
 CREATE TABLE `id_rol` (
   `id` int(11) NOT NULL,
   `nombre` varchar(50) NOT NULL,
@@ -653,6 +666,7 @@ INSERT INTO `id_rol` (`id`, `nombre`, `descripcion`, `activo`) VALUES
 -- Table structure for table `inscripcion_seccion`
 --
 
+DROP TABLE IF EXISTS `inscripcion_seccion`;
 CREATE TABLE `inscripcion_seccion` (
   `id` int(11) NOT NULL,
   `estudiante_cedula` varchar(20) NOT NULL,
@@ -975,6 +989,7 @@ INSERT INTO `inscripcion_seccion` (`id`, `estudiante_cedula`, `seccion_id`, `fec
 -- Table structure for table `materia`
 --
 
+DROP TABLE IF EXISTS `materia`;
 CREATE TABLE `materia` (
   `codigo` varchar(10) NOT NULL,
   `nombre` varchar(100) NOT NULL,
@@ -993,18 +1008,113 @@ CREATE TABLE `materia` (
 --
 
 INSERT INTO `materia` (`codigo`, `nombre`, `descripcion`, `creditos`, `semestre`, `horas_teoricas`, `horas_practicas`, `carrera_codigo`, `activo`, `fecha_creacion`) VALUES
+('ACC-220', 'ACTIVIDADES COMPLEMENTARIAS (Ed. Física)', NULL, 0, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ACC-220', 'ACTIVIDADES COMPLEMENTARIAS I(Ed. Física)', NULL, 0, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ACC-320', 'ACTIVIDADES COMPLEMENTARIAS (Ed Física)', NULL, 0, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ACC-531', 'ACTIVIDADES COMPLEMENTARIAS II(Proyectos Productivos)', NULL, 1, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ADE-333', 'ADMINISTRACION DE EMPRESAS', NULL, 3, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ADE-433', 'ADMINISTRACION DE EMPRESAS', NULL, 3, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ADE-533', 'ADMINISTRACIÓN DE EMPRESAS', NULL, 3, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ADG-143', 'ADMINISTRACIÓN GENERAL', NULL, 3, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ADG-143', 'ADMINISTRACIÓN GENERAL', NULL, 3, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ADG-143', 'ADMINISTRACIÓN GENERAL', NULL, 3, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
 ('ADM101', 'Principios de Administración', 'Fundamentos de la administración de empresas', 4, 1, NULL, NULL, 'ADM', 1, '2025-11-12 14:43:39'),
 ('ADM102', 'Contabilidad I', 'Contabilidad básica empresarial', 4, 2, NULL, NULL, 'ADM', 1, '2025-11-12 14:43:39'),
 ('ADM201', 'Marketing', 'Estrategias de marketing empresarial', 3, 3, NULL, NULL, 'ADM', 1, '2025-11-12 14:43:39'),
 ('ADM202', 'Gestión de Recursos Humanos', 'Administración del talento humano', 3, 4, NULL, NULL, 'ADM', 1, '2025-11-12 14:43:39'),
+('ADP-443', 'ADMINISTRACIÓN DE LA PRODUCCIÓN', NULL, 3, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ADP-443', 'ADMINISTRACIÓN DE LA PRODUCCIÓN', NULL, 3, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ADS-433', 'ANALISIS Y DISEÑO DE SISTEMAS', NULL, 3, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ADS-643', 'ANALISIS Y DISEÑO DE SISTEMAS DIGITALES', NULL, 3, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ALP-265', 'ALGORITMO Y PROGRAMACION I', NULL, 5, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ALP-365', 'ALGORITMO Y PROGRAMACION II', NULL, 5, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ANF-222', 'ANTROPOLOGIA FILOSOFICA', NULL, 2, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ANF-233', 'ANTROPOLOGIA FILOSOFICA', NULL, 3, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ANF-433', 'ANTROPOLOGÍA FILOSÓFICA', NULL, 3, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ANF-443', 'ANÁLISIS FINANCIERO I', NULL, 3, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ANF-443', 'ANÁLISIS FINANCIERO I', NULL, 3, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ANF-443', 'ANÁLISIS FINANCIERO I', NULL, 3, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ANF-543', 'ANÁLISIS FINANCIERO II', NULL, 3, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ANF-543', 'ANÁLISIS FINANCIERO II', NULL, 3, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ANF-543', 'ANÁLISIS FINANCIERO II', NULL, 3, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('APL-543', 'APRENDIZAJE DE LA LECTURA Y ESCRITURA', NULL, 3, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('ARC-265', 'ARQUITECTURA Y ESTRUCTURA DEL COMPUTADOR', NULL, 5, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ARC-454', 'ARQUITECTURA DE REDES DE COMPUTADORES', NULL, 4, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ART-243', 'ARTES PLÁSTICAS', NULL, 3, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('ATH-443', 'ADMINISTRACIÓN DE TALENTO HUMANO', NULL, 3, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ATH-443', 'ADMINISTRACIÓN DE TALENTO HUMANO', NULL, 3, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('AUA-543', 'AUDITORÍA ADMINISTRATIVA', NULL, 3, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('AUA-543', 'AUDITORÍA ADMINISTRATIVA', NULL, 3, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('AUD-443', 'AUDITORÍA I', NULL, 3, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('AUD-532', 'AUDITORÍA II', NULL, 2, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('AUT-443', 'AUTOMATISMOS', NULL, 3, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('CAL-265', 'CALCULO I', NULL, 5, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('CAL-365', 'CALCULO II', NULL, 5, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('CCA-532', 'CONTABILIDAD DE COSTOS APLICADO', NULL, 2, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('CIE-243', 'CIRCUITOS ELECTRICOS I', NULL, 3, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('CIE-343', 'CIRCUITOS ELECTRICOS II', NULL, 3, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('CIE-432', 'CREATIVIDAD INNOVACIÓN Y EMPRENDIMIENTO', NULL, 2, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('CIE-432', 'CREATIVIDAD INNOVACIÓN Y EMPRENDIMIENTO', NULL, 2, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('CIN-343', 'CIENCIAS DE LA NATURALEZA', NULL, 3, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('COC-443', 'CONTABILIDAD DE COSTOS', NULL, 3, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('COC-443', 'CONTABILIDAD DE COSTOS', NULL, 3, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('COC-464', 'CONTABILIDAD DE COSTOS', NULL, 4, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COC-532', 'CONTROL DE CALIDAD', NULL, 2, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('COE-543', 'CONTABILIDAD ESPECIALIZADA', NULL, 3, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COG-164', 'CONTABILIDAD GENERAL', NULL, 4, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('COG-164', 'CONTABILIDAD GENERAL', NULL, 4, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COG-164', 'CONTABILIDAD GENERAL', NULL, 4, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('COG-432', 'CONTABILIDAD GERENCIAL', NULL, 2, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COG-532', 'CONTABILIDAD GUBERNAMENTAL', NULL, 2, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COI-243', 'CONTABILIDAD INTERMEDIA', NULL, 3, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('COI-243', 'CONTABILIDAD INTERMEDIA', NULL, 3, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COI-243', 'CONTABILIDAD INTERMEDIA', NULL, 3, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('CON-464', 'CONTROL NUMÉRICO I', NULL, 4, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('CON-544', 'CONTABILIDAD COMPUTARIZADA', NULL, 4, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('CON-564', 'CONTROL NUMÉRICO II', NULL, 4, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
 ('CON101', 'Contabilidad Básica', 'Fundamentos de contabilidad', 4, 1, NULL, NULL, 'CON', 1, '2025-11-12 14:43:39'),
 ('CON102', 'Matemáticas Financieras', 'Cálculos financieros', 4, 2, NULL, NULL, 'CON', 1, '2025-11-12 14:43:39'),
 ('CON201', 'Auditoría', 'Principios de auditoría', 3, 3, NULL, NULL, 'CON', 1, '2025-11-12 14:43:39'),
 ('CON202', 'Costos', 'Contabilidad de costos', 3, 4, NULL, NULL, 'CON', 1, '2025-11-12 14:43:39'),
+('COS-364', 'CONTABILIDAD SUPERIOR', NULL, 4, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('COS-364', 'CONTABILIDAD SUPERIOR', NULL, 4, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('COS-364', 'CONTABILIDAD SUPERIOR', NULL, 4, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('CRE-543', 'CREATIVIDAD LITERARIA', NULL, 3, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('CSC-343', 'CIENCIAS SOCIALES Y CULTURA', NULL, 3, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DEE-364', 'DISEÑO DE EQUIPOS ELECTRONICOS I', NULL, 4, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('DEE-443', 'DISEÑO DE EQUIPOS ELECTRONICOS II', NULL, 3, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('DEE-543', 'DISEÑO DE EQUIPOS ELECTRONICOS III', NULL, 3, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('DEE-643', 'DISEÑO DE EQUIPOS ELECTRONICOS IV', NULL, 3, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('DIC-543', 'DIDÁCTICA DE LAS CIENCIAS NATURALES', NULL, 3, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DIG-243', 'DIDÁCTICA GENERAL', NULL, 3, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DII-132', 'DIBUJO INDUSTRIAL I', NULL, 2, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('DII-242', 'DIBUJO INDUSTRIAL II', NULL, 2, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('DII-343', 'DIBUJO INDUSTRIAL III', NULL, 3, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('DPC-443', 'DIDÁCTICA DE LOS PROCESOS COGNITIVOS', NULL, 3, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DPS-432', 'DIDÁCTICA DE LOS PROCESOS PSICOMOTOROS', NULL, 2, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DPS-543', 'DIDÁCTICA DE LOS PROCESOS SOCIOEMOCIONALES', NULL, 3, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('DVE-343', 'DERECHOS HUMANOS VALORES Y ÉTICA PROFESIONAL', NULL, 3, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('DVE-343', 'DERECHOS HUMANOS VALORES Y ÉTICA PROFESIONAL', NULL, 3, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('DVE-343', 'DERECHOS HUMANOS VALORES Y ÉTICA PROFESIONAL', NULL, 3, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('DVH-232', 'DERECHOS HUMANOS, VALORES Y ÉTICA', NULL, 2, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('EAS-432', 'ECOLOGÍA, AMBIENTE Y SUSTENTABILIDAD', NULL, 2, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('EAS-432', 'ECOLOGÍA, AMBIENTE Y SUSTENTABILIDAD', NULL, 2, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('EDA-422', 'EDUCACION AMBIENTAL', NULL, 2, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('EDI-443', 'EVALUACIÓN Y DESARROLLO INFANTIL', NULL, 3, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
 ('EDU101', 'Pedagogía General', 'Fundamentos de pedagogía', 3, 1, NULL, NULL, 'EDU', 1, '2025-11-12 14:43:39'),
 ('EDU102', 'Psicología Educativa', 'Psicología aplicada a la educación', 3, 2, NULL, NULL, 'EDU', 1, '2025-11-12 14:43:39'),
 ('EDU201', 'Didáctica', 'Metodologías de enseñanza', 4, 3, NULL, NULL, 'EDU', 1, '2025-11-12 14:43:39'),
 ('EDU202', 'Evaluación Educativa', 'Técnicas de evaluación', 3, 4, NULL, NULL, 'EDU', 1, '2025-11-12 14:43:39'),
+('EFD-132', 'EDUCACIÓN FÍSICA Y DEPORTE', NULL, 2, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('EFD-132', 'EDUCACIÓN FÍSICA Y DEPORTE', NULL, 2, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('EFD-132', 'EDUCACIÓN FÍSICA Y DEPORTE', NULL, 2, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('EFL-132', 'EDUCACIÓN FÍSICA Y LÚDICA', NULL, 2, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('ELE-343', 'ELECTRONICA I', NULL, 3, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ELE-354', 'ELECTRICIDAD', NULL, 4, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ELE-432', 'ELECTROTECNIA', NULL, 2, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ELE-443', 'ELECTRONICA II', NULL, 3, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ELE-543', 'ELECTRONICA III', NULL, 3, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ELE-543', 'ELECTIVA', NULL, 3, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
 ('ELE101', 'Circuitos Eléctricos I', 'Análisis de circuitos básicos', 5, 1, NULL, NULL, 'ELE', 1, '2025-11-12 14:43:39'),
 ('ELE102', 'Circuitos Eléctricos II', 'Análisis de circuitos avanzados', 5, 2, NULL, NULL, 'ELE', 1, '2025-11-12 14:43:39'),
 ('ELE201', 'Máquinas Eléctricas', 'Estudio de máquinas eléctricas', 4, 3, NULL, NULL, 'ELE', 1, '2025-11-12 14:43:39'),
@@ -1013,14 +1123,234 @@ INSERT INTO `materia` (`codigo`, `nombre`, `descripcion`, `creditos`, `semestre`
 ('ELN102', 'Electrónica Digital', 'Sistemas digitales básicos', 5, 2, NULL, NULL, 'ELN', 1, '2025-11-12 14:43:39'),
 ('ELN201', 'Microprocesadores', 'Arquitectura de microprocesadores', 4, 3, NULL, NULL, 'ELN', 1, '2025-11-12 14:43:39'),
 ('ELN202', 'Sistemas Embebidos', 'Diseño de sistemas embebidos', 4, 4, NULL, NULL, 'ELN', 1, '2025-11-12 14:43:39'),
+('ELT-622', 'ELECTIVA', NULL, 2, 6, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('EMU-532', 'EXPRESIÓN MUSICAL', NULL, 2, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('EPS-432', 'EDUCACIÓN, PEDAGOGÍA Y SOCIEDAD', NULL, 2, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('ESA-343', 'ESTADISTICA I', NULL, 3, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ESA-444', 'ESTADISTICA APLICADA', NULL, 4, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ETF-522', 'ETICA FUNDAMENTAL', NULL, 2, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ETI-343', 'ESTADÍSTICA INFERENCIAL', NULL, 3, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ETI-343', 'ESTADÍSTICA INFERENCIAL', NULL, 3, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ETI-343', 'ESTADÍSTICA INFERENCIAL', NULL, 3, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ETM-232', 'ESTADÍSTICA METODOLÓGICA', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ETM-232', 'ESTADÍSTICA METODOLÓGICA', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ETM-232', 'ESTADÍSTICA METODOLÓGICA', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ETP-422', 'ÉTICA PROFESIONAL', NULL, 2, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ETP-522', 'ETICA PROFESIONAL', NULL, 2, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('EVP-532', 'EVALUACIÓN DE PROYECTOS', NULL, 2, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('EVP-532', 'EVALUACIÓN DE PROYECTOS', NULL, 2, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FIS-143', 'FISICA', NULL, 3, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FIS-143', 'FÍSICA', NULL, 3, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-100', 'FORMACIÓN COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-100', 'FORMACIÓN COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-100', 'FORMACIÓN COMPLEMENTARIA', NULL, 0, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-100', 'FORMACION COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-100', 'FORMACIÓN COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-100', 'FORMACION COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-100', 'FORMACIÓN COMPLEMENTARIA I', NULL, 0, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-200', 'FORMACIÓN COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-200', 'FORMACIÓN COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-200', 'FORMACIÓN COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-200', 'FORMACION COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-200', 'FORMACIÓN COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-200', 'FORMACION COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-200', 'FORMACIÓN COMPLEMENTARIA II', NULL, 0, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-300', 'FORMACIÓN COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-300', 'FORMACIÓN COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-300', 'FORMACIÓN COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-300', 'FORMACION COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-300', 'FORMACIÓN COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-300', 'FORMACION COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-300', 'FORMACIÓN COMPLEMENTARIA III', NULL, 0, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-400', 'FORMACIÓN COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-400', 'FORMACIÓN COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-400', 'FORMACIÓN COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-400', 'FORMACION COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-400', 'FORMACIÓN COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-400', 'FORMACION COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-400', 'FORMACIÓN COMPLEMENTARIA IV', NULL, 0, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-500', 'FORMACIÓN COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-500', 'FORMACIÓN COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-500', 'FORMACIÓN COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-500', 'FORMACION COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-500', 'FORMACIÓN COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-500', 'FORMACION COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-500', 'FORMACIÓN COMPLEMENTARIA V', NULL, 0, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOC-600', 'FORMACIÓN COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOC-600', 'FORMACIÓN COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOC-600', 'FORMACIÓN COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('FOC-600', 'FORMACION COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('FOC-600', 'FORMACIÓN COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOC-600', 'FORMACION COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('FOC-600', 'FORMACIÓN COMPLEMENTARIA VI', NULL, 0, 6, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('FOH-132', 'FORMACIÓN HUMANA', NULL, 2, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('FOH-132', 'FORMACIÓN HUMANA', NULL, 2, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('FOH-132', 'FORMACIÓN HUMANA', NULL, 2, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('FOH-143', 'FORMACIÓN HUMANA', NULL, 3, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('GAM-432', 'GESTIÓN AMBIENTAL', NULL, 2, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('GDD-133', 'GEOMETRIA DESCRIPTIVA Y DIBUJO I', NULL, 3, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('GDD-233', 'GEOMETRIA DESCRIPTIVA Y DIBUJO II', NULL, 3, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('GEA-432', 'GESTIÓN ADUANERA', NULL, 2, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('GET-443', 'GESTIÓN TRIBUTARIA', NULL, 3, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('HSI-432', 'HIGIENE Y SEGURIDAD INDUSTRIAL', NULL, 2, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('HSI-432', 'HIGIENE Y SEGURIDAD INDUSTRIAL', NULL, 2, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('IFE-243', 'INFORMÁTICA EDUCATIVA', NULL, 3, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('IGL-332', 'INGLES III', NULL, 2, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('IMI-222', 'INTROD. A LA METODOLOGIA DE LA INVESTIGACION', NULL, 2, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('INA-232', 'INFORMÁTICA APLICADA', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('INA-232', 'INFORMÁTICA APLICADA', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('INA-232', 'INFORMÁTICA APLICADA', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('INC-353', 'INTRODUCCIÓN A LA COMPUTACIÓN', NULL, 3, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('INC-533', 'INTRODUCCION A LAS COMUNICACIONES', NULL, 3, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('INE-243', 'INTRODUCCION A LA ELECTRONICA', NULL, 3, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('INE-543', 'INSTRUMENTACION ELECTRONICA', NULL, 3, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('INF-432', 'INFORMATICA', NULL, 2, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
 ('INF101', 'Programación I', 'Introducción a la programación', 5, 1, NULL, NULL, 'INF', 1, '2025-11-12 14:43:39'),
 ('INF102', 'Estructuras de Datos', 'Estructuras de datos fundamentales', 5, 2, NULL, NULL, 'INF', 1, '2025-11-12 14:43:39'),
 ('INF201', 'Base de Datos I', 'Fundamentos de bases de datos', 4, 3, NULL, NULL, 'INF', 1, '2025-11-12 14:43:39'),
 ('INF202', 'Redes de Computadoras', 'Fundamentos de redes', 4, 4, NULL, NULL, 'INF', 1, '2025-11-12 14:43:39'),
+('ING-122', 'INGLES I', NULL, 2, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ING-132', 'INGLÉS I', NULL, 2, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ING-132', 'INGLÉS I', NULL, 2, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ING-132', 'INGLÉS I', NULL, 2, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ING-143', 'INGLES I', NULL, 3, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ING-143', 'INGLES I', NULL, 3, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('ING-222', 'INGLÉS II', NULL, 2, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('ING-232', 'INGLÉS II', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('ING-232', 'INGLÉS II', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('ING-232', 'INGLÉS II', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('ING-233', 'INGLES II', NULL, 3, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('ING-243', 'INGLES II', NULL, 3, 2, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('INI-154', 'INTRODUCCION A LA INFORMATICA', NULL, 4, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('INM-532', 'INVESTIGACIÓN DE MERCADO', NULL, 2, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('INM-532', 'INVESTIGACIÓN DE MERCADO', NULL, 2, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('INO-544', 'INVESTIGACION DE OPERACIONES', NULL, 4, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('INS-354', 'INGENIERIA DEL SOFTWARE', NULL, 4, 3, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('INU-554', 'INTERFACES WEB CON EL USUARIO', NULL, 4, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('IVE-543', 'INVESTIGACIÓN EDUCATIVA', NULL, 3, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('LEC-143', 'LENGUAJE Y COMUNICACIÓN I', NULL, 3, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('LEC-143', 'LENGUAJE Y COMUNICACIÓN I', NULL, 3, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('LEC-143', 'LENGUAJE Y COMUNICACIÓN I', NULL, 3, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('LEC-143', 'LENGUAJE Y COMUNICACION I', NULL, 3, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('LEC-143', 'LENGUAJE Y COMUNICACIÓN I', NULL, 3, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('LEC-143', 'LENGUAJE Y COMUNICACION I', NULL, 3, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('LEC-143', 'LENGUAJE Y COMUNICACIÓN', NULL, 3, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('LEC-243', 'LENGUAJE Y COMUNICACIÓN II', NULL, 3, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('LEC-243', 'LENGUAJE Y COMUNICACIÓN II', NULL, 3, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('LEC-243', 'LENGUAJE Y COMUNICACIÓN II', NULL, 3, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('LEC-243', 'LENGUAJE Y COMUNICACIÓN II', NULL, 3, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('LEL-232', 'LEGISLACIÓN LABORAL', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('LEL-232', 'LEGISLACIÓN LABORAL', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('LEL-232', 'LEGISLACIÓN LABORAL', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('LEM-232', 'LEGISLACIÓN MERCANTIL', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('LEM-232', 'LEGISLACIÓN MERCANTIL', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('LEM-232', 'LEGISLACIÓN MERCANTIL', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('LET-343', 'LEGISLACIÓN TRIBUTARIA', NULL, 3, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('LET-343', 'LEGISLACIÓN TRIBUTARIA', NULL, 3, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('LET-343', 'LEGISLACIÓN TRIBUTARIA', NULL, 3, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('LIM-253', 'LABORATORIO DE INSTRUMENTACION Y MEDICIONES', NULL, 3, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('LOC-154', 'LOGICA COMPUTACIONAL', NULL, 4, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('MAA-243', 'MATEMÁTICA APLICADA', NULL, 3, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MAA-243', 'MATEMÁTICA APLICADA', NULL, 3, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MAA-243', 'MATEMÁTICA APLICADA', NULL, 3, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MAE-332', 'MACROECONOMÍA', NULL, 2, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MAE-332', 'MACROECONOMÍA', NULL, 2, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MAE-332', 'MACROECONOMÍA', NULL, 2, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MAF-343', 'MATEMÁTICA FINANCIERA', NULL, 3, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MAF-343', 'MATEMÁTICA FINANCIERA', NULL, 3, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MAF-343', 'MATEMÁTICA FINANCIERA', NULL, 3, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MAG-143', 'MATEMÁTICAS GENERAL', NULL, 3, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MAG-143', 'MATEMÁTICAS GENERAL', NULL, 3, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MAG-143', 'MATEMÁTICAS GENERAL', NULL, 3, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MAG-364', 'MATEMÁTICA GENERAL', NULL, 4, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('MAH-175', 'MAQUINAS Y HERRAMIENTAS I', NULL, 5, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAH-264', 'MÁQUINAS Y HERRAMIENTAS II', NULL, 4, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAH-364', 'MAQUINAS Y HERRAMIENTAS III', NULL, 4, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAH-464', 'MÁQUINAS Y HERRAMIENTAS IV', NULL, 4, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAI-543', 'MANTENIMIENTO INDUSTRIAL', NULL, 3, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAT-165', 'MATEMATICA I', NULL, 5, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('MAT-165', 'MATEMATICA I', NULL, 5, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('MAT-165', 'MATEMATICA I', NULL, 5, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAT-265', 'MATEMATICA II', NULL, 5, 2, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('MAT-265', 'MATEMÁTICA II', NULL, 5, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAT-365', 'MATEMATICA III', NULL, 5, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('MAT-365', 'MATEMÁTICA III', NULL, 5, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MAT-432', 'MATEMATICAS IV', NULL, 2, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
 ('MEC101', 'Termodinámica', 'Principios de termodinámica', 4, 1, NULL, NULL, 'MEC', 1, '2025-11-12 14:43:39'),
 ('MEC102', 'Mecánica de Fluidos', 'Estudio de fluidos', 4, 2, NULL, NULL, 'MEC', 1, '2025-11-12 14:43:39'),
 ('MEC201', 'Diseño Mecánico', 'Fundamentos de diseño mecánico', 5, 3, NULL, NULL, 'MEC', 1, '2025-11-12 14:43:39'),
-('MEC202', 'Manufactura', 'Procesos de manufactura', 4, 4, NULL, NULL, 'MEC', 1, '2025-11-12 14:43:39');
+('MEC202', 'Manufactura', 'Procesos de manufactura', 4, 4, NULL, NULL, 'MEC', 1, '2025-11-12 14:43:39'),
+('MEI-132', 'METODOLOGÍA DE LA INVESTIGACIÓN', NULL, 2, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('MEI-522', 'METODOLOGIA DE LA INVESTIGACION', NULL, 2, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('MEI-532', 'METODOLOGÍA DE LA INVESTIGACIÓN', NULL, 2, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MEI-533', 'METODOLOGÍA DE LA INVESTIGACIÓN', NULL, 3, 5, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('MET-332', 'MERCADOTÉCNIA', NULL, 2, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MET-332', 'MERCADOTÉCNIA', NULL, 2, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MET-332', 'MERCADOTÉCNIA', NULL, 2, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MIC-232', 'MICROECONOMÍA', NULL, 2, 2, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MIC-232', 'MICROECONOMÍA', NULL, 2, 2, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('MIC-232', 'MICROECONOMÍA', NULL, 2, 2, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('MIC-543', 'MICROPROCESADORES', NULL, 3, 5, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('MIE-532', 'METODOLOGÍA DE LA INVESTIGACIÓN', NULL, 2, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('MIE-532', 'METODOLOGÍA DE LA INVESTIGACIÓN', NULL, 2, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('OEE-332', 'ORGANIZACIÓN DE LA ENTIDAD ECONÓMICA', NULL, 2, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('OEE-332', 'ORGANIZACIÓN DE LA ENTIDAD ECONÓMICA', NULL, 2, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('OEE-332', 'ORGANIZACIÓN DE LA ENTIDAD ECONÓMICA', NULL, 2, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('OFE-332', 'ORIENTACIÓN FAMILIAR Y EDUCATIVA', NULL, 2, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PAP-604', 'PASANTIA PROFESIONAL', NULL, 4, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('PAP-604', 'PASANTIA PROFESIONAL', NULL, 4, 6, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('PAP-604', 'PASANTÍA PROFESIONAL', NULL, 4, 6, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('PDE-443', 'PLANIFICACIÓN DE LA ENSEÑANZA', NULL, 3, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PEE-343', 'PLANIFICACIÓN Y EVALUACIÓN EDUCATIVA', NULL, 3, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PEL-443', 'PENSAMIENTO Y LENGUAJE', NULL, 3, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PPP-443', 'PRESUPUESTO PÚBLICO Y PRIVADO', NULL, 3, 4, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('PRA-145', 'PRÁCTICA I', NULL, 5, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PRA-245', 'PRÁCTICA II', NULL, 5, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PRA-345', 'PRÁCTICA III', NULL, 5, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PRA-445', 'PRÁCTICA IV', NULL, 5, 4, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PRA-545', 'PRÁCTICA V', NULL, 5, 5, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PRA-647', 'PRÁCTICA VI', NULL, 7, 6, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PSA-254', 'PSICOLOGÍA DEL APRENDIZAJE', NULL, 4, 2, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('PSD-154', 'PSICOLOGÍA DEL DESARROLLO', NULL, 4, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('RSP-132', 'REALIDAD SOCIAL ECONÓMICA Y POLÍTICA DE VZLA', NULL, 2, 1, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('RSP-132', 'REALIDAD SOCIAL ECONÓMICA Y POLÍTICA DE VZLA', NULL, 2, 1, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('RSP-132', 'REALIDAD SOCIAL, ECONÓMICA Y POLÍTICA DE VENEZUELA', NULL, 2, 1, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('RSP-132', 'REALIDAD SOCIAL ECONÓMICA Y POLÍTICA DE VZLA', NULL, 2, 1, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('RSP-133', 'REALIDAD SOCIAL Y POLITICA DE VENEZUELA', NULL, 3, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('RSP-133', 'REALIDAD SOCIAL Y POLITICA DE VENEZUELA', NULL, 3, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('RSP-233', 'REALIDAD SOCIAL Y POLÍTICA DE VENEZUELA', NULL, 3, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('SAM-343', 'SALUD Y AMBIENTE', NULL, 3, 3, NULL, NULL, 'EDU', 1, '2025-11-21 00:24:25'),
+('SBD-454', 'SISTEMA DE BASE DE DATOS', NULL, 4, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('SDI-554', 'SISTEMAS DE INFORMACION GERENCIAL', NULL, 4, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('SHI-222', 'SEGURIDAD E HIGIENE INDUSTRIAL', NULL, 2, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('SHI-422', 'SEGURIDAD E HIGIENE INDUSTRIAL', NULL, 2, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('SIC-543', 'SISTEMAS DE INFORMACIÓN CONTABLE', NULL, 3, 5, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('SIC-643', 'SISTEMAS DE COMUNICACIONES', NULL, 3, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('SIF-332', 'SISTEMAS FINANCIEROS', NULL, 2, 3, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('SIF-332', 'SISTEMAS FINANCIEROS', NULL, 2, 3, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('SIF-332', 'SISTEMAS FINANCIEROS', NULL, 2, 3, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('SIO-454', 'SISTEMA DE OPERACION I', NULL, 4, 4, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('SIO-554', 'SISTEMAS OPERATIVOS II', NULL, 4, 5, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('SPA-443', 'SISTEMAS Y PROCEDIMIENTOS ADMINISTRATIVOS', NULL, 3, 4, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('SPA-443', 'SISTEMAS Y PROCEDIMIENTOS ADMINISTRATIVOS', NULL, 3, 4, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('SPP-605', 'PASANTÍA PROFESIONAL (SISTEMATIZACIÓN)', NULL, 5, 6, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('SPP-605', 'PASANTÍA PROFESIONAL (SISTEMATIZACIÓN)', NULL, 5, 6, NULL, NULL, 'CON', 1, '2025-11-21 00:17:58'),
+('SPP-605', 'PASANTÍA PROFESIONAL (SISTEMATIZACIÓN)', NULL, 5, 6, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('TDP-532', 'TÉCNICAS DE PLANIFICACIÓN', NULL, 2, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('TDP-532', 'TÉCNICAS DE PLANIFICACIÓN', NULL, 2, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('TEC-144', 'TECNOLOGIA I', NULL, 4, 1, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('TEC-154', 'TECNOLOGIA', NULL, 4, 1, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('TEC-244', 'TECNOLOGÍA II', NULL, 4, 2, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('TEC-344', 'TECNOLOGÍA III', NULL, 4, 3, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('TEC-444', 'TECNOLOGÍA IV', NULL, 4, 4, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('TED-343', 'TECNICAS DIGITALES I', NULL, 3, 3, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('TED-443', 'TECNICAS DIGITALES II', NULL, 3, 4, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('TEG-606', 'TRABAJO ESPECIAL DE GRADO', NULL, 6, 6, NULL, NULL, 'ELE', 1, '2025-11-21 00:31:37'),
+('TEG-606', 'TRABAJO ESPECIAL DE GRADO', NULL, 6, 6, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31'),
+('TEG-606', 'TRABAJO ESPECIAL DE GRADO', NULL, 6, 6, NULL, NULL, 'MEC', 1, '2025-11-21 00:33:39'),
+('TEP-543', 'TÉCNICAS PRESUPUESTARIAS', NULL, 3, 5, NULL, NULL, 'ADM', 1, '2025-11-21 00:13:22'),
+('TEP-543', 'TÉCNICAS PRESUPUESTARIAS', NULL, 3, 5, NULL, NULL, 'ELN', 1, '2025-11-21 00:30:01'),
+('TID-122', 'TECNICAS DE INVESTIGACION DOCUMENTAL', NULL, 2, 1, NULL, NULL, 'INF', 1, '2025-11-21 00:35:31');
 
 -- --------------------------------------------------------
 
@@ -1028,6 +1358,7 @@ INSERT INTO `materia` (`codigo`, `nombre`, `descripcion`, `creditos`, `semestre`
 -- Table structure for table `nivel_desempeno`
 --
 
+DROP TABLE IF EXISTS `nivel_desempeno`;
 CREATE TABLE `nivel_desempeno` (
   `id` int(11) NOT NULL,
   `criterio_id` int(11) NOT NULL,
@@ -1042,58 +1373,145 @@ CREATE TABLE `nivel_desempeno` (
 --
 
 INSERT INTO `nivel_desempeno` (`id`, `criterio_id`, `nombre_nivel`, `descripcion`, `puntaje`, `orden`) VALUES
-(141, 40, 'Sobresaliente', 'Manejo correcto de MYSQL, y codigo completo', 10.00, 1),
-(142, 40, 'Notable', 'Manejo bien la herramientas pero no termino o faltaron cosas', 8.00, 2),
-(143, 40, 'Aprobado', 'hizo lo necesario para aprovar', 6.00, 3),
-(144, 40, 'Insuficiente', 'es un gafo', 4.00, 4),
-(145, 41, 'Sobresaliente', 'SACO BIEN LOS COSTOS ERES UN DURO', 10.00, 1),
-(146, 41, 'Notable', 'MANO TE FALTO POCO YA CASI', 8.00, 2),
-(147, 41, 'Aprobado', 'BUENO POR LO MENOS PASASTE PERO ESA EMPRESA VA A QUEBRAR', 6.00, 3),
-(148, 41, 'Insuficiente', 'NO MANO TU NO SIRVES PARA ESTO', 4.00, 4),
-(149, 42, 'Sobresaliente', 'klgndsflknglkadnflkagnkfnakdjg', 5.00, 1),
-(150, 42, 'Notable', 'lmgdlkafnglkasnbgfadg', 4.00, 2),
-(151, 42, 'Aprobado', 'fdkjngkj;as;dnfkg flkjrgbf', 3.00, 3),
-(152, 42, 'Insuficiente', 'fkdjagkjadf gkjangkjaldgjandfjkg', 1.00, 4),
-(153, 43, 'Sobresaliente', 'g;fdglkdnsgfiufnurdg fgjkafngjkz jkfgn;asdlfk vjkfgnadkfnblkjdfangl kfjgnaslkdfn', 5.00, 1),
-(154, 43, 'Notable', 'kgjfdkg akjs fbkjf nfkx bjkgnaskgn,gkbaksl vjkfadnglnbkjfnd;okb jcbgnad', 4.00, 2),
-(155, 43, 'Aprobado', 'fkdnjkf gdkd nkb skdjfngz,c bjkasdnkl;v lkfgnaskd vm,f glkasd v', 2.50, 3),
-(156, 43, 'Insuficiente', 'sjkdfdkjf gjknxcbmk asdjkgnblkx fgk;lsnbk fdkg nkmf gnksa vjk gjksjanvk sfdgk;j', 1.00, 4),
-(157, 44, 'Sobresaliente', 'SI SABES SOLDAR QUE PRO JAJAJ', 10.00, 1),
-(158, 44, 'Notable', 'ESTUBO BIEN PERO PUEDES MEJORAR', 8.00, 2),
-(159, 44, 'Aprobado', 'BUNEO POR LO MENOS SABES MEDIO SOLDAR', 6.00, 3),
-(160, 44, 'Insuficiente', 'NO SABES NADA JAJAJA', 4.00, 4),
-(161, 45, 'Sobresaliente', 'SOLDASTE LIMPIAMENTE AMIGO FELICIDADES', 10.00, 1),
-(162, 45, 'Notable', 'TE FALTARON DETALLES PERO VAS BIEN', 8.00, 2),
-(163, 45, 'Aprobado', 'BUENO POR LO MENOS HIZO ALGO', 6.00, 3),
-(164, 45, 'Insuficiente', 'CHAMO PON CUIDADO EN CLASES A VER SI PASAS UN EXAMEN', 4.00, 4),
-(165, 46, 'Sobresaliente', 'Jwdnsnnsbdna zndn', 10.00, 1),
-(166, 46, 'Notable', 'Dnznsnnzdb s zjc snx snzbr sb', 8.00, 2),
-(167, 46, 'Aprobado', 'Ejzjsn sjc sjc sjc djx d zjd dhd xj dej', 6.00, 3),
-(168, 46, 'Insuficiente', 'Djzns zbd znxbw xjd xhe', 4.00, 4),
-(169, 47, 'Sobresaliente', 'fdskngflksdnflknsdklgnfdglksdnf', 10.00, 1),
-(170, 47, 'Notable', 'dlksnflksdnglknsdlkfnskdf', 8.00, 2),
-(171, 47, 'Aprobado', 'dfklnsdlkfnlksdnflksdnflksd', 6.00, 3),
-(172, 47, 'Insuficiente', 'lkdslkfndslkfnklsdnflksdngkdflknsdflkndsfknsdfjoisdjf', 4.00, 4),
-(173, 48, 'Sobresaliente', 'jkdsnfjksndlkfndsjnfodsnlkngfisdng', 2.50, 1),
-(174, 48, 'Notable', 'kfdmlknflkd gjkndlkngkldnfoinrofnldskngnfjisgn', 1.88, 2),
-(175, 48, 'Aprobado', 'dkofmlksdgmfoidngkfdsmnoifnrnfgoisdnfois', 1.25, 3),
-(176, 48, 'Insuficiente', 'dkmflkmdgkmndosnfoernfksdfmoikfnmgodksfnmondsoinfrnsofdn', 0.63, 4),
-(177, 49, 'Sobresaliente', 'fjkndskdgnfoknskdnfovnfogjnsokcnrejfnjisnvjsdnfjw', 2.50, 1),
-(178, 49, 'Notable', 'kmrflknsdlkfnwrnfgjrnfjnwriofgnrjifnsjrnf', 1.88, 2),
-(179, 49, 'Aprobado', 'krmgkfnmsdofkrignsdofnronsfoidfnoekwnroifnoserae', 1.25, 3),
-(180, 49, 'Insuficiente', 'ksneflkngrjknfjkwnfijrenfjsdfnjkw;bnksjfnajkgbakjlgnjkangfiasnf', 0.63, 4),
-(181, 50, 'Sobresaliente', 'Bsjz sjx skxbdjx sjx sjxbsjxb snzbw dkf s', 1.66, 1),
-(182, 50, 'Notable', 'Bsjz wkf skf dkx wkd fks fue djd wb', 1.24, 2),
-(183, 50, 'Aprobado', 'Nskx sjx skxbd kxbdnsif e zkbf skfbw dkf', 0.83, 3),
-(184, 50, 'Insuficiente', 'Xnkd sjx skz wbfkw bfiz wjd end', 0.42, 4),
-(185, 51, 'Sobresaliente', 'Sjx sjx skz skx skzns ks djsnd wjd w', 1.66, 1),
-(186, 51, 'Notable', 'Nskx sjx wkd sjx wkd sjx sjx snx wkd bf', 1.24, 2),
-(187, 51, 'Aprobado', 'Bwdj wkdkq fks ekfj skx wbfkwnf iw fywu fjd s', 0.83, 3),
-(188, 51, 'Insuficiente', 'Sbkd wkf wkf end ddkbdhfkw fks wkc end kw fuwbfb s', 0.42, 4),
-(189, 52, 'Sobresaliente', 'Sjf w xjs xjsn wjdjw dnxbw nsnx s z. F s', 1.66, 1),
-(190, 52, 'Notable', 'Dbdb wdn s djd w fjs. Djd w fjs dj w dbd w bf', 1.24, 2),
-(191, 52, 'Aprobado', 'Ksnx snzjw zkdvkwkd dnsif wndi wndbf w d', 0.83, 3),
-(192, 52, 'Insuficiente', 'Wbdb s djd s djw bdbd wbdh', 0.42, 4);
+(89, 23, 'Sobresaliente', 'analiso bien', 3.00, 1),
+(90, 23, 'Notable', 'analizo notablemente', 2.25, 2),
+(91, 23, 'Aprobado', 'analiso por lo menos', 1.50, 3),
+(92, 23, 'Insuficiente', 'no sirves para nada', 0.75, 4),
+(93, 24, 'Sobresaliente', 'desarrollo bien', 3.00, 1),
+(94, 24, 'Notable', 'desarrolo notablemente', 2.25, 2),
+(95, 24, 'Aprobado', 'desarrollo por los menos para aprovar', 1.50, 3),
+(96, 24, 'Insuficiente', 'no sirves', 0.75, 4),
+(97, 25, 'Sobresaliente', 'perfecto', 3.00, 1),
+(98, 25, 'Notable', 'bello falto poco', 2.25, 2),
+(99, 25, 'Aprobado', 'por lo menos pasaste', 1.50, 3),
+(100, 25, 'Insuficiente', 'brutooooooooo', 0.75, 4),
+(101, 26, 'Sobresaliente', 'hola asistio', 3.00, 1),
+(102, 26, 'Notable', 'bellos casi', 2.25, 2),
+(103, 26, 'Aprobado', 'por lo menos', 1.50, 3),
+(104, 26, 'Insuficiente', 'deja de jugar y para bolas a clases', 0.75, 4),
+(105, 27, 'Sobresaliente', 'fnisdfnksdnflksdnlfjk', 3.00, 1),
+(106, 27, 'Notable', 'nfdksnfjkerjsjdf', 2.25, 2),
+(107, 27, 'Aprobado', 'f njkdsnfkjnerkjfn', 1.50, 3),
+(108, 27, 'Insuficiente', 'fdnskalfnlka;dnfklnfrjndf', 0.75, 4),
+(117, 30, 'Sobresaliente', 'fmdlkfmlksdnokdnfkd', 5.00, 1),
+(118, 30, 'Notable', 'fmdlmslkfmdflksdm', 3.75, 2),
+(119, 30, 'Aprobado', 'fmk dslkfmlksdmf', 2.50, 3),
+(120, 30, 'Insuficiente', 'fkldsmlkfmlksdf', 1.25, 4),
+(133, 34, 'Sobresaliente', 'Bien echo exelente', 6.66, 1),
+(134, 34, 'Notable', 'casi te falto poco', 5.00, 2),
+(135, 34, 'Aprobado', 'bien por lo menos lo pasaste', 3.33, 3),
+(136, 34, 'Insuficiente', 'no vale eres un bruto', 1.67, 4),
+(137, 35, 'Sobresaliente', 'Funciones correspodientes y bien echas Felicidades', 6.66, 1),
+(138, 35, 'Notable', 'esta bien pero te falto mejora un poco', 5.00, 2),
+(139, 35, 'Aprobado', 'bueno por lo menos funciona pero te falto mucho', 3.33, 3),
+(140, 35, 'Insuficiente', 'Eres un bruto', 1.67, 4),
+(141, 36, 'Sobresaliente', 'caes bien eres chevere jajaja', 6.66, 1),
+(142, 36, 'Notable', 'buena persona', 5.00, 2),
+(143, 36, 'Aprobado', 'mano se mas sociable', 3.33, 3),
+(144, 36, 'Insuficiente', 'eres un repunante jajajaj', 1.67, 4),
+(149, 38, 'Sobresaliente', 'dlknflksdnflk', 10.00, 1),
+(150, 38, 'Notable', 'lkdnslkfnsd', 7.50, 2),
+(151, 38, 'Aprobado', 'fklflkmnsdklmflksd', 5.00, 3),
+(152, 38, 'Insuficiente', 'fkldsnflknsd', 2.50, 4),
+(153, 39, 'Sobresaliente', 'fjkdnfklsd', 10.00, 1),
+(154, 39, 'Notable', 'fklmdlmf', 7.50, 2),
+(155, 39, 'Aprobado', 'fjkdnfk', 5.00, 3),
+(156, 39, 'Insuficiente', 'fkdnflknsd', 2.50, 4),
+(161, 41, 'Sobresaliente', 'dsnflkndlkfsd', 9.97, 1),
+(162, 41, 'Notable', 'kdjnlfknsd', 9.00, 2),
+(163, 41, 'Aprobado', 'fkdnsflknsld', 9.50, 3),
+(164, 41, 'Insuficiente', 'flkdnslkfn', 2.50, 4),
+(165, 42, 'Sobresaliente', 'Presenta la teoría \nrelacionada con el \ntema \n(2ptos)', 2.00, 1),
+(166, 42, 'Notable', 'Presenta \ncorrectamente, en \nla mayoría de  los \ncasos, los \nelementos teóricos \nrelacionados con el \ntema de la \nregresión y la \ncorrelación lineal \n(1,5 ptos)', 1.50, 2),
+(167, 42, 'Aprobado', 'Presenta de \nmanera básica los \nelementos teóricos \nrelacionados con el \ntema de la \nregresión y la \ncorrelación lineal \n(1 ptos)', 1.00, 3),
+(168, 42, 'Insuficiente', 'Presenta de forma \ninsuficiente  los \nelementos teóricos \nrelacionados con el \ntema de la \nregresión y la \ncorrelación lineal \n(0 ptos)', 0.25, 4),
+(169, 43, 'Sobresaliente', 'Presenta \ncorrectamente \nelementos \ninteractivos \nsuficientes y \nvaliosos en su \npresentación del \ncontenido  (2 ptos)', 2.00, 1),
+(170, 43, 'Notable', 'Presenta \ncorrectamente en \nla mayoría de los \ncasos elementos \ninteractivos \nsuficientes y \nvaliosos en su \npresentación del \ncontenido  (1,5 \nptos)', 1.50, 2),
+(171, 43, 'Aprobado', 'Presenta de \nmanera básica \nelementos \ninteractivos \nsuficientes y \nvaliosos en su \npresentación del \ncontenido  (1 ptos)', 1.00, 3),
+(172, 43, 'Insuficiente', 'Presenta de \nmanera \ninsuficiente \nelementos \ninteractivos \nsuficientes y \nvaliosos en su \npresentación del \ncontenido  (0 ptos)', 0.25, 4),
+(173, 44, 'Sobresaliente', '2d', 1.00, 1),
+(174, 44, 'Notable', 'faef', 0.75, 2),
+(175, 44, 'Aprobado', 'ewad', 0.50, 3),
+(176, 44, 'Insuficiente', 'fwe', 0.25, 4),
+(177, 45, 'Sobresaliente', 'Presenta \ncorrectamente los \ncálculos necesarios \npara determinar el \nvalor de los \ncoeficientes de \ncorrelación para \nun caso en \nparticular \npresentado \n(4 ptos)', 3.33, 1),
+(178, 45, 'Notable', 'Presenta \ncorrectamente en \nla mayoría de los \ncasos los cálculos \nnecesarios para \ndeterminar el valor \nde los coeficientes \nde correlación \npara un caso en \nparticular \npresentado \n(3 ptos)', 2.50, 2),
+(179, 45, 'Aprobado', 'Presenta de \nmanera básica  los \ncálculos necesarios \npara determinar el \nvalor de los \ncoeficientes de \ncorrelación para \nun caso en \nparticular \npresentado \n(2 ptos)', 1.67, 3),
+(180, 45, 'Insuficiente', 'Presenta \nincorrecta o no \npresenta los \ncálculos necesarios \npara determinar el \nvalor de los \ncoeficientes de \ncorrelación para \nun caso en \nparticular \npresentado \n(0 ptos)', 0.83, 4),
+(181, 46, 'Sobresaliente', 'Realiza y presenta \nde manera \ncorrecta  el análisis \no interpretación de \nlos resultados \nobtenidos en el \ncálculo de los \ncoeficientes de \ncorrelación  \n( 4 ptos)', 3.33, 1),
+(182, 46, 'Notable', 'Realiza y presenta \nde manera \ncorrecta  el análisis \no interpretación de \nlos resultados \nobtenidos en el \ncálculo de los \ncoeficientes de \ncorrelación  \n( 3 ptos)', 2.50, 2),
+(183, 46, 'Aprobado', 'Realiza y presenta \nde manera \ncorrecta  el análisis \no interpretación de \nlos resultados \nobtenidos en el \ncálculo de los \ncoeficientes de \ncorrelación  \n( 2 ptos)', 1.67, 3),
+(184, 46, 'Insuficiente', 'Realiza y presenta \nde manera \ncorrecta  el análisis \no interpretación de \nlos resultados \nobtenidos en el \ncálculo de los \ncoeficientes de \ncorrelación  \n( 0 ptos)', 0.83, 4),
+(185, 47, 'Sobresaliente', 'Responde \ncorrectamente a \nlas preguntas \nrealizadas sobre \naspectos teóricos \nrelacionados con el \ntema que se está \nevaluando \n(2 ptos)', 2.00, 1),
+(186, 47, 'Notable', 'Responde \ncorrectamente en \nla mayoría de los \ncasos a las \npreguntas \nrealizadas sobre \naspectos teóricos \nrelacionados con el \ntema que se está \nevaluando \n(1,5 ptos)', 1.50, 2),
+(187, 47, 'Aprobado', 'Responde de \nmanera basica a \nlas preguntas \nrealizadas sobre \naspectos teóricos \nrelacionados con el \ntema que se está \nevaluando \n(1 pto)', 1.00, 3),
+(188, 47, 'Insuficiente', 'Responde \nincorrectamente o \nno responde  a las \npreguntas \nrealizadas sobre \naspectos teóricos \nrelacionados con el \ntema que se está \nevaluando \n(0 ptos)', 0.25, 4),
+(189, 48, 'Sobresaliente', 'Realiza \ncorrectamente el \ndiagrama de árbol \nsolicitado analizando \ny siguiendo el \nenunciado \npresentado de un \ncaso particular  \n (3 ptos)', 2.50, 1),
+(190, 48, 'Notable', 'Realiza \ncorrectamente en la \nmayoría de los casos,  \nel diagrama de árbol \nsolicitado analizando \ny siguiendo el \nenunciado \npresentado de un \ncaso particular  \n (2 ptos)', 1.88, 2),
+(191, 48, 'Aprobado', 'Realiza de manera \nbásica  el diagrama \nde árbol solicitado \nanalizando y \nsiguiendo el \nenunciado \npresentado de un \ncaso particular  \n (1,5 ptos)', 1.25, 3),
+(192, 48, 'Insuficiente', 'Realiza \nincorrectamente el \ndiagrama de árbol \nsolicitado, sin \nanalizar y sin seguir \nel enunciado \npresentado de un \ncaso particular  \n (0 ptos)', 0.63, 4),
+(193, 49, 'Sobresaliente', 'Extrae y representa  \ncorrectamente los \nelementos del \nespacio muestral que \nrepresenta el \ndiagrama de árbol \nrealizado \n(3 ptos)', 2.50, 1),
+(194, 49, 'Notable', 'Extrae y representa  \ncorrectamente, en la \nmayoría de los casos,  \nlos elementos del \nespacio muestral que \nrepresenta el \ndiagrama de árbol \nrealizado \n(3 ptos)', 1.88, 2),
+(195, 49, 'Aprobado', 'Extrae y representa \nde manera basica  los \nelementos del \nespacio muestral que \nrepresenta el \ndiagrama de árbol \nrealizado \n(3 ptos)', 1.25, 3),
+(196, 49, 'Insuficiente', 'Extrae y representa  \nincorrectamente  ( o \nno lo hace) los \nelementos del \nespacio muestral que \nrepresenta el \ndiagrama de árbol \nrealizado \n(0 ptos)', 0.63, 4),
+(197, 50, 'Sobresaliente', 'Realiza \ncorrectamente \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn (2 \nptos)', 2.50, 1),
+(198, 50, 'Notable', 'ealiza \ncorrectamente, en la \nmayoría de los casos, \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn \n(1,5 ptos)', 1.88, 2),
+(199, 50, 'Aprobado', 'Realiza de manera \nbasica interacciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn (1 \nptos)', 1.25, 3),
+(200, 50, 'Insuficiente', 'Realiza \nincorrectamente \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn (0 \nptos)', 0.63, 4),
+(201, 51, 'Sobresaliente', 'Realiza \ncorrectamente \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \nEspacio muestral \ndado (2 ptos)', 2.50, 1),
+(202, 51, 'Notable', 'Realiza \ncorrectamente, en la \nmayoría de los casos, \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn \n(1,5 ptos)', 1.88, 2),
+(203, 51, 'Aprobado', 'Realiza de manera \nbásica interacciones \nmatemáticas (unión, \nintersección, \ncomplemento) y los \nexpresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn (1 \nptos)', 1.25, 3),
+(204, 51, 'Insuficiente', 'Realiza \nincorrectamente \ninteracciones \nmatemáticas (unión, \nintersección, \ncomplemento) y no \nlos expresa como \nelementos de un \nevento a partir de un \ndiagrama de Venn (2 \nptos)', 0.63, 4),
+(205, 52, 'Sobresaliente', 'Demuestra un entendimiento profundo; explica conceptos con seguridad y responde a preguntas complejas con argumentos sólidos.', 4.00, 1),
+(206, 52, 'Notable', 'Explica el tema con claridad; demuestra buen conocimiento, aunque con algunas vacilaciones menores en los detalles.', 3.25, 2),
+(207, 52, 'Aprobado', 'Conoce los conceptos principales, pero la explicación es superficial y la comprensión de detalles y las respuestas a preguntas es limitada.', 2.50, 3),
+(208, 52, 'Insuficiente', 'No demuestra conocimiento del tema; explicación incompleta, incorrecta o no responde a las preguntas.', 0.75, 4),
+(209, 53, 'Sobresaliente', 'Exposición totalmente fluida y natural; no lee y mantiene contacto visual constante, usando un lenguaje adecuado.', 2.00, 1),
+(210, 53, 'Notable', 'Exposición fluida con mínimas referencias a notas; mantiene contacto visual la mayor parte del tiempo.', 1.50, 2),
+(211, 53, 'Aprobado', 'La fluidez se interrumpe por la lectura frecuente de notas, lo que afecta la conexión con la audiencia.', 1.00, 3),
+(212, 53, 'Insuficiente', 'Lee gran parte de la información; la exposición es monótona, entrecortada o carece de contacto visual.', 0.50, 4),
+(213, 54, 'Sobresaliente', 'Utiliza ejemplos originales, claros y muy acordes al tema, facilitando la comprensión de la audiencia.', 1.00, 1),
+(214, 54, 'Notable', 'Utiliza ejemplos pertinentes que ayudan a entender los conceptos principales.', 0.75, 2),
+(215, 54, 'Aprobado', 'Los ejemplos son limitados o solo parcialmente relevantes para el tema expuesto.', 0.50, 3),
+(216, 54, 'Insuficiente', 'No utiliza ejemplos o los presentados son confusos e irrelevantes.', 0.25, 4),
+(217, 55, 'Sobresaliente', 'Material visualmente atractivo, organizado y sintético, complementando perfectamente la exposición (texto mínimo y legible). utiliza el tiempo asignado de forma óptima.', 2.00, 1),
+(218, 55, 'Notable', 'Material de apoyo es claro y organizado, con una buena relación entre imágenes y texto. la distribución del tiempo por puntos podría ser mejor.', 1.50, 2),
+(219, 55, 'Aprobado', 'Material funcional, pero podría estar desordenado, sobrecargado de texto o ser poco atractivo. Exposición corta o se excede del tiempo asignado,', 1.00, 3),
+(220, 55, 'Insuficiente', 'Material desorganizado, confuso o con errores; es una simple repetición de la exposición. El tiempo no se gestiona.', 0.50, 4),
+(221, 56, 'Sobresaliente', 'Logra captar y mantener la atención; los oyentes participan activamente en la sesión de preguntas.', 1.00, 1),
+(222, 56, 'Notable', 'Mantiene atención parcial; algunos oyentes participan en la sesión final.', 0.75, 2),
+(223, 56, 'Aprobado', 'Atención dispersa; participación limitada en la sesión de preguntas.', 0.50, 3),
+(224, 56, 'Insuficiente', 'No logra captar atención; nula participación en la sesión de preguntas.', 0.25, 4);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `notificaciones`
+--
+
+DROP TABLE IF EXISTS `notificaciones`;
+CREATE TABLE `notificaciones` (
+  `id` int(11) NOT NULL,
+  `mensaje` text NOT NULL,
+  `fecha` timestamp NULL DEFAULT current_timestamp(),
+  `leido` tinyint(1) DEFAULT 0,
+  `tipo` varchar(50) DEFAULT 'info',
+  `usuario_destino` varchar(20) DEFAULT 'admin',
+  `rubrica_id` int(11) DEFAULT NULL,
+  `docente_nombre` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `notificaciones`
+--
+
+INSERT INTO `notificaciones` (`id`, `mensaje`, `fecha`, `leido`, `tipo`, `usuario_destino`, `rubrica_id`, `docente_nombre`) VALUES
+(1, 'El docente Un docente ha creado la rúbrica: flkdmflksdmkfl', '2025-11-19 22:14:18', 1, 'info', 'admin', NULL, NULL),
+(2, 'El docente Katerine Suarez ha creado una nueva rúbrica', '2025-11-19 22:56:51', 1, 'info', 'admin', 11, NULL),
+(3, 'El docente Katerine Suarez ha creado una nueva rúbrica', '2025-11-19 23:03:07', 1, 'info', 'admin', 12, NULL),
+(4, 'El docente Heracles Sanchez ha creado una nueva rúbrica', '2025-11-20 01:12:56', 1, 'info', 'admin', 13, NULL),
+(5, 'El docente Heracles Sanchez ha creado una nueva rúbrica', '2025-11-20 01:16:58', 1, 'info', 'admin', 14, NULL),
+(6, 'El docente Heracles Sanchez ha creado una nueva rúbrica', '2025-11-20 01:28:09', 1, 'info', 'admin', 15, NULL),
+(7, 'El docente Andrés Mendoza ha creado una nueva rúbrica', '2025-11-21 03:19:13', 0, 'info', 'admin', 16, NULL);
 
 -- --------------------------------------------------------
 
@@ -1101,6 +1519,7 @@ INSERT INTO `nivel_desempeno` (`id`, `criterio_id`, `nombre_nivel`, `descripcion
 -- Table structure for table `permisos`
 --
 
+DROP TABLE IF EXISTS `permisos`;
 CREATE TABLE `permisos` (
   `id` int(11) NOT NULL,
   `docente_cedula` varchar(20) NOT NULL,
@@ -1136,7 +1555,7 @@ INSERT INTO `permisos` (`id`, `docente_cedula`, `carrera_codigo`, `semestre`, `m
 (16, '11223344', 'ELE', 1, 'ELE101', 12, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (17, '33445566', 'ELN', 1, 'ELN101', 13, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (18, '33445566', 'ELN', 1, 'ELN101', 14, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
-(19, '33445566', 'ELN', 1, 'ELN101', 15, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
+(19, '33445566', 'ELN', 1, 'ELN101', 15, 0, '2025-11-15 13:36:16', '2025-11-15 20:30:59'),
 (20, '33445566', 'ELN', 1, 'ELN101', 16, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (21, '87654321', 'MEC', 1, 'MEC101', 17, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (22, '87654321', 'MEC', 1, 'MEC101', 18, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
@@ -1150,8 +1569,23 @@ INSERT INTO `permisos` (`id`, `docente_cedula`, `carrera_codigo`, `semestre`, `m
 (30, '31466704', 'CON', 4, 'CON202', 1, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (31, '31466704', 'ADM', 3, 'ADM201', 22, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
 (32, '31466704', 'MEC', 2, 'MEC102', 20, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
-(33, '27739757', 'CON', 4, 'CON202', 24, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16'),
-(34, '27739757', 'CON', 2, 'CON102', 14, 1, '2025-11-15 13:36:16', '2025-11-15 13:36:16');
+(33, '27739757', 'CON', 4, 'CON202', 24, 0, '2025-11-15 13:36:16', '2025-11-15 20:37:24'),
+(34, '27739757', 'CON', 2, 'CON102', 14, 0, '2025-11-15 13:36:16', '2025-11-15 20:37:28'),
+(35, '30068297', 'ADM', 1, 'ADM101', 3, 1, '2025-11-15 20:30:33', '2025-11-15 20:30:33'),
+(36, '27739757', 'ADM', 1, 'ADM101', 1, 1, '2025-11-15 20:37:14', '2025-11-15 20:37:14'),
+(37, '27739757', 'CON', 1, 'CON101', 21, 1, '2025-11-15 20:37:37', '2025-11-15 20:37:37'),
+(38, '31987430', 'INF', 1, 'INF101', 5, 1, '2025-11-15 20:42:50', '2025-11-15 20:42:50'),
+(39, '27739757', 'INF', 1, 'INF101', 7, 1, '2025-11-16 02:13:40', '2025-11-16 02:13:40'),
+(40, '30987788', 'INF', 1, 'INF101', 6, 1, '2025-11-17 13:58:27', '2025-11-17 13:58:27'),
+(41, '30987788', 'ADM', 1, 'ADM101', 1, 1, '2025-11-17 13:58:38', '2025-11-17 13:58:38'),
+(42, '32366214', 'INF', 1, 'INF101', 8, 1, '2025-11-17 23:03:42', '2025-11-17 23:03:42'),
+(43, '32366214', 'ELN', 1, 'ELN101', 13, 1, '2025-11-17 23:03:52', '2025-11-17 23:03:52'),
+(44, '31987430', 'MEC', 1, 'MEC101', 18, 1, '2025-11-17 23:04:16', '2025-11-17 23:04:16'),
+(45, '27739757', 'EDU', 1, 'EDU101', 26, 1, '2025-11-20 18:54:08', '2025-11-20 18:54:08'),
+(46, 'V-12345690', 'ELE', 1, 'ELE101', 10, 1, '2025-11-21 02:58:12', '2025-11-21 02:58:12'),
+(47, '32366214', 'ADM', 2, 'COI-243', 37, 1, '2025-11-21 03:13:02', '2025-11-21 03:13:02'),
+(48, 'V-12345690', 'INF', 2, 'ALP-265', 57, 1, '2025-11-21 03:14:13', '2025-11-21 03:14:13'),
+(49, 'V-12345690', 'INF', 4, 'SBD-454', 74, 1, '2025-11-21 03:14:36', '2025-11-21 03:14:36');
 
 -- --------------------------------------------------------
 
@@ -1159,6 +1593,7 @@ INSERT INTO `permisos` (`id`, `docente_cedula`, `carrera_codigo`, `semestre`, `m
 -- Table structure for table `rubrica_evaluacion`
 --
 
+DROP TABLE IF EXISTS `rubrica_evaluacion`;
 CREATE TABLE `rubrica_evaluacion` (
   `id` int(11) NOT NULL,
   `nombre_rubrica` varchar(200) NOT NULL,
@@ -1181,14 +1616,16 @@ CREATE TABLE `rubrica_evaluacion` (
 --
 
 INSERT INTO `rubrica_evaluacion` (`id`, `nombre_rubrica`, `docente_cedula`, `materia_codigo`, `seccion_id`, `fecha_evaluacion`, `porcentaje_evaluacion`, `tipo_evaluacion`, `competencias`, `instrucciones`, `activo`, `fecha_creacion`, `modalidad`, `cantidad_personas`) VALUES
-(26, 'Evaluacion de Programar', '31466704', 'ADM102', 6, '2025-11-17', 10.00, 'Individual', 'HACER UN SQL QUE SIRVA', 'HAZ UNA BASE DE DATOS PARA GUARDAR INFROMACION DE UN LOGIN ', 1, '2025-11-12 14:53:48', 'Individual', 1),
-(27, 'Evaluacion de Administracion', '31466704', 'CON202', 1, '2025-11-14', 10.00, 'Grupal', 'Hacer una evaluacion de unos costos fiscales', 'dada los siguientes costos resolver', 1, '2025-11-12 15:12:52', 'Individual', 1),
-(28, 'Evaluacion docente', '31466704', 'ADM201', 22, '2025-11-07', 10.00, 'Individual', 'biurbnisdnktdnrig darjignidfngid fkjgnafj gjdalrjgi fduignadkfj brdnglkzx fjb vjkdzflgnkfd vbjkfd bg', 'gfngjfksd gjk rgfjk dfjtngakdf gsdingkjfd ngknadsk fbkjdafgnka fjksnfkg dfjkgnasdgad', 1, '2025-11-12 15:21:45', 'Individual', 1),
-(29, 'EVALUACION DE PRUEBA', '31466704', 'MEC102', 20, '2025-11-20', 20.00, 'Presentacion', 'HACER UNAS SOLDADURAS CON EXITO', 'HACER UNAS CILLAS DE HIERRO TOTALMENTE SOLDADAS Y NOSE DE MECANICA JAJAJ', 1, '2025-11-13 00:11:17', 'Individual', 1),
-(30, 'NOMBRE', '27739757', 'CON202', 24, '2025-11-18', 10.00, 'Presentacion', 'Jwjwjsbzbsbznjsbsjabdjsbwnsjsb', 'Bsbdbsbsndbsnsbdnwnwn', 1, '2025-11-13 12:56:43', 'Individual', 1),
-(31, 'Eduar', '27739757', 'CON102', 14, '2025-11-01', 10.00, 'Individual', 'kfdnsfnknglksdnlkfnsdlk', 'dklnsflknsdlkfnsdgflksdmn', 1, '2025-11-13 19:04:37', 'Individual', 1),
-(32, 'Nueba prueba', '31466704', 'INF101', 7, '2025-11-15', 5.00, 'Presentacion', 'fkmodifmsdoifmnoidnigsndoifnoidsnoifndoifnoigfndsoignoisdf', 'fdksnmflksndmkgfndsifnodnfoid', 1, '2025-11-14 22:51:18', 'Individual', 1),
-(33, 'HOLA MUNDO AQUI HACIENDO PRUEVAS', '31466704', 'MEC101', 18, '2025-11-25', 5.00, 'Taller', 'Jdiqndiw dj wkf wjd wjd akjdw sjbd sbs', 'Ndkzba zks jfjw fksnxkw ndkw djwndjw djw ', 1, '2025-11-14 23:21:30', 'Individual', 1);
+(4, 'Examen de Administracion Contable', '27739757', 'ADM101', 1, '2025-11-18', 15.00, 'Individual', 'Hacer todo los calculos correspodienstes fino', 'Seguir instrupciones del profesor', 1, '2025-11-17 21:43:11', 'Individual', 1),
+(7, 'fdfsglkdfmglkamd', '27739757', 'ADM101', 1, '2025-11-19', 5.00, 'Individual', 'vposdmflkmsdlkfmsdakl', 'kvnfdkvnlkfnknfad', 1, '2025-11-19 16:23:27', 'Individual', 1),
+(8, 'Evaluacion POO', '27739757', 'INF101', 7, '2025-11-20', 20.00, 'Individual', 'Hacer un programa con PHP, CSS y opcional(JS)', 'Hacer un login totalmente funcional con conexion a la base de datos con una tabla de usuario y con un CRUD de los usuarios', 1, '2025-11-19 21:15:53', 'Individual', 1),
+(10, 'flkdmflksdmkfl', '27739757', 'CON101', 21, '2025-11-26', 10.00, 'Individual', 'lkfnldsknflkdsnlkfnldsknflk', 'nfkdnflksdnlkfnsdf', 1, '2025-11-19 22:14:17', 'Individual', 1),
+(11, 'Prueva notificacion', '27739757', 'INF101', 7, '2025-11-21', 10.00, 'Individual', 'kdmflknds', 'ndjksvnkjsdnvkj', 1, '2025-11-19 22:56:50', 'Individual', 1),
+(12, 'Prueva notificacion 2', '27739757', 'INF101', 7, '2025-11-27', 10.00, 'Individual', 'jkdfnijsd fd fji ds', 'j fdjs nfjds nfjk sd', 1, '2025-11-19 23:03:05', 'Individual', 1),
+(13, 'RUBRICA DE EVALUACION  TALLER VIRTUAL INDIVIDUAL REGRESION Y CORRELACION LINEAL 5%', '31987430', 'INF101', 5, '2021-11-20', 10.00, 'Individual', 'tacata', 'chachacha', 1, '2025-11-20 01:12:54', 'Individual', 1),
+(14, 'RUBRICA DE EVALUACION   INDIVIDUAL COEFICIENTES DE CORRELACION   10%', '31987430', 'INF101', 5, '2021-02-13', 10.00, 'Individual', 'bien', 'arrecho', 1, '2025-11-20 01:16:56', 'Individual', 1),
+(15, 'ESPACIO MUESTRAL. EVALUACION GRUPAL 10%', '31987430', 'INF101', 5, '2025-11-26', 10.00, 'Individual', 'El estudiante domina el contenido de las previas 2 clases', 'Apeguese a los criterios expuestos a continuacion:', 1, '2025-11-20 01:28:06', 'Individual', 1),
+(16, 'Exposicion', 'V-12345690', 'SBD-454', 74, '2025-11-20', 10.00, 'Individual', 'Manejar y', 'Hacer lo siguiente:', 1, '2025-11-21 03:19:09', 'Individual', 1);
 
 -- --------------------------------------------------------
 
@@ -1196,6 +1633,7 @@ INSERT INTO `rubrica_evaluacion` (`id`, `nombre_rubrica`, `docente_cedula`, `mat
 -- Table structure for table `seccion`
 --
 
+DROP TABLE IF EXISTS `seccion`;
 CREATE TABLE `seccion` (
   `id` int(11) NOT NULL,
   `codigo` varchar(10) NOT NULL,
@@ -1241,7 +1679,55 @@ INSERT INTO `seccion` (`id`, `codigo`, `materia_codigo`, `docente_cedula`, `laps
 (25, 'EDU101-A', 'EDU101', '12345678', '2-2025', 15, 'Lun-Mie 08:00-10:00', 'G-101', 1, '2025-11-12 14:43:39'),
 (26, 'EDU101-B', 'EDU101', '12345678', '2-2025', 15, 'Mar-Jue 14:00-16:00', 'G-102', 1, '2025-11-12 14:43:39'),
 (27, 'EDU101-C', 'EDU101', '12345678', '2-2025', 15, 'Lun-Mie 18:00-20:00', 'G-103', 1, '2025-11-12 14:43:39'),
-(28, 'EDU101-D', 'EDU101', '12345678', '2-2025', 15, 'Vie 08:00-12:00', 'G-104', 1, '2025-11-12 14:43:39');
+(28, 'EDU101-D', 'EDU101', '12345678', '2-2025', 15, 'Vie 08:00-12:00', 'G-104', 1, '2025-11-12 14:43:39'),
+(29, 'ADM-A', 'ADG-143', 'V-12345682', '2024-1', 30, 'Lunes y Miércoles 7:00-9:00 AM', 'A-101', 1, '2025-11-21 02:45:23'),
+(30, 'ADM-B', 'COG-164', 'V-12345683', '2024-1', 30, 'Martes y Jueves 7:00-9:00 AM', 'A-102', 1, '2025-11-21 02:45:23'),
+(31, 'ADM-C', 'LEC-143', 'V-12345702', '2024-1', 30, 'Lunes y Miércoles 9:00-11:00 AM', 'A-103', 1, '2025-11-21 02:45:23'),
+(32, 'ADM-D', 'MAG-143', 'V-12345678', '2024-1', 30, 'Martes y Jueves 9:00-11:00 AM', 'A-104', 1, '2025-11-21 02:45:23'),
+(33, 'ADM-E', 'ING-132', 'V-12345703', '2024-1', 25, 'Viernes 7:00-10:00 AM', 'A-105', 1, '2025-11-21 02:45:23'),
+(34, 'CON-A', 'COG-164', 'V-12345683', '2024-1', 30, 'Lunes y Miércoles 7:00-9:00 AM', 'B-101', 1, '2025-11-21 02:45:23'),
+(35, 'CON-B', 'MAG-143', 'V-12345678', '2024-1', 30, 'Martes y Jueves 7:00-9:00 AM', 'B-102', 1, '2025-11-21 02:45:23'),
+(36, 'CON-C', 'LEC-143', 'V-12345702', '2024-1', 30, 'Lunes y Miércoles 9:00-11:00 AM', 'B-103', 1, '2025-11-21 02:45:23'),
+(37, 'CON-D', 'COI-243', 'V-12345683', '2024-1', 30, 'Martes y Jueves 9:00-11:00 AM', 'B-104', 1, '2025-11-21 02:45:23'),
+(38, 'CON-E', 'LET-343', 'V-12345685', '2024-1', 25, 'Viernes 7:00-10:00 AM', 'B-105', 1, '2025-11-21 02:45:23'),
+(39, 'EDU-A', 'LEC-143', 'V-12345702', '2024-1', 25, 'Lunes y Miércoles 7:00-9:00 AM', 'C-101', 1, '2025-11-21 02:45:23'),
+(40, 'EDU-B', 'PSD-154', 'V-12345687', '2024-1', 25, 'Martes y Jueves 7:00-9:00 AM', 'C-102', 1, '2025-11-21 02:45:23'),
+(41, 'EDU-C', 'FOH-143', 'V-12345707', '2024-1', 25, 'Lunes y Miércoles 9:00-11:00 AM', 'C-103', 1, '2025-11-21 02:45:23'),
+(42, 'EDU-D', 'DIG-243', 'V-12345688', '2024-1', 25, 'Martes y Jueves 9:00-11:00 AM', 'C-104', 1, '2025-11-21 02:45:23'),
+(43, 'EDU-E', 'PRA-145', 'V-12345686', '2024-1', 20, 'Viernes 7:00-10:00 AM', 'C-105', 1, '2025-11-21 02:45:23'),
+(44, 'ELE-A', 'MAT-165', 'V-12345678', '2024-1', 25, 'Lunes y Miércoles 7:00-9:00 AM', 'D-101', 1, '2025-11-21 02:45:23'),
+(45, 'ELE-B', 'FIS-143', 'V-12345679', '2024-1', 25, 'Martes y Jueves 7:00-9:00 AM', 'D-102', 1, '2025-11-21 02:45:23'),
+(46, 'ELE-C', 'TEC-154', 'V-12345690', '2024-1', 20, 'Lunes y Miércoles 9:00-11:00 AM', 'Lab-1', 1, '2025-11-21 02:45:23'),
+(47, 'ELE-D', 'CIE-243', 'V-12345690', '2024-1', 20, 'Martes y Jueves 9:00-11:00 AM', 'Lab-2', 1, '2025-11-21 02:45:23'),
+(48, 'ELE-E', 'INE-243', 'V-12345691', '2024-1', 20, 'Viernes 7:00-10:00 AM', 'Lab-3', 1, '2025-11-21 02:45:23'),
+(49, 'MEC-A', 'MAT-165', 'V-12345678', '2024-1', 25, 'Lunes y Miércoles 7:00-9:00 AM', 'E-101', 1, '2025-11-21 02:45:23'),
+(50, 'MEC-B', 'FIS-143', 'V-12345679', '2024-1', 25, 'Martes y Jueves 7:00-9:00 AM', 'E-102', 1, '2025-11-21 02:45:23'),
+(51, 'MEC-C', 'MAH-175', 'V-12345694', '2024-1', 20, 'Lunes y Miércoles 9:00-11:00 AM', 'Taller-1', 1, '2025-11-21 02:45:23'),
+(52, 'MEC-D', 'TEC-144', 'V-12345694', '2024-1', 20, 'Martes y Jueves 9:00-11:00 AM', 'Taller-2', 1, '2025-11-21 02:45:23'),
+(53, 'MEC-E', 'DII-132', 'V-12345695', '2024-1', 20, 'Viernes 7:00-10:00 AM', 'Dibujo-1', 1, '2025-11-21 02:45:23'),
+(54, 'INF-A', 'MAT-165', 'V-12345678', '2024-1', 25, 'Lunes y Miércoles 7:00-9:00 AM', 'F-101', 1, '2025-11-21 02:45:23'),
+(55, 'INF-B', 'LOC-154', '123456789', '2024-1', 25, 'Martes y Jueves 7:00-9:00 AM', 'F-102', 1, '2025-11-21 02:45:23'),
+(56, 'INF-C', 'INI-154', '123456789', '2024-1', 20, 'Lunes y Miércoles 9:00-11:00 AM', 'Lab-4', 1, '2025-11-21 02:45:23'),
+(57, 'INF-D', 'ALP-265', '123456789', '2024-1', 20, 'Martes y Jueves 9:00-11:00 AM', 'Lab-5', 1, '2025-11-21 02:45:23'),
+(58, 'INF-E', 'ARC-265', '123456789', '2024-1', 20, 'Viernes 7:00-10:00 AM', 'Lab-6', 1, '2025-11-21 02:45:23'),
+(59, 'ADM-F', 'ADG-143', 'V-12345682', '2024-1', 30, 'Lunes y Miércoles 2:00-4:00 PM', 'A-106', 1, '2025-11-21 02:45:23'),
+(60, 'CON-F', 'COG-164', 'V-12345683', '2024-1', 30, 'Martes y Jueves 2:00-4:00 PM', 'B-106', 1, '2025-11-21 02:45:23'),
+(61, 'ELE-F', 'MAT-165', '87654321', '2024-1', 25, 'Lunes y Miércoles 2:00-4:00 PM', 'D-103', 1, '2025-11-21 02:45:23'),
+(62, 'MEC-F', 'MAT-165', '87654321', '2024-1', 25, 'Martes y Jueves 2:00-4:00 PM', 'E-103', 1, '2025-11-21 02:45:23'),
+(63, 'INF-F', 'MAT-165', '87654321', '2024-1', 25, 'Lunes y Miércoles 4:00-6:00 PM', 'F-103', 1, '2025-11-21 02:45:23'),
+(64, 'ADM-G', 'ANF-443', 'V-12345684', '2024-1', 25, 'Lunes 7:00-10:00 AM', 'A-201', 1, '2025-11-21 02:45:23'),
+(65, 'ADM-H', 'AUA-543', 'V-12345684', '2024-1', 25, 'Miércoles 7:00-10:00 AM', 'A-202', 1, '2025-11-21 02:45:23'),
+(66, 'CON-G', 'AUD-443', 'V-12345684', '2024-1', 25, 'Martes 7:00-10:00 AM', 'B-201', 1, '2025-11-21 02:45:23'),
+(67, 'CON-H', 'COC-464', 'V-12345683', '2024-1', 20, 'Jueves 7:00-10:00 AM', 'B-202', 1, '2025-11-21 02:45:23'),
+(68, 'EDU-F', 'IVE-543', 'V-12345686', '2024-1', 20, 'Lunes 2:00-5:00 PM', 'C-201', 1, '2025-11-21 02:45:23'),
+(69, 'EDU-G', 'PRA-545', 'V-12345686', '2024-1', 15, 'Miércoles 2:00-5:00 PM', 'C-202', 1, '2025-11-21 02:45:23'),
+(70, 'ELE-G', 'ELE-543', 'V-12345691', '2024-1', 20, 'Martes 2:00-5:00 PM', 'Lab-4', 1, '2025-11-21 02:45:23'),
+(71, 'ELE-H', 'MIC-543', 'V-12345692', '2024-1', 20, 'Jueves 2:00-5:00 PM', 'Lab-5', 1, '2025-11-21 02:45:23'),
+(72, 'MEC-G', 'CON-564', 'V-12345696', '2024-1', 20, 'Lunes 2:00-5:00 PM', 'Taller-3', 1, '2025-11-21 02:45:23'),
+(73, 'MEC-H', 'MAI-543', 'V-12345697', '2024-1', 20, 'Miércoles 2:00-5:00 PM', 'Taller-4', 1, '2025-11-21 02:45:23'),
+(74, 'INF-G', 'SBD-454', '99887766', '2024-1', 20, 'Martes 2:00-5:00 PM', 'Lab-7', 1, '2025-11-21 02:45:23'),
+(75, 'INF-H', 'ADS-433', '123456789', '2024-1', 20, 'Jueves 2:00-5:00 PM', 'Lab-8', 1, '2025-11-21 02:45:23'),
+(76, 'INF-I', 'INU-554', '55667788', '2024-1', 20, 'Viernes 2:00-5:00 PM', 'Lab-9', 1, '2025-11-21 02:45:23');
 
 -- --------------------------------------------------------
 
@@ -1249,6 +1735,7 @@ INSERT INTO `seccion` (`id`, `codigo`, `materia_codigo`, `docente_cedula`, `laps
 -- Table structure for table `usuario`
 --
 
+DROP TABLE IF EXISTS `usuario`;
 CREATE TABLE `usuario` (
   `cedula` varchar(20) NOT NULL,
   `username` varchar(50) NOT NULL,
@@ -1266,10 +1753,11 @@ INSERT INTO `usuario` (`cedula`, `username`, `email`, `password`, `id_rol`, `act
 ('27739757', 'Katerine Suarez', 'katerine@gmail.comm', '4545', 2, 1),
 ('30068297', 'Lorraine Amaro', 'lorraineamaro@gmail.com', '4545', 1, 1),
 ('30916457', 'Greymar Medina', 'grey@gmail.com', '4545', 1, 1),
-('30987788', 'Franchesca Izquierdo', 'franchesca@gmail.com', '123456789', 1, 1),
+('30987788', 'Franchesca Izquierdo', 'franchesca@gmail.com', '123456789', 2, 1),
 ('31466704', 'Eduar Suarez', 'eduar@gmail.com', '4545', 1, 1),
 ('31987430', 'Heracles Sanchez', 'heraclesenmanuel@gmail.com', '4545', 2, 1),
-('32366214', 'Ezequiel Angulo', 'ezequielangulo@gmail.com', '123456789', 2, 1);
+('32366214', 'Ezequiel Angulo', 'ezequielangulo@gmail.com', '123456789', 2, 1),
+('V-12345690', 'Andrés Mendoza', 'andres.mendoza@instituto.edu', '4545', 2, 1);
 
 --
 -- Indexes for dumped tables
@@ -1337,7 +1825,7 @@ ALTER TABLE `inscripcion_seccion`
 -- Indexes for table `materia`
 --
 ALTER TABLE `materia`
-  ADD PRIMARY KEY (`codigo`),
+  ADD PRIMARY KEY (`codigo`,`carrera_codigo`),
   ADD KEY `carrera_codigo` (`carrera_codigo`);
 
 --
@@ -1346,6 +1834,13 @@ ALTER TABLE `materia`
 ALTER TABLE `nivel_desempeno`
   ADD PRIMARY KEY (`id`),
   ADD KEY `criterio_id` (`criterio_id`);
+
+--
+-- Indexes for table `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `rubrica_id` (`rubrica_id`);
 
 --
 -- Indexes for table `permisos`
@@ -1392,19 +1887,19 @@ ALTER TABLE `usuario`
 -- AUTO_INCREMENT for table `criterio_evaluacion`
 --
 ALTER TABLE `criterio_evaluacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `detalle_evaluacion`
 --
 ALTER TABLE `detalle_evaluacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
 -- AUTO_INCREMENT for table `evaluacion_estudiante`
 --
 ALTER TABLE `evaluacion_estudiante`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=186;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=100;
 
 --
 -- AUTO_INCREMENT for table `id_rol`
@@ -1422,25 +1917,31 @@ ALTER TABLE `inscripcion_seccion`
 -- AUTO_INCREMENT for table `nivel_desempeno`
 --
 ALTER TABLE `nivel_desempeno`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=225;
+
+--
+-- AUTO_INCREMENT for table `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `permisos`
 --
 ALTER TABLE `permisos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `rubrica_evaluacion`
 --
 ALTER TABLE `rubrica_evaluacion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `seccion`
 --
 ALTER TABLE `seccion`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
 
 --
 -- Constraints for dumped tables
@@ -1491,6 +1992,12 @@ ALTER TABLE `materia`
 --
 ALTER TABLE `nivel_desempeno`
   ADD CONSTRAINT `nivel_desempeno_ibfk_1` FOREIGN KEY (`criterio_id`) REFERENCES `criterio_evaluacion` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD CONSTRAINT `notificaciones_ibfk_1` FOREIGN KEY (`rubrica_id`) REFERENCES `rubrica_evaluacion` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `permisos`

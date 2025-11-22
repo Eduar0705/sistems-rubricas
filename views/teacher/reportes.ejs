@@ -75,12 +75,12 @@
     </main>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Pass stats data from EJS to JavaScript
-        const stats = "<%- stats ? JSON.stringify(stats) : 'null' %>";
-    </script>
+    <script id="stats-data" type="application/json"><%- stats ? JSON.stringify(stats) : 'null' %></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const statsElement = document.getElementById('stats-data');
+            const stats = statsElement ? JSON.parse(statsElement.textContent) : null;
+            
             if (stats) {
                 // Rendimiento por Materia Chart
                 const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
