@@ -5,7 +5,7 @@ const getNotifications = (req, res) => {
         return res.status(401).json({ error: 'No autorizado' });
     }
 
-    // Fetch notifications with detailed rubric information
+    // Obtener notificaciones con información detallada de la rúbrica
     const query = `
         SELECT 
             n.*,
@@ -32,11 +32,11 @@ const getNotifications = (req, res) => {
 
     conexion.query(query, (err, results) => {
         if (err) {
-            console.error('Error fetching notifications:', err);
+            console.error('Error al obtener notificaciones:', err);
             return res.status(500).json({ error: 'Error al obtener notificaciones' });
         }
         
-        // Count unread
+        // Contar no leídas
         const unreadCount = results.filter(n => !n.leido).length;
         
         res.json({
@@ -52,7 +52,7 @@ const markAsRead = (req, res) => {
     
     conexion.query(query, [id], (err) => {
         if (err) {
-            console.error('Error marking notification as read:', err);
+            console.error('Error al marcar notificación como leída:', err);
             return res.status(500).json({ error: 'Error al actualizar notificación' });
         }
         res.json({ success: true });
@@ -64,7 +64,7 @@ const markAllAsRead = (req, res) => {
     
     conexion.query(query, (err) => {
         if (err) {
-            console.error('Error marking all notifications as read:', err);
+            console.error('Error al marcar todas las notificaciones como leídas:', err);
             return res.status(500).json({ error: 'Error al actualizar notificaciones' });
         }
         res.json({ success: true });

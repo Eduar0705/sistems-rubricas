@@ -88,7 +88,7 @@ app.use(require('./controllers/logoutControllers'))
 
 app.use(require('./routers/exportacion'))
 
-//RUTAS DE LOS CONTROLLERS
+// RUTAS DE LOS CONTROLADORES
 app.use(require('./controllers/login'));
 app.use(require('./controllers/addProfeControllers'));
 app.use(require('./controllers/deleteProfeControllers'));
@@ -100,7 +100,7 @@ app.use(require('./controllers/createRubricaAdmin'));
 app.use(require('./controllers/createRubricaTeacher'));
 app.use(require('./controllers/updateRubricas'));
 
-//RUTAS ADMIN
+// RUTAS DE ADMINISTRADOR
 app.use(require('./routers/admin'));
 app.use(require('./routers/rubricasAdmin'));
 app.use(require('./routers/crearRubricaAdmin'));
@@ -111,7 +111,7 @@ app.use(require('./routers/configAdmin'));
 app.use(require('./controllers/deleteRubrica'))
 app.use(require('./routers/notificaciones'));
 
-//RUTAS TEACHER
+// RUTAS DE DOCENTE
 app.use(require('./routers/teacher'));
 app.use(require('./routers/crearRubricaTeachers'));
 app.use(require('./routers/estudiantesTeacher'));
@@ -120,7 +120,7 @@ app.use(require('./routers/reportesTeacher'));
 app.use(require('./routers/rubricasTeacher'));
 app.use(require('./controllers/Evaluar'))
 
-//RUTAS STUDENT
+// RUTAS DE ESTUDIANTE
 app.use(require('./routers/student'));
 app.use(require('./routers/evaluacionStudents'));
 app.use(require('./routers/calificacionesStudents'));

@@ -18,20 +18,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const item = e.target.closest(".nav-item");
             if (!item) return;
 
-            // If external, allow default navigation
+            // Si es externo, permitir navegación predeterminada
             if (item.getAttribute("data-external") === "true") {
                 return;
             }
 
             e.preventDefault();
 
-            // Remove active from nav items scoped to sidebar if exists, otherwise global
+            // Remover activo de elementos de navegación en sidebar si existe, de lo contrario global
             const scope = sidebar ? sidebar : document;
             removeActiveFrom(scope.querySelectorAll(".nav-item"));
 
             item.classList.add("active");
 
-            // Show/hide views
+            // Mostrar/ocultar vistas
             const viewName = item.getAttribute("data-view");
             if (views && views.length) removeActiveFrom(views);
             if (viewName) {
@@ -39,11 +39,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (selectedView) selectedView.classList.add("active");
             }
 
-            // Update page title safely
+            // Actualizar título de página de forma segura
             const span = item.querySelector("span");
             if (pageTitle && span) pageTitle.textContent = span.textContent || "";
 
-            // Close mobile menu on small screens
+            // Cerrar menú móvil en pantallas pequeñas
             if (window.innerWidth <= 1024 && sidebar) {
                 sidebar.classList.remove("active");
             }
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Close sidebar when clicking outside on mobile
+    // Cerrar sidebar al hacer clic fuera en móvil
     document.addEventListener("click", (e) => {
         try {
             if (!sidebar || !mobileMenuToggle) return;
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Handle window resize (debounced)
+    // Manejar redimensionamiento de ventana (con debounce)
     let resizeTimer;
     window.addEventListener("resize", () => {
         clearTimeout(resizeTimer);

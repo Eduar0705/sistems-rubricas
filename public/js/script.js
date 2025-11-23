@@ -1,12 +1,12 @@
 // ========================================
-// DOM Content Loaded
+// Contenido DOM Cargado
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Set current year in footer
+    // Establecer año actual en el pie de página
     document.getElementById('currentYear').textContent = new Date().getFullYear();
     
-    // Initialize all functions
+    // Inicializar todas las funciones
     initNavbar();
     initSmoothScroll();
     initScrollAnimations();
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// Navbar Scroll Effect
+// Efecto de Desplazamiento del Navbar
 // ========================================
 function initNavbar() {
     const navbar = document.querySelector('.navbar');
@@ -30,7 +30,7 @@ function initNavbar() {
         }
     });
     
-    // Close mobile menu when clicking on a link
+    // Cerrar menú móvil al hacer clic en un enlace
     const navLinks = document.querySelectorAll('.nav-link');
     const navbarCollapse = document.querySelector('.navbar-collapse');
     
@@ -45,14 +45,14 @@ function initNavbar() {
 }
 
 // ========================================
-// Smooth Scroll
+// Desplazamiento Suave
 // ========================================
 function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
             
-            // Skip if href is just "#"
+            // Omitir si href es solo "#"
             if (targetId === '#') {
                 e.preventDefault();
                 return;
@@ -76,7 +76,7 @@ function initSmoothScroll() {
 }
 
 // ========================================
-// Scroll Animations
+// Animaciones de Desplazamiento
 // ========================================
 function initScrollAnimations() {
     const observerOptions = {
@@ -94,7 +94,7 @@ function initScrollAnimations() {
         });
     }, observerOptions);
     
-    // Observe feature cards
+    // Observar tarjetas de características
     const featureCards = document.querySelectorAll('.feature-card');
     featureCards.forEach((card, index) => {
         card.style.opacity = '0';
@@ -103,7 +103,7 @@ function initScrollAnimations() {
         observer.observe(card);
     });
     
-    // Observe service cards
+    // Observar tarjetas de servicios
     const serviceCards = document.querySelectorAll('.service-card');
     serviceCards.forEach((card, index) => {
         card.style.opacity = '0';
@@ -114,7 +114,7 @@ function initScrollAnimations() {
 }
 
 // ========================================
-// Progress Bars Animation
+// Animación de Barras de Progreso
 // ========================================
 function initProgressBars() {
     const progressObserver = new IntersectionObserver(
@@ -148,16 +148,16 @@ function initProgressBars() {
 }
 
 // ========================================
-// Scroll to Top Button
+// Botón de Desplazamiento hacia Arriba
 // ========================================
 function initScrollToTop() {
-    // Create scroll to top button
+    // Crear botón de desplazamiento hacia arriba
     const scrollTopBtn = document.createElement('div');
     scrollTopBtn.className = 'scroll-top';
     scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
     document.body.appendChild(scrollTopBtn);
     
-    // Show/hide button based on scroll position
+    // Mostrar/ocultar botón según la posición de desplazamiento
     window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
             scrollTopBtn.classList.add('show');
@@ -176,7 +176,7 @@ function initScrollToTop() {
 }
 
 // ========================================
-// Active Navigation Link on Scroll
+// Enlace de Navegación Activo al Desplazarse
 // ========================================
 window.addEventListener('scroll', function() {
     const sections = document.querySelectorAll('section[id]');
@@ -203,7 +203,7 @@ window.addEventListener('scroll', function() {
 });
 
 // ========================================
-// Card Hover Effects
+// Efectos de Hover en Tarjetas
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const cards = document.querySelectorAll('.feature-card, .service-card');
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// CTA Button Pulse Animation
+// Animación de Pulsación del Botón CTA
 // ========================================
 function initCTAPulse() {
     const ctaButtons = document.querySelectorAll('.cta-section .btn');
@@ -235,11 +235,11 @@ function initCTAPulse() {
     });
 }
 
-// Initialize CTA pulse
+// Inicializar pulsación CTA
 setTimeout(initCTAPulse, 2000);
 
 // ========================================
-// Form Validation (if needed in future)
+// Validación de Formulario (si se necesita en el futuro)
 // ========================================
 function validateForm(formId) {
     const form = document.getElementById(formId);
@@ -270,12 +270,12 @@ function validateForm(formId) {
 }
 
 // ========================================
-// Loading Animation
+// Animación de Carga
 // ========================================
 window.addEventListener('load', function() {
     document.body.classList.add('loaded');
     
-    // Hide any loading spinner if exists
+    // Ocultar spinner de carga si existe
     const loader = document.querySelector('.loader');
     if (loader) {
         loader.style.opacity = '0';
@@ -286,7 +286,7 @@ window.addEventListener('load', function() {
 });
 
 // ========================================
-// Prevent Default Behavior for # Links
+// Prevenir Comportamiento Predeterminado para Enlaces #
 // ========================================
 document.querySelectorAll('a[href="#"]').forEach(link => {
     link.addEventListener('click', function(e) {
@@ -295,7 +295,7 @@ document.querySelectorAll('a[href="#"]').forEach(link => {
 });
 
 // ========================================
-// Lazy Loading Images (if needed)
+// Carga Diferida de Imágenes (si se necesita)
 // ========================================
 function initLazyLoading() {
     const images = document.querySelectorAll('img[data-src]');
@@ -314,20 +314,20 @@ function initLazyLoading() {
     images.forEach(img => imageObserver.observe(img));
 }
 
-// Initialize lazy loading if images exist
+// Inicializar carga diferida si existen imágenes
 if (document.querySelectorAll('img[data-src]').length > 0) {
     initLazyLoading();
 }
 
 // ========================================
-// Console Welcome Message
+// Mensaje de Bienvenida en Consola
 // ========================================
 console.log('%c🎓 IUJO - Sistema de Gestión de Rúbricas', 'color: #1a365d; font-size: 20px; font-weight: bold;');
 console.log('%cInstituto Universitario Jesús Obrero', 'color: #e53e3e; font-size: 14px;');
 console.log('%cExtensión Barquisimeto - Fe y Alegría', 'color: #718096; font-size: 12px;');
 
 // ========================================
-// Export functions for external use
+// Exportar funciones para uso externo
 // ========================================
 window.iujoApp = {
     smoothScrollTo: function(targetId) {

@@ -5,7 +5,7 @@ const getCalificaciones = (req, res) => {
         return res.redirect('/login');
     }
 
-    const estudianteCedula = req.session.cedula; // Assuming cedula is stored in session
+    const estudianteCedula = req.session.cedula;
 
     const query = `
         SELECT 
@@ -37,7 +37,7 @@ const getCalificaciones = (req, res) => {
 
     conexion.query(query, [estudianteCedula], (err, results) => {
         if (err) {
-            console.error('Error fetching grades:', err);
+            console.error('Error al obtener calificaciones:', err);
             return res.render('studen/calificaciones', { 
                 datos: req.session, 
                 currentPage: 'calificaciones',
@@ -52,7 +52,7 @@ const getCalificaciones = (req, res) => {
             });
         }
 
-        // Process results to group by subject
+        // Procesar resultados para agrupar por materia
         const materiasMap = new Map();
 
         results.forEach(row => {
@@ -64,7 +64,7 @@ const getCalificaciones = (req, res) => {
                     rubricas: [],
                     calificacion_final: 0,
                     porcentaje_acumulado: 0,
-                    total_evaluado: 0 // Percentage of the course that has been evaluated so far
+                    total_evaluado: 0
                 });
             }
 
@@ -77,22 +77,7 @@ const getCalificaciones = (req, res) => {
                 
                 let calificacionRubrica = 0;
                 if (maxPuntaje > 0 && row.puntaje_total !== null) {
-                    // Calculate weighted score: (Score / Max) * Weight
-                    // Assuming the final grade is on a scale of 0-20 or 0-100 based on the sum of weights.
-                    // If weights sum to 100%, this gives the final score out of 100.
-                    // If weights sum to 20 (common in some systems), it gives score out of 20.
-                    // Let's assume weights sum to 100 for percentage calculation.
-                    
-                    // However, usually grades are 0-20 in Venezuela (implied by cedula/names).
-                    // Let's check if percentages are like 10, 20 (sum to 100) or weights.
-                    // In the dump: `porcentaje_evaluacion` is 10.00, 20.00.
-                    // So likely sum to 100.
-                    
-                    // Contribution to final grade (0-20 scale):
-                    // (Score / Max) * (Weight / 100) * 20 ??
-                    // Or maybe the final grade is just sum of (Score / Max * Weight).
-                    // Let's stick to a 0-100 scale for the progress bar and display.
-                    
+                    // Calcular calificación ponderada
                     calificacionRubrica = (puntajeObtenido / maxPuntaje) * porcentajeRubrica;
                     materia.calificacion_final += calificacionRubrica;
                 }
@@ -115,23 +100,21 @@ const getCalificaciones = (req, res) => {
 
         const materias = Array.from(materiasMap.values());
 
-        // Calculate stats
+        // Calcular estadísticas
         let totalMaterias = materias.length;
-        let materiasAprobadas = materias.filter(m => m.calificacion_final >= 10).length; // Assuming 10 is passing on 0-20 scale, or 50 on 0-100
+        let materiasAprobadas = materias.filter(m => m.calificacion_final >= 10).length;
  
         materias.forEach(m => {
-            // Heuristic: if total weight > 20, assume it's out of 100 and convert to 20.
+            // Convertir escala según el peso total
             if (m.total_evaluado > 20) {
                 m.calificacion_final_20 = (m.calificacion_final / 100) * 20;
                 m.scale = 100;
             } else {
-                // If scale is 20, convert to 100 for display consistency
                 m.calificacion_final_20 = m.calificacion_final;
                 m.calificacion_final = (m.calificacion_final / 20) * 100;
                 m.scale = 20;
             }
             
-            // Format for display
             m.promedio = m.calificacion_final.toFixed(1);
             m.promedioDisplay = `${m.calificacion_final.toFixed(1)/10}/100 (${m.calificacion_final_20.toFixed(1)/10}/20)`;
         });
@@ -147,8 +130,6 @@ const getCalificaciones = (req, res) => {
 
         let porcentajeCompletado = 0;
         if (totalMaterias > 0) {
-             porcentajeCompletado = (materias.reduce((acc, m) => acc + m.porcentaje_acumulado, 0) / (totalMaterias * 100) * 100).toFixed(1);
-             // Simplified: just average of accumulated percentage
              porcentajeCompletado = (materias.reduce((acc, m) => acc + m.porcentaje_acumulado, 0) / totalMaterias).toFixed(1);
         }
 

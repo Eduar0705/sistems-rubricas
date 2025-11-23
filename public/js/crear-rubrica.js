@@ -265,7 +265,7 @@ function agregarValidacionTiempoReal() {
         });
     }
 
-    // Observer para detectar cambios
+    // Observador para detectar cambios
     const observer = new MutationObserver(function() {
         validarPuntajes();
     });

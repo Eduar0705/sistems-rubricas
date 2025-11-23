@@ -1,14 +1,14 @@
 const conexion = require('../models/conetion');
 
 // =============================================
-// ADMIN REPORTS
+// REPORTES DE ADMINISTRADOR
 // =============================================
 const getAdminReports = (req, res) => {
     if (!req.session.login) {
         return res.redirect('/login');
     }
 
-    // Queries for Admin Stats
+    // Consultas para estadísticas de administrador
     const queries = {
         totalEstudiantes: "SELECT COUNT(*) as total FROM estudiante WHERE activo = 1",
         totalDocentes: "SELECT COUNT(*) as total FROM docente WHERE activo = 1",
@@ -41,7 +41,7 @@ const getAdminReports = (req, res) => {
         `
     };
 
-    // Execute all queries
+    // Ejecutar todas las consultas
     const promises = Object.entries(queries).map(([key, query]) => {
         return new Promise((resolve, reject) => {
             conexion.query(query, (err, results) => {
@@ -58,7 +58,7 @@ const getAdminReports = (req, res) => {
                 return acc;
             }, {});
 
-            // Process data for view
+            // Procesar datos para la vista
             const stats = {
                 totalEstudiantes: data.totalEstudiantes[0].total,
                 totalDocentes: data.totalDocentes[0].total,
@@ -76,7 +76,7 @@ const getAdminReports = (req, res) => {
             });
         })
         .catch(err => {
-            console.error("Error getting admin reports:", err);
+            console.error("Error al obtener reportes de administrador:", err);
             res.render("admin/reportes", {
                 datos: req.session,
                 title: 'SGR - Reportes Admin',
@@ -88,7 +88,7 @@ const getAdminReports = (req, res) => {
 };
 
 // =============================================
-// TEACHER REPORTS
+// REPORTES DE DOCENTE
 // =============================================
 const getTeacherReports = (req, res) => {
     if (!req.session.login) {
@@ -165,7 +165,7 @@ const getTeacherReports = (req, res) => {
             });
         })
         .catch(err => {
-            console.error("Error getting teacher reports:", err);
+            console.error("Error al obtener reportes de docente:", err);
             res.render("teacher/reportes", {
                 datos: req.session,
                 title: 'SGR - Reportes Docente',

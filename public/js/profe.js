@@ -874,7 +874,7 @@ async function cargarCarreras() {
 
         console.log('Response from /api/carreras:', data);
 
-        // Handle different response structures
+        // Manejar diferentes estructuras de respuesta
         let carreras = [];
         if (Array.isArray(data)) {
             carreras = data;

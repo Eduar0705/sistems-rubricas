@@ -10,7 +10,7 @@ if (menuToggle) {
   })
 }
 
-// Close sidebar when clicking outside on mobile
+// Cerrar sidebar al hacer clic fuera en móvil
 document.addEventListener("click", (e) => {
   if (window.innerWidth <= 1024 && sidebar) {
     if (!sidebar.contains(e.target) && (!menuToggle || !menuToggle.contains(e.target))) {

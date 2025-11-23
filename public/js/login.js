@@ -1,7 +1,7 @@
 // Esperar a que el DOM esté completamente cargado
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Toggle password visibility
+    // Alternar visibilidad de contraseña
     const togglePassword = document.getElementById("togglePassword");
     const passwordInput = document.getElementById("password");
 
@@ -185,7 +185,7 @@ if (cedulaInput) {
             }
         }, 100);
     } else {
-        // If loginContainer is not found, still try to focus if cedulaInput exists
+        // Si no se encuentra loginContainer, intentar enfocar si cedulaInput existe
         const cedulaInput = document.getElementById("cedula");
         if (cedulaInput && !cedulaInput.value) {
             cedulaInput.focus();
