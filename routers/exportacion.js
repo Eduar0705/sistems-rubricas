@@ -355,7 +355,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                 headerValues.push(`${c.descripcion} (${c.puntaje_maximo}%)`);
                             });
                             
-                            headerValues.push('Total sobre 10%', 'Total sobre 100%');
+                            headerValues.push('Total sobre 10%'); // Solo Total sobre 10%
 
                             const headerRow = worksheet.getRow(9);
                             headerRow.values = headerValues;
@@ -387,7 +387,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                             }
                             
                             worksheet.getColumn(4 + criteriosRubrica.length).width = 15;
-                            worksheet.getColumn(5 + criteriosRubrica.length).width = 15;
+                            // Eliminada la columna para Total sobre 100%
 
                             evaluacion.estudiantes.forEach((estudiante, index) => {
                                 const rowValues = [
@@ -408,27 +408,27 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                 });
 
                                 const puntajeObtenido = estudiante.puntaje !== null ? parseFloat(estudiante.puntaje).toFixed(2) : '0.00';
-                                const total100 = estudiante.puntaje !== null ? 
-                                    parseFloat(((estudiante.puntaje * 100) / evaluacion.porcentaje).toFixed(2)) : 0;
+                                // Eliminado el cálculo de total100
 
                                 rowValues.push(puntajeObtenido);
-                                rowValues.push(total100);
+                                // Eliminado el push de total100
 
                                 const row = worksheet.addRow(rowValues);
 
                                 row.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
                                 row.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
                                 
-                                const porcentaje = total100;
+                                // Usar el puntaje directo para colorear las filas
+                                const puntajeNum = estudiante.puntaje !== null ? parseFloat(estudiante.puntaje) : 0;
                                 let fillColor = 'FFFFFFFF';
                                 
-                                if (porcentaje >= 80) {
+                                if (puntajeNum >= 8) {
                                     fillColor = 'FFD4EDDA';
-                                } else if (porcentaje >= 60) {
+                                } else if (puntajeNum >= 6) {
                                     fillColor = 'FFFFFFFF';
-                                } else if (porcentaje >= 40) {
+                                } else if (puntajeNum >= 4) {
                                     fillColor = 'FFFFF3CD';
-                                } else if (porcentaje > 0) {
+                                } else if (puntajeNum > 0) {
                                     fillColor = 'FFF8D7DA';
                                 }
 
@@ -789,22 +789,22 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                             // Definir columnas dinámicas
                             const criteriosRubrica = criteriosMap[evaluacion.id] || [];
                             const fixedColsWidth = 250; // Nro + Cédula + Apellidos
-                            const remainingWidth = availableWidth - fixedColsWidth - 100; // -100 para totales
+                            const remainingWidth = availableWidth - fixedColsWidth - 50; // -50 solo para total 10%
                             const criteriaColWidth = Math.min(remainingWidth / (criteriosRubrica.length || 1), 80);
                             
                             const colWidths = [30, 70, 150]; // Nro, Cédula, Apellidos
                             criteriosRubrica.forEach(() => colWidths.push(criteriaColWidth));
-                            colWidths.push(50, 50); // Total %, Total 100%
+                            colWidths.push(50); // Solo Total 10%
 
                             const rowHeight = 35; // Más alto para descripciones
 
                             // Dibujar encabezado tabla
                             doc.rect(30, tableTop, colWidths.reduce((a,b) => a+b), rowHeight)
-                               .fillAndStroke('#D3D3D3', '#000000');
+                            .fillAndStroke('#D3D3D3', '#000000');
                             
                             doc.fillColor('#000000')
-                               .fontSize(7)
-                               .font('Helvetica-Bold');
+                            .fontSize(7)
+                            .font('Helvetica-Bold');
                             
                             let x = 35;
                             doc.text('Nro', x, tableTop + 12, { width: colWidths[0] - 10, align: 'center' });
@@ -823,9 +823,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 x += colWidths[3+i];
                             });
 
-                            doc.text('Total 10%', x, tableTop + 6, { width: colWidths[colWidths.length-2] - 4, align: 'center' });
-                            x += colWidths[colWidths.length-2];
-                            doc.text('Total 100%', x, tableTop + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
+                            doc.text('Total 10%', x, tableTop + 12, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
 
                             let currentY = tableTop + rowHeight;
 
@@ -837,21 +835,19 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 }
 
                                 const puntaje = est.puntaje !== null ? parseFloat(est.puntaje).toFixed(2) : '0.00';
-                                const total100 = est.puntaje !== null ? 
-                                    parseFloat(((est.puntaje * 100) / evaluacion.porcentaje).toFixed(2)) : 0;
 
                                 let fillColor = '#FFFFFF';
-                                if (total100 >= 80) fillColor = '#D4EDDA';
-                                else if (total100 >= 60) fillColor = '#FFFFFF';
-                                else if (total100 >= 40) fillColor = '#FFF3CD';
-                                else if (total100 > 0) fillColor = '#F8D7DA';
+                                if (est.puntaje >= 8) fillColor = '#D4EDDA';
+                                else if (est.puntaje >= 6) fillColor = '#FFFFFF';
+                                else if (est.puntaje >= 4) fillColor = '#FFF3CD';
+                                else if (est.puntaje > 0) fillColor = '#F8D7DA';
 
                                 doc.rect(30, currentY, colWidths.reduce((a,b) => a+b), 20)
-                                   .fillAndStroke(fillColor, '#000000');
+                                .fillAndStroke(fillColor, '#000000');
 
                                 doc.fillColor('#000000')
-                                   .fontSize(8)
-                                   .font('Helvetica');
+                                .fontSize(8)
+                                .font('Helvetica');
 
                                 x = 35;
                                 doc.text(`${idx + 1}`, x, currentY + 6, { width: colWidths[0] - 10, align: 'center' });
@@ -869,38 +865,20 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                     x += colWidths[3+i];
                                 });
 
-                                doc.text(puntaje, x, currentY + 6, { width: colWidths[colWidths.length-2] - 4, align: 'center' });
-                                x += colWidths[colWidths.length-2];
                                 doc.font('Helvetica-Bold')
-                                   .text(`${total100}`, x, currentY + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
+                                .text(puntaje, x, currentY + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
 
                                 currentY += 20;
                             });
-
-                            // Estadísticas
-                            currentY += 10;
-                            const totalEstudiantes = evaluacion.estudiantes.length;
-                            const completadas = evaluacion.estudiantes.filter(e => e.puntaje !== null).length;
-                            const estudiantesCalificados = evaluacion.estudiantes.filter(e => e.puntaje !== null);
-                            const promedioGeneral = estudiantesCalificados.length > 0 ?
-                                (estudiantesCalificados.reduce((acc, e) => acc + e.puntaje, 0) / estudiantesCalificados.length).toFixed(2) : '0.00';
-                            const promedioPorc = estudiantesCalificados.length > 0 ?
-                                parseFloat((estudiantesCalificados.reduce((acc, e) => acc + ((e.puntaje * 100) / evaluacion.porcentaje), 0) / estudiantesCalificados.length).toFixed(2)) : 0;
-
-                            doc.rect(30, currentY, colWidths.reduce((a,b) => a+b), 20)
-                               .fillAndStroke('#FFEB3B', '#000000');
-
-                            doc.fillColor('#000000')
-                               .fontSize(8)
-                               .font('Helvetica-Bold')
-                               .text(`ESTADÍSTICAS: Total: ${totalEstudiantes} | Completadas: ${completadas} | Pendientes: ${totalEstudiantes - completadas} | Promedio: ${promedioGeneral} (${promedioPorc}%)`, 
-                                     35, currentY + 6, { width: colWidths.reduce((a,b) => a+b) - 10 });
-
                             doc.fontSize(7)
-                               .font('Helvetica')
-                               .fillColor('#666666')
-                               .text(`Generado: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 
-                                     30, doc.page.height - 40, { align: 'center', width: doc.page.width - 60 });
+                            .font('Helvetica')
+                            .fillColor('#666666')
+                            .text(
+                                `Generado: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`,
+                                30,
+                                doc.page.height - 40,
+                                { align: 'center', width: doc.page.width - 60 }
+                            );
                         });
                     });
                 });
