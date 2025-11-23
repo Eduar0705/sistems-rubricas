@@ -93,3 +93,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 250);
     });
 });
+
+// =============================================
+// MÓDULO DE LISTADO DE ESTUDIANTES
+// =============================================
+function exportarExcel() {
+    window.location.href = '/api/teacher/evaluaciones/export/excel';
+}
+
+function exportarPDF() {
+    window.location.href = '/api/teacher/evaluaciones/export/pdf';
+}

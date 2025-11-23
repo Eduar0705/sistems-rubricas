@@ -1,5 +1,3 @@
-/* SweetAlert2 z-index override para mostrar por encima de todo */
-/* SweetAlert2 z-index override para mostrar por encima de todo */
 .swal2-container {
     z-index: 10000 !important;
 }
@@ -11,7 +9,6 @@
 .swal2-popup {
     z-index: 10002 !important;
 }
-
 
 /* Modal Agregar Evaluación */
 .modal-add-evaluacion {

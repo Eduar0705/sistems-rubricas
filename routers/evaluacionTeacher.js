@@ -561,8 +561,6 @@ router.get('/api/teacher/seccion/:seccionId/estudiantes', (req, res) => {
             console.error('Error al obtener estudiantes (docente):', error);
             return res.json({ success: false, message: 'Error al obtener estudiantes' });
         }
-
-        res.json({ success: true, estudiantes });
     });
 });
 
@@ -653,7 +651,7 @@ router.post('/api/teacher/evaluaciones/crear', (req, res) => {
             SELECT estudiante_cedula 
             FROM evaluacion_estudiante 
             WHERE rubrica_id = ? 
-              AND estudiante_cedula IN (?)
+            AND estudiante_cedula IN (?)
         `;
 
         conexion.query(queryDuplicados, [rubrica_id, estudiantes], (error, duplicados) => {

@@ -86,6 +86,8 @@ app.locals.sesionesActivas = sesionesActivas;
 app.use(require('./routers/login'));
 app.use(require('./controllers/logoutControllers'))
 
+app.use(require('./routers/exportacion'))
+
 //RUTAS DE LOS CONTROLLERS
 app.use(require('./controllers/login'));
 app.use(require('./controllers/addProfeControllers'));

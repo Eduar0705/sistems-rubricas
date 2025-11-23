@@ -81,6 +81,33 @@ body {
     font-size: 1.5rem;
 }
 
+.excel{
+    color: #ffffff;
+    background-color: #10b981;
+}
+
+.pdf{
+    color: #ffffff;
+    background-color: rgb(241, 63, 63);
+}
+
+.listado{
+    color: #ffffff;
+    background-color: #4c6edb;
+}
+
+.excel:hover{
+    background-color: #35daa3;
+}
+
+.pdf:hover{
+    background-color: rgb(233, 109, 109);
+}
+
+.listado:hover{
+    background-color: #748ee4;
+}
+
 .sidebar-toggle {
     display: none;
     background: none;
