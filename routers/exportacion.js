@@ -8,6 +8,7 @@ const fs = require('fs');
 const https = require('https');
 const http = require('http');
 
+ 
 // Función auxiliar para descargar imagen desde URL
 function downloadImage(url) {
     return new Promise((resolve, reject) => {
@@ -27,10 +28,15 @@ function downloadImage(url) {
     });
 }
 
-//Funcion para obtener el logo y cargarlo a los documentos
+/**
+ * Función para obtener el buffer del logo.
+ * Intenta primero leer la imagen local de /public/img/logoiujo.jpg.
+ * Si falla o no existe, descarga la imagen desde la URL.
+ * Devuelve un Promise<Buffer|null>
+ */
 async function getLogoBuffer() {
     // Ruta al logo JPG local (compatible con PDF y Excel)
-    const localPathJpg = path.join(__dirname, '..', 'public', 'img', 'IUJO.gif');
+    const localPathJpg = path.join(__dirname, '..', 'public', 'img', 'logoiujo.jpg');
     // URL de respaldo (opcional, por si falla el local)
     const logoUrl = 'https://aulabqto.iujoac.org.ve/pluginfile.php/1/core_admin/logo/0x200/1685566539/logo%20iujo%20para%20moodle.png';
 
@@ -67,7 +73,6 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
     let query;
     let queryParams = [];
 
-    //Consulta para si es admin le salgan todas las evaluaciones
     if (rol === 1) {
         query = `
             SELECT
@@ -103,8 +108,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
             WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
             ORDER BY c.nombre, m.semestre, s.codigo, r.nombre_rubrica, e.apellido, e.nombre
         `;
-    }//Si es 2 o Profesor le muestra solo las que tiene permisos
-    else if (rol === 2) {
+    } else if (rol === 2) {
         query = `
             SELECT
                 ee.id as evaluacion_id,
@@ -156,7 +160,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
         try {
             // Obtener IDs de rúbricas para buscar criterios
             const rubricaIds = [...new Set(evaluaciones.map(e => e.rubrica_id))];
-
+            
             let criteriosMap = {};
             let detallesMap = {};
 
@@ -168,7 +172,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                     WHERE rubrica_id IN (?)
                     ORDER BY rubrica_id, orden
                 `;
-
+                
                 const criterios = await new Promise((resolve, reject) => {
                     conexion.query(queryCriterios, [rubricaIds], (err, results) => {
                         if (err) reject(err);
@@ -257,7 +261,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                         estudiantes: []
                     };
                 }
-
+                
                 agrupado[keyCarrera].semestres[keySemestre].secciones[keySeccion].evaluaciones[keyEvaluacion].estudiantes.push({
                     id: ev.evaluacion_id,
                     cedula: ev.estudiante_cedula,
@@ -273,7 +277,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                 Object.values(carrera.semestres).forEach(semestre => {
                     Object.values(semestre.secciones).forEach(seccion => {
                         Object.values(seccion.evaluaciones).forEach((evaluacion, evalIndex) => {
-
+                            
                             const sheetName = `${carrera.nombre.substring(0, 10)}-S${semestre.numero}-${seccion.codigo}-${evalIndex + 1}`;
                             const worksheet = workbook.addWorksheet(sheetName);
 
@@ -284,10 +288,10 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                         buffer: logoBuffer,
                                         extension: 'jpeg'
                                     });
-
+                                    
                                     worksheet.addImage(imageId, {
                                         tl: { col: 0, row: 0 },
-                                        ext: { width: 200 },
+                                        ext: { width: 200, height: 60 },
                                         editAs: 'oneCell'
                                     });
                                 } catch (imgError) {
@@ -340,23 +344,25 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                             worksheet.getCell('C7').value = `Sección: ${seccion.codigo}`;
                             worksheet.getCell('D7').value = `Horario: ${seccion.horario}`;
                             worksheet.getCell('E7').value = `Aula: ${seccion.aula}`;
+                            
                             worksheet.addRow([]);
 
-                            // Construir encabezados dinámicos (SE ELIMINA la columna "Total sobre 100%")
+                            // Construir encabezados dinámicos
                             const criteriosRubrica = criteriosMap[evaluacion.id] || [];
                             const headerValues = ['Nro', 'Cédula', 'Apellidos y Nombres'];
-
+                            
                             criteriosRubrica.forEach(c => {
                                 headerValues.push(`${c.descripcion} (${c.puntaje_maximo}%)`);
                             });
-                            headerValues.push('Total sobre 10%'); // solo el total sobre 10%
+                            
+                            headerValues.push('Total sobre 10%', 'Total sobre 100%');
 
                             const headerRow = worksheet.getRow(9);
                             headerRow.values = headerValues;
                             headerRow.font = { bold: true, color: { argb: 'FF000000' } };
                             headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
                             headerRow.height = 40;
-
+                            
                             headerRow.eachCell((cell) => {
                                 cell.fill = {
                                     type: 'pattern',
@@ -374,14 +380,14 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                             worksheet.getColumn(1).width = 8;
                             worksheet.getColumn(2).width = 15;
                             worksheet.getColumn(3).width = 35;
-
+                            
                             // Ajustar ancho de columnas de criterios
                             for (let i = 0; i < criteriosRubrica.length; i++) {
                                 worksheet.getColumn(4 + i).width = 20; // Más ancho para descripción
                             }
-
-                            // Solo una columna adicional (Total sobre 10%)
+                            
                             worksheet.getColumn(4 + criteriosRubrica.length).width = 15;
+                            worksheet.getColumn(5 + criteriosRubrica.length).width = 15;
 
                             evaluacion.estudiantes.forEach((estudiante, index) => {
                                 const rowValues = [
@@ -402,19 +408,20 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                 });
 
                                 const puntajeObtenido = estudiante.puntaje !== null ? parseFloat(estudiante.puntaje).toFixed(2) : '0.00';
-                                // calcular porcentaje para coloreado y estadística, pero NO se muestra como columna
-                                const total100 = estudiante.puntaje !== null ? parseFloat(((estudiante.puntaje * 100) / evaluacion.porcentaje).toFixed(2)) : 0;
+                                const total100 = estudiante.puntaje !== null ? 
+                                    parseFloat(((estudiante.puntaje * 100) / evaluacion.porcentaje).toFixed(2)) : 0;
 
-                                rowValues.push(puntajeObtenido); // solo el total sobre 10%
+                                rowValues.push(puntajeObtenido);
+                                rowValues.push(total100);
 
                                 const row = worksheet.addRow(rowValues);
 
                                 row.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
                                 row.getCell(3).alignment = { horizontal: 'left', vertical: 'middle' };
-
-                                const porcentaje = total100; // usar porcentaje para colores
+                                
+                                const porcentaje = total100;
                                 let fillColor = 'FFFFFFFF';
-
+                                
                                 if (porcentaje >= 80) {
                                     fillColor = 'FFD4EDDA';
                                 } else if (porcentaje >= 60) {
@@ -439,15 +446,15 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                     };
                                 });
 
-                                // Resaltar la última columna (ahora Total sobre 10%)
                                 row.getCell(rowValues.length).font = { bold: true };
                             });
 
                             const totalEstudiantes = evaluacion.estudiantes.length;
                             const completadas = evaluacion.estudiantes.filter(e => e.puntaje !== null).length;
                             const pendientes = totalEstudiantes - completadas;
+                            
                             worksheet.addRow([]);
-
+                            
                             const statsRow = worksheet.addRow([
                                 'ESTADÍSTICAS:',
                                 `Total: ${totalEstudiantes}`,
@@ -456,7 +463,7 @@ router.get('/api/teacher/evaluaciones/export/excel', async (req, res) => {
                                 '',
                                 ''
                             ]);
-
+                            
                             statsRow.font = { bold: true };
                             statsRow.fill = {
                                 type: 'pattern',
@@ -593,6 +600,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
         try {
             // Obtener IDs de rúbricas para buscar criterios
             const rubricaIds = [...new Set(evaluaciones.map(e => e.rubrica_id))];
+            
             let criteriosMap = {};
             let detallesMap = {};
 
@@ -604,7 +612,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                     WHERE rubrica_id IN (?)
                     ORDER BY rubrica_id, orden
                 `;
-
+                
                 const criterios = await new Promise((resolve, reject) => {
                     conexion.query(queryCriterios, [rubricaIds], (err, results) => {
                         if (err) reject(err);
@@ -651,15 +659,16 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
             }
 
             // Configurar PDF en Landscape
-            const doc = new PDFDocument({
-                margin: 30,
+            const doc = new PDFDocument({ 
+                margin: 30, 
                 size: 'LETTER',
                 layout: 'landscape',
                 bufferPages: true
             });
-
+            
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename=evaluaciones_IUJO_${new Date().toISOString().split('T')[0]}.pdf`);
+
             doc.pipe(res);
 
             // Agrupar por carrera → semestre → sección → evaluación
@@ -695,7 +704,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                         estudiantes: []
                     };
                 }
-
+                
                 agrupado[keyCarrera].semestres[keySemestre].secciones[keySeccion].evaluaciones[keyEvaluacion].estudiantes.push({
                     id: ev.evaluacion_id,
                     cedula: ev.estudiante_cedula,
@@ -709,53 +718,55 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
             function addHeaderIUJO(evaluacion, seccion, materia) {
                 if (logoBuffer) {
                     try {
-                        doc.image(logoBuffer, 30, 30, {
-                            width: 200,
-                            align: 'left',
-                            valign: 'center'
+                        doc.image(logoBuffer, 30, 30, { 
+                            width: 150,
+                            align: 'left', 
+                            valign: 'center' 
                         });
                     } catch (err) {
                         doc.fillColor('#000000')
-                            .fontSize(28)
-                            .font('Helvetica-Bold')
-                            .text('IUJO', 30, 55, { width: 80, align: 'center' });
+                           .fontSize(28)
+                           .font('Helvetica-Bold')
+                           .text('IUJO', 30, 55, { width: 80, align: 'center' });
                     }
                 } else {
                     doc.fillColor('#000000')
-                        .fontSize(28)
-                        .font('Helvetica-Bold')
-                        .text('IUJO', 30, 55, { width: 80, align: 'center' });
+                       .fontSize(28)
+                       .font('Helvetica-Bold')
+                       .text('IUJO', 30, 55, { width: 80, align: 'center' });
                 }
 
                 const textX = 200;
                 const pageWidth = doc.page.width;
 
                 doc.fontSize(14)
-                    .font('Helvetica-Bold')
-                    .fillColor('#000000')
-                    .text('Instituto Universitario Jesús Obrero (IUJO)', textX, 35);
-
+                   .font('Helvetica-Bold')
+                   .fillColor('#000000')
+                   .text('Instituto Universitario Jesús Obrero (IUJO)', textX, 35);
+                
                 doc.fontSize(11)
-                    .font('Helvetica')
-                    .text('Extensión Barquisimeto', textX, 55);
-
+                   .font('Helvetica')
+                   .text('Extensión Barquisimeto', textX, 55);
+                
                 doc.fontSize(10)
-                    .font('Helvetica-Bold')
-                    .text(`Materia: ${materia}`, textX, 75);
-
+                   .font('Helvetica-Bold')
+                   .text(`Materia: ${materia}`, textX, 75);
+                
                 doc.fontSize(9)
-                    .font('Helvetica')
-                    .text(`Docente: ${evaluacion.docente}`, textX, 90);
+                   .font('Helvetica')
+                   .text(`Docente: ${evaluacion.docente}`, textX, 90);
 
                 doc.moveDown(4);
                 doc.fontSize(11)
-                    .font('Helvetica-Bold')
-                    .fillColor('#000000')
-                    .text(evaluacion.nombre, 30, 120, { align: 'center', width: pageWidth - 60 });
-
+                   .font('Helvetica-Bold')
+                   .fillColor('#000000')
+                   .text(evaluacion.nombre, 30, 120, { align: 'center', width: pageWidth - 60 });
+                
                 doc.fontSize(8)
-                    .font('Helvetica')
-                    .text(`Valor: ${evaluacion.porcentaje}pts | Tipo: ${evaluacion.tipo} | Sección: ${seccion.codigo} | ${seccion.horario} | Aula: ${seccion.aula}`, 30, 135, { align: 'center', width: pageWidth - 60 });
+                   .font('Helvetica')
+                   .text(`Valor: ${evaluacion.porcentaje}pts | Tipo: ${evaluacion.tipo} | Sección: ${seccion.codigo} | ${seccion.horario} | Aula: ${seccion.aula}`, 
+                         30, 135, { align: 'center', width: pageWidth - 60 });
+                
                 doc.moveDown(1);
             }
 
@@ -765,7 +776,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                 Object.values(carrera.semestres).forEach(semestre => {
                     Object.values(semestre.secciones).forEach(seccion => {
                         Object.values(seccion.evaluaciones).forEach((evaluacion, evalIdx) => {
-
+                            
                             if (!isFirstPage) doc.addPage();
                             isFirstPage = false;
 
@@ -774,24 +785,27 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                             const tableTop = 165;
                             const pageWidth = doc.page.width;
                             const availableWidth = pageWidth - 60;
-
-                            // Definir columnas dinámicas (se elimina la columna "Total 100%")
+                            
+                            // Definir columnas dinámicas
                             const criteriosRubrica = criteriosMap[evaluacion.id] || [];
                             const fixedColsWidth = 250; // Nro + Cédula + Apellidos
-                            const remainingWidth = availableWidth - fixedColsWidth - 50; // -50 para el total (solo Total 10%)
+                            const remainingWidth = availableWidth - fixedColsWidth - 100; // -100 para totales
                             const criteriaColWidth = Math.min(remainingWidth / (criteriosRubrica.length || 1), 80);
+                            
                             const colWidths = [30, 70, 150]; // Nro, Cédula, Apellidos
                             criteriosRubrica.forEach(() => colWidths.push(criteriaColWidth));
-                            colWidths.push(50); // Total 10% (ahora sólo una columna de totales)
+                            colWidths.push(50, 50); // Total %, Total 100%
+
                             const rowHeight = 35; // Más alto para descripciones
 
                             // Dibujar encabezado tabla
                             doc.rect(30, tableTop, colWidths.reduce((a,b) => a+b), rowHeight)
-                                .fillAndStroke('#D3D3D3', '#000000');
+                               .fillAndStroke('#D3D3D3', '#000000');
+                            
                             doc.fillColor('#000000')
-                                .fontSize(7)
-                                .font('Helvetica-Bold');
-
+                               .fontSize(7)
+                               .font('Helvetica-Bold');
+                            
                             let x = 35;
                             doc.text('Nro', x, tableTop + 12, { width: colWidths[0] - 10, align: 'center' });
                             x += colWidths[0];
@@ -799,7 +813,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                             x += colWidths[1];
                             doc.text('Apellidos y Nombres', x, tableTop + 12, { width: colWidths[2] - 10 });
                             x += colWidths[2];
-
+                            
                             criteriosRubrica.forEach((c, i) => {
                                 doc.text(`${c.descripcion} (${c.puntaje_maximo}%)`, x, tableTop + 2, { 
                                     width: colWidths[3+i] - 4, 
@@ -809,9 +823,9 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 x += colWidths[3+i];
                             });
 
-                            // Sólo Total 10%
-                            doc.text('Total 10%', x, tableTop + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
-                            x += colWidths[colWidths.length-1];
+                            doc.text('Total 10%', x, tableTop + 6, { width: colWidths[colWidths.length-2] - 4, align: 'center' });
+                            x += colWidths[colWidths.length-2];
+                            doc.text('Total 100%', x, tableTop + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
 
                             let currentY = tableTop + rowHeight;
 
@@ -823,7 +837,7 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 }
 
                                 const puntaje = est.puntaje !== null ? parseFloat(est.puntaje).toFixed(2) : '0.00';
-                                const total100 = est.puntaje !== null ?
+                                const total100 = est.puntaje !== null ? 
                                     parseFloat(((est.puntaje * 100) / evaluacion.porcentaje).toFixed(2)) : 0;
 
                                 let fillColor = '#FFFFFF';
@@ -833,11 +847,11 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 else if (total100 > 0) fillColor = '#F8D7DA';
 
                                 doc.rect(30, currentY, colWidths.reduce((a,b) => a+b), 20)
-                                    .fillAndStroke(fillColor, '#000000');
+                                   .fillAndStroke(fillColor, '#000000');
 
                                 doc.fillColor('#000000')
-                                    .fontSize(8)
-                                    .font('Helvetica');
+                                   .fontSize(8)
+                                   .font('Helvetica');
 
                                 x = 35;
                                 doc.text(`${idx + 1}`, x, currentY + 6, { width: colWidths[0] - 10, align: 'center' });
@@ -855,9 +869,10 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                     x += colWidths[3+i];
                                 });
 
-                                // Mostrar solo el total sobre 10%
+                                doc.text(puntaje, x, currentY + 6, { width: colWidths[colWidths.length-2] - 4, align: 'center' });
+                                x += colWidths[colWidths.length-2];
                                 doc.font('Helvetica-Bold')
-                                    .text(puntaje, x, currentY + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
+                                   .text(`${total100}`, x, currentY + 6, { width: colWidths[colWidths.length-1] - 4, align: 'center' });
 
                                 currentY += 20;
                             });
@@ -873,19 +888,19 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
                                 parseFloat((estudiantesCalificados.reduce((acc, e) => acc + ((e.puntaje * 100) / evaluacion.porcentaje), 0) / estudiantesCalificados.length).toFixed(2)) : 0;
 
                             doc.rect(30, currentY, colWidths.reduce((a,b) => a+b), 20)
-                                .fillAndStroke('#FFEB3B', '#000000');
+                               .fillAndStroke('#FFEB3B', '#000000');
 
                             doc.fillColor('#000000')
-                                .fontSize(8)
-                                .font('Helvetica-Bold')
-                                .text(`ESTADÍSTICAS: Total: ${totalEstudiantes} | Completadas: ${completadas} | Pendientes: ${totalEstudiantes - completadas} | Promedio: ${promedioGeneral} (${promedioPorc}%)`, 
-                                    35, currentY + 6, { width: colWidths.reduce((a,b) => a+b) - 10 });
+                               .fontSize(8)
+                               .font('Helvetica-Bold')
+                               .text(`ESTADÍSTICAS: Total: ${totalEstudiantes} | Completadas: ${completadas} | Pendientes: ${totalEstudiantes - completadas} | Promedio: ${promedioGeneral} (${promedioPorc}%)`, 
+                                     35, currentY + 6, { width: colWidths.reduce((a,b) => a+b) - 10 });
 
                             doc.fontSize(7)
-                                .font('Helvetica')
-                                .fillColor('#666666')
-                                .text(`Generado: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 
-                                    30, doc.page.height - 40, { align: 'center', width: doc.page.width - 60 });
+                               .font('Helvetica')
+                               .fillColor('#666666')
+                               .text(`Generado: ${new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 
+                                     30, doc.page.height - 40, { align: 'center', width: doc.page.width - 60 });
                         });
                     });
                 });
@@ -895,8 +910,8 @@ router.get('/api/teacher/evaluaciones/export/pdf', async (req, res) => {
             for (let i = range.start; i < range.start + range.count; i++) {
                 doc.switchToPage(i);
                 doc.fontSize(8)
-                    .fillColor('#999999')
-                    .text(`Página ${i + 1} de ${range.count}`, 30, doc.page.height - 25, { align: 'center', width: doc.page.width - 60 });
+                   .fillColor('#999999')
+                   .text(`Página ${i + 1} de ${range.count}`, 30, doc.page.height - 25, { align: 'center', width: doc.page.width - 60 });
             }
 
             doc.end();

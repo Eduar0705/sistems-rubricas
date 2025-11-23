@@ -2,9 +2,6 @@ const express = require('express');
 const routers = express.Router();
 const conexion = require('../models/conetion');
 
-// Constante para timeout de sesión (debe coincidir con app.js)
-const SESSION_TIMEOUT = process.env.SESSION_TIMEOUT || (1000 * 60 * 20); // 20 minutos
-
 routers.post('/verifLogin', (req, res) => {
     const { cedula, password, forzarCierre } = req.body;
 
@@ -23,7 +20,7 @@ routers.post('/verifLogin', (req, res) => {
     if (sesionesActivas.has(cedula) && !forzarCierre) {
         const sesionExistente = sesionesActivas.get(cedula);
         const tiempoTranscurrido = Date.now() - (sesionExistente.ultimaActividad || sesionExistente.inicioSesion);
-        const tiempoRestante = Math.ceil((SESSION_TIMEOUT - tiempoTranscurrido) / 1000 / 60); // en minutos
+        const tiempoRestante = Math.ceil((600000 - tiempoTranscurrido) / 1000 / 60); // en minutos
         
         // Devolver información para mostrar modal de confirmación
         return res.render('auth/login', { 
@@ -121,18 +118,13 @@ function configurarSesionUsuario(req, user, sesionesActivas) {
     console.log('============================================')
 
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
-        try {
-            sesionesActivas.set(req.session.cedula, {
-                inicioSesion: ahora,
-                ultimaActividad: ahora,
-                sessionID: req.sessionID,
-                tipo: 'usuario',
-                username: user.username
-            });
-            console.log(`✅ Sesión registrada en Map: ${req.session.cedula}`);
-        } catch (error) {
-            console.error('Error al registrar sesión en Map:', error);
-        }
+        sesionesActivas.set(req.session.cedula, {
+            inicioSesion: ahora,
+            ultimaActividad: ahora,
+            sessionID: req.sessionID,
+            tipo: 'usuario',
+            username: user.username
+        });
     }
 }
 
@@ -156,18 +148,13 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     console.log('============================================')
 
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
-        try {
-            sesionesActivas.set(req.session.cedula, {
-                inicioSesion: ahora,
-                ultimaActividad: ahora,
-                sessionID: req.sessionID,
-                tipo: 'estudiante',
-                username: req.session.username
-            });
-            console.log(`✅ Sesión registrada en Map: ${req.session.cedula}`);
-        } catch (error) {
-            console.error('Error al registrar sesión en Map:', error);
-        }
+        sesionesActivas.set(req.session.cedula, {
+            inicioSesion: ahora,
+            ultimaActividad: ahora,
+            sessionID: req.sessionID,
+            tipo: 'estudiante',
+            username: req.session.username
+        });
     }
 }
 

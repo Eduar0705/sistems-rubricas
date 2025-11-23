@@ -5,21 +5,16 @@ routers.get('/logout', (req, res) => {
     const cedula = req.session.cedula;
     const sesionesActivas = req.app.locals.sesionesActivas;
     
-    // Destruir la sesión primero
+    // Eliminar la sesión activa del mapa
+    if (cedula && sesionesActivas) {
+        sesionesActivas.delete(cedula);
+    }
+    
+    // Destruir la sesión
     req.session.destroy((err) => {
         if (err) {
             console.error('Error al cerrar sesión:', err);
             return res.redirect('/home');
-        }
-        
-        // Solo eliminar del Map si la sesión se destruyó correctamente
-        if (cedula && sesionesActivas) {
-            try {
-                sesionesActivas.delete(cedula);
-                console.log(`✅ Sesión eliminada del Map: ${cedula}`);
-            } catch (error) {
-                console.error('Error al eliminar sesión del Map:', error);
-            }
         }
         
         // Limpiar la cookie

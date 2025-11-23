@@ -1,11 +1,8 @@
 const express = require('express');
 const session = require('express-session');
 const app = express();
-const title = 'Sistema de Gestión de Rúbricas';
+const title = 'APP';
 const PORT = process.env.PORT || 3008;
-
-// Constante global para timeout de sesión
-const SESSION_TIMEOUT = process.env.SESSION_TIMEOUT || (1000 * 60 * 20); // 20 minutos
 
 // Objeto para rastrear sesiones activas por usuario
 const sesionesActivas = new Map();
@@ -13,10 +10,11 @@ const sesionesActivas = new Map();
 // Función para limpiar sesiones expiradas
 function limpiarSesionesExpiradas() {
     const ahora = Date.now();
+    const TIMEOUT_SESION = 300000; // 5 minutos
     
     for (const [cedula, sesion] of sesionesActivas.entries()) {
         const tiempoInactivo = ahora - (sesion.ultimaActividad || sesion.inicioSesion);
-        if (tiempoInactivo > SESSION_TIMEOUT) {
+        if (tiempoInactivo > TIMEOUT_SESION) {
             console.log(`🧹 Limpiando sesión expirada de: ${cedula}`);
             sesionesActivas.delete(cedula);
         }
@@ -39,7 +37,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: false,
-        maxAge: SESSION_TIMEOUT
+        maxAge: 1000 * 60 * 20  // 20 minutos de inactividad
     }
 }));
 
@@ -47,28 +45,12 @@ app.use(session({
 app.use((req, res, next) => {
     if (req.session && req.session.login) {
         const ahora = Date.now();
-        const cedula = req.session.cedula;
-        
-        // Verificar que la sesión exista en el Map (sincronización)
-        if (cedula && !sesionesActivas.has(cedula)) {
-            // Sesión en cookie pero no en Map - posible reinicio del servidor
-            console.warn(`⚠️ Sesión encontrada en cookie pero no en Map: ${cedula}`);
-            
-            // Re-registrar en el Map
-            sesionesActivas.set(cedula, {
-                inicioSesion: ahora,
-                ultimaActividad: ahora,
-                sessionID: req.sessionID,
-                tipo: req.session.tipo,
-                username: req.session.username
-            });
-        }
-        
         const ultimaActividad = req.session.ultimaActividad || ahora;
         const tiempoInactivo = ahora - ultimaActividad;
         
-        // Verificar si la sesión ha expirado
-        if (tiempoInactivo > SESSION_TIMEOUT) {
+        // Si han pasado más de 5 minutos (300000 ms)
+        if (tiempoInactivo > 300000) {
+            const cedula = req.session.cedula;
             req.session.destroy((err) => {
                 if (err) {
                     console.error('Error al destruir la sesión:', err);
@@ -85,8 +67,8 @@ app.use((req, res, next) => {
             req.session.ultimaActividad = ahora;
             
             // Actualizar también en el Map de sesiones activas
-            const sesionActiva = sesionesActivas.get(cedula);
-            if (sesionActiva) {
+            if (req.session.cedula && sesionesActivas.has(req.session.cedula)) {
+                const sesionActiva = sesionesActivas.get(req.session.cedula);
                 sesionActiva.ultimaActividad = ahora;
             }
             
