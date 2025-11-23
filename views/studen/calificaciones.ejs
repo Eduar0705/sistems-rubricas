@@ -65,8 +65,8 @@
                                     </div>
                                     <small><%= materia.porcentaje_acumulado %>% Evaluado</small>
                                 </div>
-                                <div class="grade-score <%= materia.promedio >= 10 ? 'excellent' : (materia.promedio >= 6 ? 'good' : 'average') %>">
-                                    <%= materia.promedio %>
+                                <div class="grade-score <%= materia.calificacion_final_20 >= 10 ? 'excellent' : (materia.calificacion_final_20 >= 6 ? 'good' : 'average') %>">
+                                    <%= materia.promedioDisplay %>
                                 </div>
                             </div>
                         <% }) %>
@@ -168,8 +168,7 @@
                     </div>
                     <div class="evaluacion-score-large">
                         <span class="score-label">Calificación Acumulada</span>
-                        <span class="score-value">${materia.promedio}</span>
-                        <span class="score-max">/ ${materia.scale}</span>
+                        <span class="score-value" style="font-size: 1.5em;">${materia.promedioDisplay}</span>
                     </div>
                 </div>
                 

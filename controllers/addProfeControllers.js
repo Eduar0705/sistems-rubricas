@@ -4,23 +4,23 @@ const conexion = require('../models/conetion')
 
 router.post('/envioProfe', (req, res) => {
     const { cedula, nombre, apellido, email, telefono, especialidad, notas } = req.body;
-    
+
     // Validación básica de datos requeridos
     if (!cedula || !nombre || !apellido || !email || !telefono || !especialidad) {
         const mensaje = 'Todos los campos son obligatorios';
         return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
     }
-    
+
     const activo = 1;
     const verifdatos = `SELECT * FROM docente WHERE cedula = ? OR email = ? OR telf = ?`;
-    
+
     conexion.query(verifdatos, [cedula, email, telefono], (err, results) => {
         if (err) {
             console.error('Error en la verificación de datos:', err);
             const mensaje = 'Error en el servidor';
             return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
         }
-        
+
         if (results.length > 0) {
             // Determinar qué campo está duplicado
             let campo = 'dato';
@@ -31,7 +31,7 @@ router.post('/envioProfe', (req, res) => {
             } else if (results[0].telf === telefono) {
                 campo = 'teléfono';
             }
-            
+
             console.log('Ya el profesor existe con ese', campo);
             const mensaje = `Error, ya existe un profesor con ese ${campo}`;
             return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
@@ -49,7 +49,7 @@ router.post('/envioProfe', (req, res) => {
                 const mensaje = 'Error al guardar el profesor';
                 return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
             }
-            
+
             console.log('Profesor agregado exitosamente. ID:', result.insertId);
             const mensaje = 'Profesor agregado exitosamente :D';
             return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));

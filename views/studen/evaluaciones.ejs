@@ -1,60 +1,79 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Evaluaciones del Estudiante</title>
-    <link rel="stylesheet" href="../css/home.css">
-    <link rel="stylesheet" href="../css/evaluacionsStudents.css">
-    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-</head>
-<body>
+    <link rel="stylesheet" href="../css/home.css" />
+    <link rel="stylesheet" href="../css/evaluacionsStudents.css" />
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+  <body>
     <%- include('../inc/menuStudents') %>
     <main class="main-content">
-        <%- include('../inc/headerStudents') %>
+      <%- include('../inc/headerStudents') %>
 
-        <div class="container">
-            <h1>Evaluaciones del Estudiante</h1>
-            <% if (evaluaciones && evaluaciones.length > 0) { %>
-                <div class="evaluaciones-grid">
-                    <% evaluaciones.forEach(evaluacion => { %>
-                        <div class="evaluacion-card">
-                            <h3><%= evaluacion.nombre_rubrica %></h3>
-                            <p><strong>Materia:</strong> <%= evaluacion.materia %></p>
-                            <p><strong>Profesor:</strong> <%= evaluacion.profesor %></p>
-                            <p><strong>Puntaje Total:</strong> <%= evaluacion.puntaje_total %></p>
-                            <p><strong>Fecha de Evaluación:</strong> <%= new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES') %></p>
-                            <p><strong>Tipo de Evaluación:</strong> <%= evaluacion.tipo_evaluacion %></p>
-                            <p><strong>Porcentaje:</strong> <%= evaluacion.porcentaje_evaluacion %>%</p>
-                            <button class="btn-detalles" onclick="verDetallesEvaluacion('<%= evaluacion.evaluacion_id %>')">
-                                <i class="fas fa-eye"></i> Ver Detalles
-                            </button>
-                        </div>
-                    <% }); %>
-                </div>
-            <% } else { %>
-                <p>No hay evaluaciones disponibles.</p>
-            <% } %>
+      <div class="container">
+        <h1>Evaluaciones del Estudiante</h1>
+        <% if (evaluaciones && evaluaciones.length > 0) { %>
+        <div class="evaluaciones-grid">
+          <% evaluaciones.forEach(evaluacion => { %>
+          <div class="evaluacion-card">
+            <h3><%= evaluacion.nombre_rubrica %></h3>
+            <p><strong>Materia:</strong> <%= evaluacion.materia %></p>
+            <p><strong>Profesor:</strong> <%= evaluacion.profesor %></p>
+            <p>
+              <strong>Puntaje Total:</strong> <%=
+              parseFloat(evaluacion.puntaje_total).toFixed(1) %>/100 (<%=
+              (parseFloat(evaluacion.puntaje_total) / 5).toFixed(1) %>/20)
+            </p>
+            <p>
+              <strong>Fecha de Evaluación:</strong> <%= new
+              Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES') %>
+            </p>
+            <p>
+              <strong>Tipo de Evaluación:</strong> <%=
+              evaluacion.tipo_evaluacion %>
+            </p>
+            <p>
+              <strong>Porcentaje:</strong> <%= evaluacion.porcentaje_evaluacion
+              %>%
+            </p>
+            <button
+              class="btn-detalles"
+              onclick="verDetallesEvaluacion('<%= evaluacion.evaluacion_id %>')"
+            >
+              <i class="fas fa-eye"></i> Ver Detalles
+            </button>
+          </div>
+          <% }); %>
         </div>
+        <% } else { %>
+        <p>No hay evaluaciones disponibles.</p>
+        <% } %>
+      </div>
     </main>
 
     <!-- Modal para detalles de evaluación -->
     <div id="evaluacionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-file-alt"></i> Detalles de la Evaluación</h2>
-                <button class="close-btn" onclick="cerrarModal('evaluacionModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body" id="evaluacionModalBody">
-                <!-- El contenido se cargará dinámicamente -->
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-file-alt"></i> Detalles de la Evaluación</h2>
+          <button class="close-btn" onclick="cerrarModal('evaluacionModal')">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
+        <div class="modal-body" id="evaluacionModalBody">
+          <!-- El contenido se cargará dinámicamente -->
+        </div>
+      </div>
     </div>
 
     <script src="../js/students.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</body>
+  </body>
 </html>

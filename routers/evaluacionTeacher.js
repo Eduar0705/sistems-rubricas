@@ -109,7 +109,7 @@ router.get("/teacher/evaluacion", function(req, res) {
                 iniciales,
                 fecha_formateada: fecha,
                 calificacion: ev.puntaje_total ? 
-                    `${parseFloat(ev.puntaje_total).toFixed(1)}/${ev.porcentaje_evaluacion}` : 
+                    `${parseFloat(ev.puntaje_total).toFixed(1)}/100 (${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/20)` : 
                     '-/-'
             };
         });

@@ -118,38 +118,35 @@ const getCalificaciones = (req, res) => {
         // Calculate stats
         let totalMaterias = materias.length;
         let materiasAprobadas = materias.filter(m => m.calificacion_final >= 10).length; // Assuming 10 is passing on 0-20 scale, or 50 on 0-100
-        // Let's assume 0-20 scale for now as it's common in the region suggested by the data.
-        // If the sum of percentages is 100, then `calificacion_final` is out of 100.
-        // Let's convert to 0-20 scale if needed or keep as is.
-        // In the view, grades are like "9.2", "8.5". This looks like 0-10 or 0-20 scale.
-        // If `porcentaje_evaluacion` sums to 100 (e.g. 20% + 30%...), then `calificacion_final` will be 0-100.
-        // To get 0-20, we divide by 5.
-        // Let's normalize to 0-20 for display if the sum of weights is > 20.
-        
+ 
         materias.forEach(m => {
             // Heuristic: if total weight > 20, assume it's out of 100 and convert to 20.
             if (m.total_evaluado > 20) {
                 m.calificacion_final_20 = (m.calificacion_final / 100) * 20;
                 m.scale = 100;
             } else {
+                // If scale is 20, convert to 100 for display consistency
                 m.calificacion_final_20 = m.calificacion_final;
+                m.calificacion_final = (m.calificacion_final / 20) * 100;
                 m.scale = 20;
             }
             
             // Format for display
-            m.promedio = m.calificacion_final_20.toFixed(1);
+            m.promedio = m.calificacion_final.toFixed(1);
+            m.promedioDisplay = `${m.calificacion_final.toFixed(1)/10}/100 (${m.calificacion_final_20.toFixed(1)/10}/20)`;
         });
 
         let promedioGeneral = 0;
+        
         if (totalMaterias > 0) {
-            promedioGeneral = (materias.reduce((acc, m) => acc + parseFloat(m.promedio), 0) / totalMaterias).toFixed(1);
+            const sum100 = materias.reduce((acc, m) => acc + parseFloat(m.calificacion_final), 0);
+            const sum20 = materias.reduce((acc, m) => acc + parseFloat(m.calificacion_final_20), 0);
+            
+            promedioGeneral = ((sum20 / totalMaterias)/10).toFixed(1);
         }
 
         let porcentajeCompletado = 0;
         if (totalMaterias > 0) {
-            // Average of (porcentaje_acumulado / total_evaluado) ?
-            // Or just average of percentage completed per subject
-            // Let's use average of (porcentaje_acumulado) if we assume 100% is the goal
              porcentajeCompletado = (materias.reduce((acc, m) => acc + m.porcentaje_acumulado, 0) / (totalMaterias * 100) * 100).toFixed(1);
              // Simplified: just average of accumulated percentage
              porcentajeCompletado = (materias.reduce((acc, m) => acc + m.porcentaje_acumulado, 0) / totalMaterias).toFixed(1);
@@ -160,7 +157,7 @@ const getCalificaciones = (req, res) => {
             currentPage: 'calificaciones',
             materias: materias,
             stats: {
-                promedioGeneral,
+                promedioGeneral: promedioGeneral,
                 materiasAprobadas,
                 totalMaterias,
                 porcentajeCompletado
