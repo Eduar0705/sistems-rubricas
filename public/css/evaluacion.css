@@ -1651,3 +1651,390 @@
 .modal-content-detalles::-webkit-scrollbar-thumb:hover {
     background: #5568d3;
 }
+
+
+
+
+
+/* Agrega estos estilos en tu archivo evaluacion.css */
+
+/* Modal de detalles */
+.modal-detalles-Admin {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.modal-detalles-Admin.active {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.modal-content-detalles {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideDown 0.3s ease;
+}
+
+@keyframes modalSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header-detalles {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 2px solid #e9ecef;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header-detalles h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.modal-body-detalles {
+    padding: 30px;
+    max-height: calc(90vh - 150px);
+    overflow-y: auto;
+}
+
+.modal-footer-detalles {
+    padding: 20px 30px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Loading y Error */
+.loading-detalles,
+.error-detalles {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-detalles i,
+.error-detalles i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.error-detalles i {
+    color: #dc3545;
+}
+
+.loading-detalles p,
+.error-detalles p {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Detalles de evaluación */
+.detalles-evaluacion {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.seccion-detalles {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.seccion-detalles h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.seccion-detalles h3 i {
+    color: #667eea;
+}
+
+/* Info Grid */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.info-item .label {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item .value {
+    font-size: 1rem;
+    color: #333;
+}
+
+/* Estadísticas */
+.estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 2px solid #e9ecef;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: #f0f0f0;
+    color: #667eea;
+}
+
+.stat-card.success .stat-icon {
+    background: #d4edda;
+    color: #28a745;
+}
+
+.stat-card.warning .stat-icon {
+    background: #fff3cd;
+    color: #ffc107;
+}
+
+.stat-card.info .stat-icon {
+    background: #d1ecf1;
+    color: #17a2b8;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Criterios */
+.criterios-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.criterio-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.criterio-numero {
+    width: 35px;
+    height: 35px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.criterio-descripcion {
+    flex: 1;
+    color: #333;
+}
+
+.criterio-puntaje {
+    font-weight: bold;
+    color: #667eea;
+    padding: 5px 12px;
+    background: #f0f0ff;
+    border-radius: 20px;
+}
+
+/* Tabla de estudiantes */
+.estudiantes-table-wrapper {
+    overflow-x: auto;
+}
+
+.estudiantes-detalles-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.estudiantes-detalles-table thead {
+    background: #667eea;
+    color: white;
+}
+
+.estudiantes-detalles-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.estudiantes-detalles-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.estudiantes-detalles-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.puntaje {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.puntaje.excelente {
+    background: #d4edda;
+    color: #155724;
+}
+
+.puntaje.bueno {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.puntaje.regular {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.puntaje.deficiente {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.estado-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.estado-badge.completada {
+    background: #d4edda;
+    color: #155724;
+}
+
+.estado-badge.pendiente {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modal-content-detalles {
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+    
+    .info-grid,
+    .estadisticas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-body-detalles {
+        padding: 20px;
+    }
+}

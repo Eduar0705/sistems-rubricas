@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Rubricas' %></title>
+    <link rel="stylesheet" href="../css/home.css">
+    <link rel="stylesheet" href="../css/modalConfig.css">
+    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <%- include('../inc/menu.ejs') %>
+
+    <main class="main-content">
+        <!-- Header -->
+        <%- include('../inc/headerAdmin.ejs') %>
+
+        <div class="view active" id="config">
+
+            <div class="view-header">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="buscar-Docente" placeholder="Buscar docente">
+                </div>
+                <button class="btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Nueva Evaluación
+                </button>
+            </div>
+
+            <div class="pagination-controls">
+                <div class="entries-control">
+                    <label for="entriesPerPage">Mostrar:</label>
+                    <select id="entriesPerPage" class="entries-select">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="all">Todos</option>
+                    </select>
+                    <span>evaluaciones</span>
+                </div>
+                <div class="pagination-info">
+                    Mostrando <span id="showingStart">1</span> a <span id="showingEnd">5</span> de <span id="totalEntries"></span> ++--
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Docente</th>
+                            <th>Rubrica</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../js/home.js"></script>
+    <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            Swal.fire({
+                icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                title: 'Información',
+                text: '<%= locals.mensaje || mensaje %>',
+                confirmButtonText: 'Aceptar'
+            });
+        </script>
+    <% } %>
+</body>
+</html>

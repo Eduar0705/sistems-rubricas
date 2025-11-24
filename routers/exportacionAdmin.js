@@ -693,4 +693,102 @@ router.get('/admin/exportar/pdf/:rubricaId', async (req, res) => {
     });
 });
 
+
+// API: Obtener detalles completos de una evaluación
+router.get('/api/evaluacion/detalles/:rubricaId', (req, res) => {
+    if(!req.session.login){
+        return res.json({ success: false, message: 'No autorizado' });
+    }
+
+    const { rubricaId } = req.params;
+
+    // Consulta para información de la rúbrica
+    const queryInfo = `
+        SELECT
+            r.id as rubrica_id,
+            r.nombre_rubrica,
+            r.porcentaje_evaluacion,
+            r.tipo_evaluacion,
+            r.modalidad,
+            m.nombre as materia_nombre,
+            m.codigo as materia_codigo,
+            m.semestre,
+            c.nombre as carrera_nombre,
+            c.codigo as carrera_codigo,
+            s.codigo as seccion_codigo,
+            s.horario as seccion_horario,
+            s.aula as seccion_aula,
+            s.lapso_academico,
+            d.nombre as docente_nombre,
+            d.apellido as docente_apellido,
+            d.cedula as docente_cedula
+        FROM rubrica_evaluacion r
+        INNER JOIN materia m ON r.materia_codigo = m.codigo
+        INNER JOIN seccion s ON r.seccion_id = s.id
+        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
+        WHERE r.id = ? AND r.activo = 1
+    `;
+
+    // Consulta para criterios
+    const queryCriterios = `
+        SELECT id, descripcion, puntaje_maximo, orden
+        FROM criterio_evaluacion
+        WHERE rubrica_id = ?
+        ORDER BY orden
+    `;
+
+    // Consulta para estudiantes evaluados
+    const queryEstudiantes = `
+        SELECT
+            ee.id as evaluacion_id,
+            ee.puntaje_total,
+            ee.fecha_evaluacion,
+            e.cedula as estudiante_cedula,
+            e.nombre as estudiante_nombre,
+            e.apellido as estudiante_apellido,
+            CASE
+                WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
+                ELSE 'Pendiente'
+            END as estado
+        FROM evaluacion_estudiante ee
+        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
+        WHERE ee.rubrica_id = ? AND e.activo = 1
+        ORDER BY e.apellido, e.nombre
+    `;
+
+    // Ejecutar las consultas
+    conexion.query(queryInfo, [rubricaId], (error, infoResults) => {
+        if (error) {
+            console.error('Error al obtener información:', error);
+            return res.json({ success: false, message: 'Error al obtener información' });
+        }
+
+        if (infoResults.length === 0) {
+            return res.json({ success: false, message: 'Rúbrica no encontrada' });
+        }
+
+        conexion.query(queryCriterios, [rubricaId], (error, criterios) => {
+            if (error) {
+                console.error('Error al obtener criterios:', error);
+                return res.json({ success: false, message: 'Error al obtener criterios' });
+            }
+
+            conexion.query(queryEstudiantes, [rubricaId], (error, estudiantes) => {
+                if (error) {
+                    console.error('Error al obtener estudiantes:', error);
+                    return res.json({ success: false, message: 'Error al obtener estudiantes' });
+                }
+
+                res.json({
+                    success: true,
+                    info: infoResults[0],
+                    criterios: criterios,
+                    estudiantes: estudiantes
+                });
+            });
+        });
+    });
+});
+
 module.exports = router;

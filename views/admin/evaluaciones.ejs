@@ -6,7 +6,7 @@
     <title><%= title || 'Rubricas' %></title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="stylesheet" href="../css/evaluacion.css">
-    <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -91,10 +91,9 @@
                                 <td> <span class="estado"><%= ev.estado_formateado %></span></td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btns detalles" onclick="verDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-                                        <button class="btns pdf" title="Descargar PDF"><i class="fas fa-file-pdf"></i></button>
-                                        <button class="btns excel" title="Descargar Excel"><i class="fas fa-file-excel"></i></button>
-                                        <button class="btns word" title="Descargar Word"><i class="fas fa-file-word"></i></button>
+                                        <button class="btns detalles" onclick="openModalDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                                        <button class="btns pdf" title="Descargar PDF" onclick="DescargarPDF('<%= ev.rubrica_id %>')"><i class="fas fa-file-pdf"></i></button>
+                                        <button class="btns excel" title="Descargar Excel" onclick="DescargarExcel('<%= ev.rubrica_id %>')"><i class="fas fa-file-excel"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -266,8 +265,7 @@
         </div>
     </div>
 
-    <!-- Modal Ver Detalles de Evaluación -->
-    <div class="modal-verdetalles" id="modalVerDetalles">
+    <div class="modal-detalles-Admin" id="detalles-admin">
         <div class="modal-content-detalles">
             <div class="modal-header-detalles">
                 <h2><i class="fas fa-eye"></i> Detalles de Evaluación</h2>
@@ -296,5 +294,235 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/home.js"></script>
     <script src="../js/evaluacion-Admin.js"></script>
+    <script>
+        // Funciones del modal de ver detalles
+        function openModalDetalles(rubricaId) {
+            const modal = document.getElementById('detalles-admin');
+            const modalBody = document.getElementById('modalBodyDetalles');
+            
+            // Mostrar modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Mostrar loading
+            modalBody.innerHTML = `
+                <div class="loading-detalles">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Cargando detalles...</p>
+                </div>
+            `;
+            
+            // Hacer petición para obtener detalles
+            fetch(`/api/evaluacion/detalles/${rubricaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarDetallesEvaluacion(data);
+                    } else {
+                        modalBody.innerHTML = `
+                            <div class="error-detalles">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>${data.message || 'Error al cargar los detalles'}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    modalBody.innerHTML = `
+                        <div class="error-detalles">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Error al cargar los detalles de la evaluación</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function closeModalDetalles() {
+            const modal = document.getElementById('detalles-admin');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function mostrarDetallesEvaluacion(data) {
+            const modalBody = document.getElementById('modalBodyDetalles');
+            const info = data.info;
+            const estudiantes = data.estudiantes;
+            const criterios = data.criterios;
+            
+            // Calcular estadísticas
+            const totalEstudiantes = estudiantes.length;
+            const completadas = estudiantes.filter(e => e.puntaje_total !== null).length;
+            const pendientes = totalEstudiantes - completadas;
+            const promedio = estudiantes.reduce((sum, e) => sum + (parseFloat(e.puntaje_total) || 0), 0) / (completadas || 1);
+            
+            let html = `
+                <div class="detalles-evaluacion">
+                    <!-- Información de la Rúbrica -->
+                    <div class="seccion-detalles">
+                        <h3><i class="fas fa-clipboard-list"></i> Información de la Rúbrica</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="label">Rúbrica:</span>
+                                <span class="value">${info.nombre_rubrica}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Carrera:</span>
+                                <span class="value">${info.carrera_nombre} (${info.carrera_codigo})</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Materia:</span>
+                                <span class="value">${info.materia_nombre} (${info.materia_codigo})</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Sección:</span>
+                                <span class="value">${info.seccion_codigo}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Docente:</span>
+                                <span class="value">${info.docente_nombre} ${info.docente_apellido}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Tipo:</span>
+                                <span class="value">${info.tipo_evaluacion}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Porcentaje:</span>
+                                <span class="value">${info.porcentaje_evaluacion}%</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">Modalidad:</span>
+                                <span class="value">${info.modalidad}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas -->
+                    <div class="seccion-detalles">
+                        <h3><i class="fas fa-chart-bar"></i> Estadísticas</h3>
+                        <div class="estadisticas-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Total Estudiantes</span>
+                                    <span class="stat-value">${totalEstudiantes}</span>
+                                </div>
+                            </div>
+                            <div class="stat-card success">
+                                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Completadas</span>
+                                    <span class="stat-value">${completadas}</span>
+                                </div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Pendientes</span>
+                                    <span class="stat-value">${pendientes}</span>
+                                </div>
+                            </div>
+                            <div class="stat-card info">
+                                <div class="stat-icon"><i class="fas fa-calculator"></i></div>
+                                <div class="stat-info">
+                                    <span class="stat-label">Promedio</span>
+                                    <span class="stat-value">${promedio.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Criterios de Evaluación -->
+                    <div class="seccion-detalles">
+                        <h3><i class="fas fa-list-check"></i> Criterios de Evaluación</h3>
+                        <div class="criterios-list">
+                            ${criterios.map((c, i) => `
+                                <div class="criterio-item">
+                                    <span class="criterio-numero">${i + 1}</span>
+                                    <span class="criterio-descripcion">${c.descripcion}</span>
+                                    <span class="criterio-puntaje">${c.puntaje_maximo}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Estudiantes -->
+                    <div class="seccion-detalles">
+                        <h3><i class="fas fa-user-graduate"></i> Estudiantes Evaluados</h3>
+                        <div class="estudiantes-table-wrapper">
+                            <table class="estudiantes-detalles-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nro</th>
+                                        <th>Cédula</th>
+                                        <th>Estudiante</th>
+                                        <th>Puntaje</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${estudiantes.map((est, idx) => {
+                                        const puntaje = est.puntaje_total !== null ? parseFloat(est.puntaje_total).toFixed(2) : '-';
+                                        const fecha = est.fecha_evaluacion ? 
+                                            new Date(est.fecha_evaluacion).toLocaleDateString('es-ES') : '-';
+                                        
+                                        let estadoClass = 'pendiente';
+                                        if (est.estado === 'Completada') estadoClass = 'completada';
+                                        
+                                        let puntajeClass = '';
+                                        if (est.puntaje_total !== null) {
+                                            if (est.puntaje_total >= 8) puntajeClass = 'excelente';
+                                            else if (est.puntaje_total >= 6) puntajeClass = 'bueno';
+                                            else if (est.puntaje_total >= 4) puntajeClass = 'regular';
+                                            else puntajeClass = 'deficiente';
+                                        }
+                                        
+                                        return `
+                                            <tr>
+                                                <td>${idx + 1}</td>
+                                                <td>${est.estudiante_cedula}</td>
+                                                <td>${est.estudiante_apellido} ${est.estudiante_nombre}</td>
+                                                <td><span class="puntaje ${puntajeClass}">${puntaje}</span></td>
+                                                <td><span class="estado-badge ${estadoClass}">${est.estado}</span></td>
+                                                <td>${fecha}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modalBody.innerHTML = html;
+        }
+
+        // Cerrar modal de detalles con ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modalDetalles = document.getElementById('detalles-admin');
+                if (modalDetalles && modalDetalles.classList.contains('active')) {
+                    closeModalDetalles();
+                }
+            }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        document.getElementById('detalles-admin')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModalDetalles();
+            }
+        });
+
+        function DescargarPDF(id){
+            window.location.href = `/admin/exportar/pdf/${id}`;
+        }
+
+        function DescargarExcel(id){
+            window.location.href = `/admin/exportar/excel/${id}`;
+        }
+    </script>
 </body>
 </html>

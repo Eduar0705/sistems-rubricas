@@ -87,6 +87,7 @@ app.use(require('./routers/login'));
 app.use(require('./controllers/logoutControllers'))
 
 app.use(require('./routers/exportacion'))
+app.use(require('./routers/exportacionAdmin'))
 
 // RUTAS DE LOS CONTROLADORES
 app.use(require('./controllers/login'));
@@ -109,7 +110,8 @@ app.use(require('./routers/profeAdmin'));
 app.use(require('./routers/reportesAdmin'));
 app.use(require('./routers/configAdmin'));
 app.use(require('./controllers/deleteRubrica'))
-app.use(require('./routers/notificaciones'));
+app.use(require('./routers/notificaciones'))
+app.use(require('./routers/evaluacionDocente'))
 
 // RUTAS DE DOCENTE
 app.use(require('./routers/teacher'));
