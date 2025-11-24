@@ -29,13 +29,13 @@
                     Nueva Evaluación
                 </button>
                 <div class="filter-group">
-                    <select class="form-select" id="filterRubrica">
-                        <option value="">Todas las rúbricas</option>
+                    <select class="form-select" id="filterDocente">
+                        <option value="">Todos los docentes</option>
                         <% if(typeof evaluaciones !== 'undefined' && evaluaciones.length > 0) { %>
                             <% 
-                            const rubricas = [...new Set(evaluaciones.map(ev => ev.nombre_rubrica))];
-                            rubricas.forEach(rubrica => { %>
-                                <option value="<%= rubrica %>"><%= rubrica %></option>
+                            const docentes = [...new Set(evaluaciones.map(ev => `${ev.docente_nombre} ${ev.docente_apellido}`).filter(d => d.trim() !== ''))];
+                            docentes.forEach(docente => { %>
+                                <option value="<%= docente %>"><%= docente %></option>
                             <% }); %>
                         <% } %>
                     </select>
@@ -43,110 +43,69 @@
                         <option value="">Todos los estados</option>
                         <option value="Completada">Completadas</option>
                         <option value="Pendiente">Pendientes</option>
+                        <option value="En Progreso">En Progreso</option>
                     </select>
-                    <!-- Botones de accion para importar evaluaciones -->
-                    <button class="btns excel" onclick="exportarExcel()" title="Exportar a Excel">
-                        <i class="fas fa-file-excel"></i> Excel
-                    </button>
-                    <button class="btns pdf" onclick="exportarPDF()" title="Exportar a PDF">
-                        <i class="fas fa-file-pdf"></i> PDF
-                    </button>
                 </div>
             </div>
 
-            <div class="evaluaciones-grid">
-                <% if(typeof evaluaciones !== 'undefined' && evaluaciones.length > 0) { %>
-                    <%
-                    // Agrupar evaluaciones por carrera y sección
-                    const evaluacionesAgrupadas = {};
-                    evaluaciones.forEach(ev => {
-                        const clave = `${ev.carrera_nombre} - ${ev.seccion_codigo}`;
-                        if (!evaluacionesAgrupadas[clave]) {
-                            evaluacionesAgrupadas[clave] = {
-                                carrera: ev.carrera_nombre,
-                                seccion: ev.seccion_codigo,
-                                horario: ev.seccion_horario,
-                                aula: ev.seccion_aula,
-                                evaluaciones: []
-                            };
-                        }
-                        evaluacionesAgrupadas[clave].evaluaciones.push(ev);
-                    });
-                    %>
+            <!-- Controles de paginación -->
+            <div class="pagination-controls">
+                <div class="entries-control">
+                    <label for="entriesPerPage">Mostrar:</label>
+                    <select id="entriesPerPage" class="entries-select">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="all">Todos</option>
+                    </select>
+                    <span>evaluaciones</span>
+                </div>
+                <div class="pagination-info">
+                    Mostrando <span id="showingStart">1</span> a <span id="showingEnd">5</span> de <span id="totalEntries"><%= evaluaciones.length %></span> evaluaciones
+                </div>
+            </div>
 
-                    <% Object.keys(evaluacionesAgrupadas).forEach(clave => { %>
-                        <% const grupo = evaluacionesAgrupadas[clave]; %>
-                        <div class="seccion-group">
-                            <div class="seccion-header">
-                                <h3 class="seccion-title">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <%= grupo.carrera %> - Sección <%= grupo.seccion %>
-                                </h3>
-                                <div class="seccion-info">
-                                    <span class="seccion-detail">
-                                        <i class="fas fa-clock"></i>
-                                        <%= grupo.horario %>
-                                    </span>
-                                    <span class="seccion-detail">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <%= grupo.aula %>
-                                    </span>
-                                    <span class="seccion-count">
-                                        <i class="fas fa-users"></i>
-                                        <%= grupo.evaluaciones.length %> evaluación(es)
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="seccion-evaluaciones">
-                                <% grupo.evaluaciones.forEach(ev => { %>
-                                    <div class="evaluacion-card"
-                                            data-rubrica="<%= ev.nombre_rubrica %>"
-                                            data-estado="<%= ev.estado %>"
-                                            data-estudiante="<%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %>">
-                                        <div class="evaluacion-header">
-                                            <div class="evaluacion-student">
-                                                <div class="student-avatar"><%= ev.iniciales %></div>
-                                                <div>
-                                                    <div class="student-name"><%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %></div>
-                                                    <div class="student-id">ID: <%= ev.estudiante_cedula %></div>
-                                                </div>
-                                            </div>
-                                            <span class="badge-status <%= ev.estado === 'Completada' ? 'completed' : 'pending' %>">
-                                                <%= ev.estado %>
-                                            </span>
-                                        </div>
-                                        <div class="evaluacion-body">
-                                            <div class="evaluacion-rubrica">
-                                                <i class="fas fa-file-alt"></i>
-                                                <%= ev.nombre_rubrica %> - <%= ev.materia_nombre %>
-                                            </div>
-                                            <div class="evaluacion-score">
-                                                <div class="score-label">Calificación</div>
-                                                <div class="score-value"><%= ev.calificacion %></div>
-                                            </div>
-                                        </div>
-                                        <div class="evaluacion-footer">
-                                            <span class="evaluacion-date">
-                                                <i class="fas fa-calendar"></i>
-                                                <%= ev.fecha_formateada %>
-                                            </span>
-                                            <% if(ev.estado === 'Completada') { %>
-                                                <button class="btn-text" onclick="verDetalles('<%= ev.id %>')">Ver Detalles</button>
-                                            <% } %>
-                                        </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Docente</th>
+                            <th>Rúbrica</th>
+                            <th>Valor</th>
+                            <th>Carrera</th>
+                            <th>Materia</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="evaluacionesTableBody">
+                        <% evaluaciones.forEach(ev => { %>
+                            <tr class="evaluacion-row" data-docente="<%= ev.docente_nombre %> <%= ev.docente_apellido %>">
+                                <td><%= ev.docente_nombre || 'Sin asignar' %> <%= ev.docente_apellido || '' %></td>
+                                <td><%= ev.nombre_rubrica %></td>
+                                <td><%= ev.valor %>%</td>
+                                <td><%= ev.carrera_nombre %></td>
+                                <td><%= ev.materia_nombre %></td>
+                                <td><%= ev.fecha_formateada %></td>
+                                <td> <span class="estado"><%= ev.estado_formateado %></span></td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="btns detalles" onclick="verDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+                                        <button class="btns pdf" title="Descargar PDF"><i class="fas fa-file-pdf"></i></button>
+                                        <button class="btns excel" title="Descargar Excel"><i class="fas fa-file-excel"></i></button>
+                                        <button class="btns word" title="Descargar Word"><i class="fas fa-file-word"></i></button>
                                     </div>
-                                <% }); %>
-                            </div>
-                        </div>
-                    <% }); %>
-                <% } else { %>
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list"></i>
-                        <h3>No hay evaluaciones registradas</h3>
-                        <p>Aún no se han realizado evaluaciones a estudiantes</p>
-                    </div>
-                <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Botones de paginación -->
+            <div class="pagination-buttons" id="paginationButtons">
+                <!-- Se generarán dinámicamente con JavaScript -->
             </div>
         </div>
     </main>

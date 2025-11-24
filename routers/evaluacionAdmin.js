@@ -11,32 +11,35 @@ router.get("/admin/evaluaciones", function(req, res) {
 
     const query = `
         SELECT
-            ee.id,
-            ee.puntaje_total,
-            ee.fecha_evaluacion,
-            ee.observaciones,
-            e.cedula as estudiante_cedula,
-            e.nombre as estudiante_nombre,
-            e.apellido as estudiante_apellido,
+            r.id as rubrica_id,
             r.nombre_rubrica,
-            r.porcentaje_evaluacion,
+            r.porcentaje_evaluacion as valor,
+            d.cedula as docente_cedula,
+            d.nombre as docente_nombre,
+            d.apellido as docente_apellido,
             m.nombre as materia_nombre,
             c.nombre as carrera_nombre,
-            s.codigo as seccion_codigo,
-            s.horario as seccion_horario,
-            s.aula as seccion_aula,
+            s.codigo as grupo_nombre,
+            COUNT(ee.id) as total_evaluaciones,
+            SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) as completadas,
+            SUM(CASE WHEN ee.puntaje_total IS NULL THEN 1 ELSE 0 END) as pendientes,
+            MAX(ee.fecha_evaluacion) as fecha_ultima_evaluacion,
             CASE
-                WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
-                ELSE 'Pendiente'
+                WHEN SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) = COUNT(ee.id) THEN 'Completada'
+                WHEN SUM(CASE WHEN ee.puntaje_total IS NULL THEN 1 ELSE 0 END) = COUNT(ee.id) THEN 'Pendiente'
+                ELSE 'En Progreso'
             END as estado
         FROM evaluacion_estudiante ee
-        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
         INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
         INNER JOIN materia m ON r.materia_codigo = m.codigo
         INNER JOIN seccion s ON r.seccion_id = s.id
         INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-        WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
-        ORDER BY c.nombre, s.codigo, ee.fecha_evaluacion DESC
+        LEFT JOIN docente d ON r.docente_cedula = d.cedula
+        WHERE r.activo = 1 AND s.activo = 1 AND c.activo = 1
+        GROUP BY r.id, r.nombre_rubrica, r.porcentaje_evaluacion, 
+                 d.cedula, d.nombre, d.apellido,
+                 m.nombre, c.nombre, s.codigo
+        ORDER BY d.apellido, d.nombre, c.nombre, s.codigo
     `;
 
     conexion.query(query, (error, evaluaciones) => {
@@ -52,21 +55,20 @@ router.get("/admin/evaluaciones", function(req, res) {
         }
 
         const evaluacionesFormateadas = evaluaciones.map(ev => {
-            const iniciales = (ev.estudiante_nombre.charAt(0) + ev.estudiante_apellido.charAt(0)).toUpperCase();
-            const fecha = ev.fecha_evaluacion ? 
-                new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES', {
+            const fecha = ev.fecha_ultima_evaluacion ? 
+                new Date(ev.fecha_ultima_evaluacion).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
-                }) : 'Pendiente';
+                }) : 'Sin evaluaciones';
+            
+            // Formato del estado con contadores
+            let estadoFormateado = ev.estado;
             
             return {
                 ...ev,
-                iniciales,
                 fecha_formateada: fecha,
-                calificacion: ev.puntaje_total ? 
-                    `${parseFloat(ev.puntaje_total).toFixed(1)}/${ev.porcentaje_evaluacion}` : 
-                    '-/-'
+                estado_formateado: estadoFormateado
             };
         });
 
@@ -338,7 +340,8 @@ router.post('/api/evaluaciones/crear', (req, res) => {
         });
     });
 });
-// API: Obtener carreras activas
+
+// API: Obtener carreras activas (duplicado, pero lo mantengo por compatibilidad)
 router.get('/api/carreras', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });

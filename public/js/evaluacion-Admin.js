@@ -1,901 +1,744 @@
-        // Variables globales
-        let estudiantesSeleccionados = [];
+// Variables globales
+let estudiantesSeleccionados = [];
 
-        // Función para filtrar evaluaciones
-        function filtrarEvaluaciones() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            const rubricaFilter = document.getElementById('filterRubrica').value;
-            const estadoFilter = document.getElementById('filterEstado').value;
-            const cards = document.querySelectorAll('.evaluacion-card');
-            let visibleCount = 0;
+// Variables para paginación
+let currentPage = 1;
+let entriesPerPage = 5;
+let allRows = [];
 
-            cards.forEach(card => {
-                // Obtener datos del dataset
-                const estudiante = card.dataset.estudiante.toLowerCase();
-                const rubrica = card.dataset.rubrica;
-                const estado = card.dataset.estado;
+// Aplicar clases de estado cuando se cargue la página
+document.addEventListener('DOMContentLoaded', function() {
+    const estadoElements = document.querySelectorAll('.estado');
 
-                // Obtener texto adicional visible en la card
-                const studentId = card.querySelector('.student-id')?.textContent.toLowerCase() || '';
-                const materiaText = card.querySelector('.evaluacion-rubrica')?.textContent.toLowerCase() || '';
+    estadoElements.forEach(element => {
+        const estadoTexto = element.textContent.trim();
+        const claseEstado = 'estado-' + estadoTexto.replace(/ /g, '-');
+        element.classList.add(claseEstado);
+    });
+});
 
-                // Filtrado de búsqueda más preciso
-                let matchSearch = true;
-                if (searchTerm !== '') {
-                    // Buscar en nombre del estudiante, ID, rúbrica y materia
-                    const searchFields = [estudiante, studentId, rubrica.toLowerCase(), materiaText];
-                    const searchWords = searchTerm.split(' ').filter(word => word.length > 0);
-
-                    matchSearch = searchWords.every(word =>
-                        searchFields.some(field => field.includes(word))
-                    );
-                }
-
-                // Filtros por rúbrica y estado
-                const matchRubrica = !rubricaFilter || rubrica === rubricaFilter;
-                const matchEstado = !estadoFilter || estado === estadoFilter;
-
-                // Determinar visibilidad
-                const isVisible = matchSearch && matchRubrica && matchEstado;
-                card.style.display = isVisible ? 'block' : 'none';
-
-                if (isVisible) visibleCount++;
-            });
-
-            const hasActiveFilter = searchTerm !== '' || rubricaFilter !== '' || estadoFilter !== '';
-
-            // Ocultar secciones completas sin resultados
-            const seccionGroups = document.querySelectorAll('.seccion-group');
-            seccionGroups.forEach(group => {
-                const groupCards = group.querySelectorAll('.evaluacion-card');
-                const hasVisibleCard = Array.from(groupCards).some(card => card.style.display !== 'none');
-
-                // Mostrar solo las secciones que tienen resultados
-                group.style.display = hasVisibleCard ? 'block' : 'none';
-            });
-
-            // Actualizar mensaje cuando no hay resultados
-            const evaluacionesGrid = document.querySelector('.evaluaciones-grid');
-            let emptyMessage = evaluacionesGrid.querySelector('.empty-search-message');
-
-            if (visibleCount === 0 && hasActiveFilter) {
-                if (!emptyMessage) {
-                    emptyMessage = document.createElement('div');
-                    emptyMessage.className = 'empty-search-message';
-                    emptyMessage.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-search"></i>
-                            <h3>No se encontraron evaluaciones</h3>
-                            <p>No hay evaluaciones que coincidan con los filtros aplicados</p>
-                        </div>
-                    `;
-                    evaluacionesGrid.appendChild(emptyMessage);
-                }
-                emptyMessage.style.display = 'block';
-            } else {
-                if (emptyMessage) {
-                    emptyMessage.style.display = 'none';
-                }
+// Función para filtrar evaluaciones (para tabla)
+function filtrarEvaluaciones() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    const docenteFilter = document.getElementById('filterDocente')?.value || '';
+    const estadoFilter = document.getElementById('filterEstado')?.value || '';
+    
+    // Filtrar allRows en lugar de las filas del DOM
+    const filteredRows = allRows.filter(row => {
+        // Obtener texto de todas las celdas
+        const rowText = row.textContent.toLowerCase();
+        const docenteAttr = row.dataset.docente || '';
+        
+        // Filtrado de búsqueda
+        const matchSearch = !searchTerm || rowText.includes(searchTerm);
+        
+        // Filtro por docente
+        const matchDocente = !docenteFilter || docenteAttr === docenteFilter;
+        
+        // Filtro por estado
+        let matchEstado = true;
+        if (estadoFilter) {
+            const estadoCell = row.cells[7]?.textContent || ''; // Columna de estado
+            if (estadoFilter === 'Completada') {
+                matchEstado = estadoCell.includes('Completada') || estadoCell === 'Completada';
+            } else if (estadoFilter === 'Pendiente') {
+                matchEstado = estadoCell === 'Pendiente';
+            } else if (estadoFilter === 'En Progreso') {
+                matchEstado = estadoCell.includes('/') && !estadoCell.includes('Completada') && estadoCell !== 'Pendiente';
             }
         }
 
-        // Event listeners para los filtros
-        document.getElementById('searchInput')?.addEventListener('input', filtrarEvaluaciones);
-        document.getElementById('filterRubrica')?.addEventListener('change', filtrarEvaluaciones);
-        document.getElementById('filterEstado')?.addEventListener('change', filtrarEvaluaciones);
+        return matchSearch && matchDocente && matchEstado;
+    });
+    
+    // Actualizar allRows con las filas filtradas
+    allRows = filteredRows;
+    currentPage = 1;
+    updateTable();
+}
 
-        // Funciones para los botones
-        function verDetalles(evaluacionId) {
-            openModalDetalles(evaluacionId);
+// Event listeners para los filtros
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('searchInput')?.addEventListener('input', () => {
+        // Resetear allRows antes de filtrar
+        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
+        filtrarEvaluaciones();
+    });
+    document.getElementById('filterDocente')?.addEventListener('change', () => {
+        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
+        filtrarEvaluaciones();
+    });
+    document.getElementById('filterEstado')?.addEventListener('change', () => {
+        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
+        filtrarEvaluaciones();
+    });
+    
+    // Inicializar paginación
+    inicializarPaginacion();
+});
+
+// Funciones para los botones
+function verDetalles(evaluacionId) {
+    openModalDetalles(evaluacionId);
+}
+
+function evaluar(evaluacionId) {
+    window.location.href = `/admin/evaluar/${evaluacionId}`;
+}
+
+// Funciones del modal
+function openModalEvaluacion() {
+    document.getElementById('modalAddEvaluacion').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    cargarRubricas();
+    cargarCarreras();
+}
+
+function closeModalEvaluacion() {
+    document.getElementById('modalAddEvaluacion').classList.remove('active');
+    document.body.style.overflow = 'auto';
+    document.getElementById('formAddEvaluacion').reset();
+    document.getElementById('rubricaInfo').style.display = 'none';
+    document.getElementById('materia_codigo').disabled = true;
+    document.getElementById('seccion_id').disabled = true;
+    document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
+    document.getElementById('btnGuardarEvaluacion').disabled = true;
+    estudiantesSeleccionados = [];
+}
+
+// Cargar rúbricas disponibles
+async function cargarRubricas() {
+    try {
+        const response = await fetch('/api/rubricas/activas');
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('rubrica_id');
+            select.innerHTML = '<option value="">Seleccione una rúbrica</option>';
+            
+            data.rubricas.forEach(rubrica => {
+                const option = document.createElement('option');
+                option.value = rubrica.id;
+                option.textContent = `${rubrica.nombre_rubrica} - ${rubrica.materia_nombre}`;
+                option.dataset.rubrica = JSON.stringify(rubrica);
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar rúbricas:', error);
+        Swal.fire('Error', 'No se pudieron cargar las rúbricas', 'error');
+    }
+}
+
+// Cargar carreras
+async function cargarCarreras() {
+    try {
+        const response = await fetch('/api/carreras');
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('carrera_codigo');
+            select.innerHTML = '<option value="">Seleccione una carrera</option>';
+            
+            data.carreras.forEach(carrera => {
+                const option = document.createElement('option');
+                option.value = carrera.codigo;
+                option.textContent = carrera.nombre;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar carreras:', error);
+        Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
+    }
+}
+
+// Evento cuando se selecciona una rúbrica
+document.getElementById('rubrica_id')?.addEventListener('change', async function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (selectedOption.value) {
+        const rubrica = JSON.parse(selectedOption.dataset.rubrica);
+        mostrarInfoRubrica(rubrica);
+        await aplicarDatosRubricaEnFormulario(rubrica);
+    } else {
+        document.getElementById('rubricaInfo').style.display = 'none';
+    }
+    verificarFormularioCompleto();
+});
+
+// Mostrar información de la rúbrica seleccionada
+function mostrarInfoRubrica(rubrica) {
+    document.getElementById('rubricaCarrera').textContent = rubrica.carrera_nombre || '-';
+
+    const carreraCodigoEl = document.getElementById('rubricaCarreraCodigo');
+    if (carreraCodigoEl) {
+        carreraCodigoEl.textContent = rubrica.carrera_codigo || '-';
+    }
+
+    document.getElementById('rubricaSemestre').textContent = rubrica.semestre ? `Semestre ${rubrica.semestre}` : '-';
+    document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre || '-';
+
+    const materiaCodigoEl = document.getElementById('rubricaMateriaCodigo');
+    if (materiaCodigoEl) {
+        materiaCodigoEl.textContent = rubrica.materia_codigo || '-';
+    }
+
+    document.getElementById('rubricaSeccion').textContent = rubrica.seccion_codigo || '-';
+
+    const lapsoEl = document.getElementById('rubricaLapso');
+    if (lapsoEl) {
+        lapsoEl.textContent = rubrica.seccion_lapso || '-';
+    }
+
+    const docenteEl = document.getElementById('rubricaDocente');
+    if (docenteEl) {
+        if (rubrica.docente_nombre) {
+            const apellido = rubrica.docente_apellido ? ` ${rubrica.docente_apellido}` : '';
+            docenteEl.textContent = `${rubrica.docente_nombre}${apellido}`;
+        } else {
+            docenteEl.textContent = '-';
+        }
+    }
+
+    document.getElementById('rubricaTipo').textContent = rubrica.tipo_evaluacion;
+    document.getElementById('rubricaPorcentaje').textContent = rubrica.porcentaje_evaluacion + '%';
+    document.getElementById('rubricaModalidad').textContent = rubrica.modalidad + 
+        (rubrica.cantidad_personas > 1 ? ` (${rubrica.cantidad_personas} personas)` : '');
+    document.getElementById('rubricaInfo').style.display = 'block';
+}
+
+// Sincronizar selects de carrera/materia/sección a partir de la rúbrica seleccionada
+async function aplicarDatosRubricaEnFormulario(rubrica) {
+    const carreraSelect = document.getElementById('carrera_codigo');
+    const materiaSelect = document.getElementById('materia_codigo');
+    const seccionSelect = document.getElementById('seccion_id');
+
+    if (!carreraSelect || !materiaSelect || !seccionSelect) {
+        return;
+    }
+
+    try {
+        // Nos aseguramos de tener las carreras cargadas
+        await cargarCarreras();
+
+        if (rubrica.carrera_codigo) {
+            carreraSelect.value = rubrica.carrera_codigo;
         }
 
-        function evaluar(evaluacionId) {
-            window.location.href = `/admin/evaluar/${evaluacionId}`;
+        if (rubrica.carrera_codigo) {
+            materiaSelect.disabled = false;
+            await cargarMaterias(rubrica.carrera_codigo);
+            if (rubrica.materia_codigo) {
+                materiaSelect.value = rubrica.materia_codigo;
+            }
         }
 
-        // Funciones del modal
-        function openModalEvaluacion() {
-            document.getElementById('modalAddEvaluacion').classList.add('active');
-            document.body.style.overflow = 'hidden';
-            cargarRubricas();
-            cargarCarreras();
+        if (rubrica.materia_codigo) {
+            seccionSelect.disabled = false;
+            await cargarSecciones(rubrica.materia_codigo);
+            if (rubrica.seccion_id) {
+                seccionSelect.value = rubrica.seccion_id;
+            }
         }
 
-        function closeModalEvaluacion() {
-            document.getElementById('modalAddEvaluacion').classList.remove('active');
-            document.body.style.overflow = 'auto';
-            document.getElementById('formAddEvaluacion').reset();
-            document.getElementById('rubricaInfo').style.display = 'none';
-            document.getElementById('materia_codigo').disabled = true;
-            document.getElementById('seccion_id').disabled = true;
-            document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
-            document.getElementById('btnGuardarEvaluacion').disabled = true;
+        // Si ya tenemos sección seleccionada, cargamos los estudiantes asociados
+        if (seccionSelect.value) {
+            await cargarEstudiantes(seccionSelect.value);
+        }
+    } catch (error) {
+        console.error('Error al aplicar datos de la rúbrica en el formulario:', error);
+    }
+}
+
+// Evento cuando se selecciona una carrera
+document.getElementById('carrera_codigo')?.addEventListener('change', async function() {
+    const carreraCodigo = this.value;
+    const materiaSelect = document.getElementById('materia_codigo');
+    const seccionSelect = document.getElementById('seccion_id');
+    
+    if (carreraCodigo) {
+        materiaSelect.disabled = false;
+        await cargarMaterias(carreraCodigo);
+        
+        // Reset materia y sección
+        materiaSelect.value = '';
+        seccionSelect.disabled = true;
+        seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+        document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione materia y sección para cargar estudiantes</div>';
+    } else {
+        materiaSelect.disabled = true;
+        materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+        seccionSelect.disabled = true;
+        seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+        document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
+    }
+    verificarFormularioCompleto();
+});
+
+// Cargar materias por carrera
+async function cargarMaterias(carreraCodigo) {
+    try {
+        const response = await fetch(`/api/carrera/${carreraCodigo}/materias`);
+        const data = await response.json();
+        
+        const select = document.getElementById('materia_codigo');
+        select.innerHTML = '<option value="">Seleccione una materia</option>';
+        
+        if (data.success && data.materias.length > 0) {
+            data.materias.forEach(materia => {
+                const option = document.createElement('option');
+                option.value = materia.codigo;
+                option.textContent = `${materia.nombre} (Semestre ${materia.semestre})`;
+                select.appendChild(option);
+            });
+        } else {
+            select.innerHTML = '<option value="">No hay materias disponibles</option>';
+        }
+    } catch (error) {
+        console.error('Error al cargar materias:', error);
+        Swal.fire('Error', 'No se pudieron cargar las materias', 'error');
+    }
+}
+
+// Evento cuando se selecciona una materia
+document.getElementById('materia_codigo')?.addEventListener('change', async function() {
+    const materiaCodigo = this.value;
+    const seccionSelect = document.getElementById('seccion_id');
+    
+    if (materiaCodigo) {
+        seccionSelect.disabled = false;
+        await cargarSecciones(materiaCodigo);
+    } else {
+        seccionSelect.disabled = true;
+        seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+        document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
+    }
+    verificarFormularioCompleto();
+});
+
+// Cargar secciones por materia
+async function cargarSecciones(materiaCodigo) {
+    try {
+        const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
+        const data = await response.json();
+        
+        const select = document.getElementById('seccion_id');
+        select.innerHTML = '<option value="">Seleccione una sección</option>';
+        
+        if (data.success && data.secciones.length > 0) {
+            data.secciones.forEach(seccion => {
+                const option = document.createElement('option');
+                option.value = seccion.id;
+                option.textContent = `Sección ${seccion.codigo} - ${seccion.horario} (${seccion.aula})`;
+                select.appendChild(option);
+            });
+        } else {
+            select.innerHTML = '<option value="">No hay secciones disponibles</option>';
+        }
+    } catch (error) {
+        console.error('Error al cargar secciones:', error);
+        Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
+    }
+}
+
+// Evento cuando se selecciona una sección
+document.getElementById('seccion_id')?.addEventListener('change', async function() {
+    const seccionId = this.value;
+    
+    if (seccionId) {
+        await cargarEstudiantes(seccionId);
+    } else {
+        document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
+    }
+    verificarFormularioCompleto();
+});
+
+// Cargar estudiantes de la sección
+async function cargarEstudiantes(seccionId) {
+    document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>';
+    
+    try {
+        const response = await fetch(`/api/seccion/${seccionId}/estudiantes`);
+        const data = await response.json();
+        
+        if (data.success && data.estudiantes.length > 0) {
+            estudiantesSeleccionados = data.estudiantes.map(e => e.cedula);
+            mostrarEstudiantes(data.estudiantes);
+        } else {
+            document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-exclamation-circle"></i> No hay estudiantes inscritos en esta sección</div>';
             estudiantesSeleccionados = [];
         }
+    } catch (error) {
+        console.error('Error al cargar estudiantes:', error);
+        document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-exclamation-triangle"></i> Error al cargar estudiantes</div>';
+        estudiantesSeleccionados = [];
+    }
+    verificarFormularioCompleto();
+}
 
-        // Cargar rúbricas disponibles
-        async function cargarRubricas() {
-            try {
-                const response = await fetch('/api/rubricas/activas');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const select = document.getElementById('rubrica_id');
-                    select.innerHTML = '<option value="">Seleccione una rúbrica</option>';
-                    
-                    data.rubricas.forEach(rubrica => {
-                        const option = document.createElement('option');
-                        option.value = rubrica.id;
-                        option.textContent = `${rubrica.nombre_rubrica} - ${rubrica.materia_nombre}`;
-                        option.dataset.rubrica = JSON.stringify(rubrica);
-                        select.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error al cargar rúbricas:', error);
-                Swal.fire('Error', 'No se pudieron cargar las rúbricas', 'error');
-            }
-        }
+// Mostrar lista de estudiantes
+function mostrarEstudiantes(estudiantes) {
+    const container = document.getElementById('estudiantesPreview');
+    
+    let html = `
+        <div class="estudiantes-header">
+            <i class="fas fa-users"></i>
+            <span>Se crearán evaluaciones para <strong>${estudiantes.length}</strong> estudiante(s)</span>
+        </div>
+        <div class="estudiantes-list-preview">
+    `;
 
-        // Cargar carreras
-        async function cargarCarreras() {
-            try {
-                const response = await fetch('/api/carreras');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const select = document.getElementById('carrera_codigo');
-                    select.innerHTML = '<option value="">Seleccione una carrera</option>';
-                    
-                    data.carreras.forEach(carrera => {
-                        const option = document.createElement('option');
-                        option.value = carrera.codigo;
-                        option.textContent = carrera.nombre;
-                        select.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error al cargar carreras:', error);
-                Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
-            }
-        }
-
-        // Evento cuando se selecciona una rúbrica
-        document.getElementById('rubrica_id')?.addEventListener('change', async function() {
-            const selectedOption = this.options[this.selectedIndex];
-            
-            if (selectedOption.value) {
-                const rubrica = JSON.parse(selectedOption.dataset.rubrica);
-                mostrarInfoRubrica(rubrica);
-                await aplicarDatosRubricaEnFormulario(rubrica);
-            } else {
-                document.getElementById('rubricaInfo').style.display = 'none';
-            }
-            verificarFormularioCompleto();
-        });
-
-        // Mostrar información de la rúbrica seleccionada
-        function mostrarInfoRubrica(rubrica) {
-            document.getElementById('rubricaCarrera').textContent = rubrica.carrera_nombre || '-';
-
-            const carreraCodigoEl = document.getElementById('rubricaCarreraCodigo');
-            if (carreraCodigoEl) {
-                carreraCodigoEl.textContent = rubrica.carrera_codigo || '-';
-            }
-
-            document.getElementById('rubricaSemestre').textContent = rubrica.semestre ? `Semestre ${rubrica.semestre}` : '-';
-            document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre || '-';
-
-            const materiaCodigoEl = document.getElementById('rubricaMateriaCodigo');
-            if (materiaCodigoEl) {
-                materiaCodigoEl.textContent = rubrica.materia_codigo || '-';
-            }
-
-            document.getElementById('rubricaSeccion').textContent = rubrica.seccion_codigo || '-';
-
-            const lapsoEl = document.getElementById('rubricaLapso');
-            if (lapsoEl) {
-                lapsoEl.textContent = rubrica.seccion_lapso || '-';
-            }
-
-            const docenteEl = document.getElementById('rubricaDocente');
-            if (docenteEl) {
-                if (rubrica.docente_nombre) {
-                    const apellido = rubrica.docente_apellido ? ` ${rubrica.docente_apellido}` : '';
-                    docenteEl.textContent = `${rubrica.docente_nombre}${apellido}`;
-                } else {
-                    docenteEl.textContent = '-';
-                }
-            }
-
-            document.getElementById('rubricaTipo').textContent = rubrica.tipo_evaluacion;
-            document.getElementById('rubricaPorcentaje').textContent = rubrica.porcentaje_evaluacion + '%';
-            document.getElementById('rubricaModalidad').textContent = rubrica.modalidad + 
-                (rubrica.cantidad_personas > 1 ? ` (${rubrica.cantidad_personas} personas)` : '');
-            document.getElementById('rubricaInfo').style.display = 'block';
-        }
-
-        // Sincronizar selects de carrera/materia/sección a partir de la rúbrica seleccionada
-        async function aplicarDatosRubricaEnFormulario(rubrica) {
-            const carreraSelect = document.getElementById('carrera_codigo');
-            const materiaSelect = document.getElementById('materia_codigo');
-            const seccionSelect = document.getElementById('seccion_id');
-
-            if (!carreraSelect || !materiaSelect || !seccionSelect) {
-                return;
-            }
-
-            try {
-                // Nos aseguramos de tener las carreras cargadas
-                await cargarCarreras();
-
-                if (rubrica.carrera_codigo) {
-                    carreraSelect.value = rubrica.carrera_codigo;
-                }
-
-                if (rubrica.carrera_codigo) {
-                    materiaSelect.disabled = false;
-                    await cargarMaterias(rubrica.carrera_codigo);
-                    if (rubrica.materia_codigo) {
-                        materiaSelect.value = rubrica.materia_codigo;
-                    }
-                }
-
-                if (rubrica.materia_codigo) {
-                    seccionSelect.disabled = false;
-                    await cargarSecciones(rubrica.materia_codigo);
-                    if (rubrica.seccion_id) {
-                        seccionSelect.value = rubrica.seccion_id;
-                    }
-                }
-
-                // Si ya tenemos sección seleccionada, cargamos los estudiantes asociados
-                if (seccionSelect.value) {
-                    await cargarEstudiantes(seccionSelect.value);
-                }
-            } catch (error) {
-                console.error('Error al aplicar datos de la rúbrica en el formulario:', error);
-            }
-        }
-
-        // Evento cuando se selecciona una carrera
-        document.getElementById('carrera_codigo')?.addEventListener('change', async function() {
-            const carreraCodigo = this.value;
-            const materiaSelect = document.getElementById('materia_codigo');
-            const seccionSelect = document.getElementById('seccion_id');
-            
-            if (carreraCodigo) {
-                materiaSelect.disabled = false;
-                await cargarMaterias(carreraCodigo);
-                
-                // Reset materia y sección
-                materiaSelect.value = '';
-                seccionSelect.disabled = true;
-                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
-                document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione materia y sección para cargar estudiantes</div>';
-            } else {
-                materiaSelect.disabled = true;
-                materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
-                seccionSelect.disabled = true;
-                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
-                document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
-            }
-            verificarFormularioCompleto();
-        });
-
-        // Cargar materias por carrera
-        async function cargarMaterias(carreraCodigo) {
-            try {
-                const response = await fetch(`/api/carrera/${carreraCodigo}/materias`);
-                const data = await response.json();
-                
-                const select = document.getElementById('materia_codigo');
-                select.innerHTML = '<option value="">Seleccione una materia</option>';
-                
-                if (data.success && data.materias.length > 0) {
-                    data.materias.forEach(materia => {
-                        const option = document.createElement('option');
-                        option.value = materia.codigo;
-                        option.textContent = `${materia.nombre} (Semestre ${materia.semestre})`;
-                        select.appendChild(option);
-                    });
-                } else {
-                    select.innerHTML = '<option value="">No hay materias disponibles</option>';
-                }
-            } catch (error) {
-                console.error('Error al cargar materias:', error);
-                Swal.fire('Error', 'No se pudieron cargar las materias', 'error');
-            }
-        }
-
-        // Evento cuando se selecciona una materia
-        document.getElementById('materia_codigo')?.addEventListener('change', async function() {
-            const materiaCodigo = this.value;
-            const seccionSelect = document.getElementById('seccion_id');
-            
-            if (materiaCodigo) {
-                seccionSelect.disabled = false;
-                await cargarSecciones(materiaCodigo);
-            } else {
-                seccionSelect.disabled = true;
-                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
-                document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
-            }
-            verificarFormularioCompleto();
-        });
-
-        // Cargar secciones por materia
-        async function cargarSecciones(materiaCodigo) {
-            try {
-                const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
-                const data = await response.json();
-                
-                const select = document.getElementById('seccion_id');
-                select.innerHTML = '<option value="">Seleccione una sección</option>';
-                
-                if (data.success && data.secciones.length > 0) {
-                    data.secciones.forEach(seccion => {
-                        const option = document.createElement('option');
-                        option.value = seccion.id;
-                        option.textContent = `Sección ${seccion.codigo} - ${seccion.horario} (${seccion.aula})`;
-                        select.appendChild(option);
-                    });
-                } else {
-                    select.innerHTML = '<option value="">No hay secciones disponibles</option>';
-                }
-            } catch (error) {
-                console.error('Error al cargar secciones:', error);
-                Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
-            }
-        }
-
-        // Evento cuando se selecciona una sección
-        document.getElementById('seccion_id')?.addEventListener('change', async function() {
-            const seccionId = this.value;
-            
-            if (seccionId) {
-                await cargarEstudiantes(seccionId);
-            } else {
-                document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
-            }
-            verificarFormularioCompleto();
-        });
-
-        // Cargar estudiantes de la sección
-        async function cargarEstudiantes(seccionId) {
-            document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>';
-            
-            try {
-                const response = await fetch(`/api/seccion/${seccionId}/estudiantes`);
-                const data = await response.json();
-                
-                if (data.success && data.estudiantes.length > 0) {
-                    estudiantesSeleccionados = data.estudiantes.map(e => e.cedula);
-                    mostrarEstudiantes(data.estudiantes);
-                } else {
-                    document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-exclamation-circle"></i> No hay estudiantes inscritos en esta sección</div>';
-                    estudiantesSeleccionados = [];
-                }
-            } catch (error) {
-                console.error('Error al cargar estudiantes:', error);
-                document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-exclamation-triangle"></i> Error al cargar estudiantes</div>';
-                estudiantesSeleccionados = [];
-            }
-            verificarFormularioCompleto();
-        }
-
-        // Mostrar lista de estudiantes
-        function mostrarEstudiantes(estudiantes) {
-            const container = document.getElementById('estudiantesPreview');
-            
-            let html = `
-                <div class="estudiantes-header">
-                    <i class="fas fa-users"></i>
-                    <span>Se crearán evaluaciones para <strong>${estudiantes.length}</strong> estudiante(s)</span>
+    estudiantes.forEach(estudiante => {
+        const iniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
+        html += `
+            <div class="estudiante-preview-item">
+                <div class="estudiante-avatar-small">${iniciales}</div>
+                <div class="estudiante-info-preview">
+                    <div class="estudiante-nombre-preview">${estudiante.nombre} ${estudiante.apellido}</div>
+                    <div class="estudiante-cedula-preview">CI: ${estudiante.cedula}</div>
                 </div>
-                <div class="estudiantes-list-preview">
-            `;
+                <i class="fas fa-check-circle estudiante-check"></i>
+            </div>
+        `;
+    });
 
-            estudiantes.forEach(estudiante => {
-                const iniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
-                html += `
-                    <div class="estudiante-preview-item">
-                        <div class="estudiante-avatar-small">${iniciales}</div>
-                        <div class="estudiante-info-preview">
-                            <div class="estudiante-nombre-preview">${estudiante.nombre} ${estudiante.apellido}</div>
-                            <div class="estudiante-cedula-preview">CI: ${estudiante.cedula}</div>
-                        </div>
-                        <i class="fas fa-check-circle estudiante-check"></i>
-                    </div>
-                `;
-            });
+    html += '</div>';
+    container.innerHTML = html;
+}
 
-            html += '</div>';
-            container.innerHTML = html;
+// Verificar si el formulario está completo
+function verificarFormularioCompleto() {
+    const rubricaId = document.getElementById('rubrica_id').value;
+    const btnGuardar = document.getElementById('btnGuardarEvaluacion');
+    
+    if (rubricaId && estudiantesSeleccionados.length > 0) {
+        btnGuardar.disabled = false;
+    } else {
+        btnGuardar.disabled = true;
+    }
+}
+
+// Guardar evaluación
+async function guardarEvaluacion() {
+    const rubricaId = document.getElementById('rubrica_id').value;
+    const observaciones = document.getElementById('observaciones').value;
+
+    // Validaciones
+    if (!rubricaId) {
+        Swal.fire('Error', 'Debe seleccionar una rúbrica', 'error');
+        return;
+    }
+
+    if (estudiantesSeleccionados.length === 0) {
+        Swal.fire('Error', 'No hay estudiantes seleccionados', 'error');
+        return;
+    }
+
+    // Confirmar creación
+    const result = await Swal.fire({
+        title: '¿Crear evaluaciones?',
+        html: `Se crearán <strong>${estudiantesSeleccionados.length}</strong> evaluación(es) para los estudiantes de la sección seleccionada`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, crear',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#667eea'
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Mostrar loading
+    Swal.fire({
+        title: 'Creando evaluaciones...',
+        html: 'Por favor espere...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
         }
+    });
 
-        // Verificar si el formulario está completo
-        function verificarFormularioCompleto() {
-            const rubricaId = document.getElementById('rubrica_id').value;
-            const btnGuardar = document.getElementById('btnGuardarEvaluacion');
-            
-            if (rubricaId && estudiantesSeleccionados.length > 0) {
-                btnGuardar.disabled = false;
-            } else {
-                btnGuardar.disabled = true;
-            }
-        }
+    try {
+        const response = await fetch('/api/evaluaciones/crear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                rubrica_id: rubricaId,
+                estudiantes: estudiantesSeleccionados,
+                observaciones: observaciones
+            })
+        });
 
-        // Guardar evaluación
-        async function guardarEvaluacion() {
-            const rubricaId = document.getElementById('rubrica_id').value;
-            const observaciones = document.getElementById('observaciones').value;
+        const data = await response.json();
 
-            // Validaciones
-            if (!rubricaId) {
-                Swal.fire('Error', 'Debe seleccionar una rúbrica', 'error');
-                return;
-            }
-
-            if (estudiantesSeleccionados.length === 0) {
-                Swal.fire('Error', 'No hay estudiantes seleccionados', 'error');
-                return;
-            }
-
-            // Confirmar creación
-            const result = await Swal.fire({
-                title: '¿Crear evaluaciones?',
-                html: `Se crearán <strong>${estudiantesSeleccionados.length}</strong> evaluación(es) para los estudiantes de la sección seleccionada`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, crear',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#667eea'
-            });
-
-            if (!result.isConfirmed) return;
-
-            // Mostrar loading
+        if (data.success) {
             Swal.fire({
-                title: 'Creando evaluaciones...',
-                html: 'Por favor espere...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            try {
-                const response = await fetch('/api/evaluaciones/crear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        rubrica_id: rubricaId,
-                        estudiantes: estudiantesSeleccionados,
-                        observaciones: observaciones
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Evaluaciones creadas!',
-                        html: `Se crearon <strong>${data.cantidad}</strong> evaluación(es) correctamente`,
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#667eea'
-                    }).then(() => {
-                        closeModalEvaluacion();
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire('Error', 'Ocurrió un error al crear las evaluaciones', 'error');
-            }
-        }
-
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modal = document.getElementById('modalAddEvaluacion');
-                if (modal.classList.contains('active')) {
-                    closeModalEvaluacion();
-                }
-            }
-        });
-
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('modalAddEvaluacion')?.addEventListener('click', function(event) {
-            if (event.target === this) {
+                icon: 'success',
+                title: '¡Evaluaciones creadas!',
+                html: `Se crearon <strong>${data.cantidad}</strong> evaluación(es) correctamente`,
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#667eea'
+            }).then(() => {
                 closeModalEvaluacion();
-            }
-        });
+                location.reload();
+            });
+        } else {
+            Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Ocurrió un error al crear las evaluaciones', 'error');
+    }
+}
 
-        // Funciones del modal de detalles
-        async function openModalDetalles(evaluacionId) {
-            const modal = document.getElementById('modalVerDetalles');
-            const modalBody = modal.querySelector('.modal-body-detalles');
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('modalAddEvaluacion');
+        if (modal && modal.classList.contains('active')) {
+            closeModalEvaluacion();
+        }
+    }
+});
 
-            // Mostrar loading
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalAddEvaluacion')?.addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeModalEvaluacion();
+    }
+});
+
+// Funciones del modal de detalles
+async function openModalDetalles(evaluacionId) {
+    const modal = document.getElementById('modalVerDetalles');
+    const modalBody = modal.querySelector('.modal-body-detalles');
+
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="loading-detalles">
+            <i class="fas fa-spinner fa-spin"></i>
+            <h3>Cargando detalles...</h3>
+            <p>Por favor espere</p>
+        </div>
+    `;
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    try {
+        const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+        const data = await response.json();
+
+        if (data.success) {
+            mostrarDetallesEvaluacion(data);
+        } else {
             modalBody.innerHTML = `
                 <div class="loading-detalles">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <h3>Cargando detalles...</h3>
-                    <p>Por favor espere</p>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error al cargar detalles</h3>
+                    <p>${data.message || 'No se pudieron cargar los detalles de la evaluación'}</p>
                 </div>
             `;
-
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-
-            try {
-                const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
-                const data = await response.json();
-
-                if (data.success) {
-                    mostrarDetallesEvaluacion(data);
-                } else {
-                    modalBody.innerHTML = `
-                        <div class="loading-detalles">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <h3>Error al cargar detalles</h3>
-                            <p>${data.message || 'No se pudieron cargar los detalles de la evaluación'}</p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error al cargar detalles:', error);
-                modalBody.innerHTML = `
-                    <div class="loading-detalles">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <h3>Error de conexión</h3>
-                        <p>No se pudieron cargar los detalles de la evaluación</p>
-                    </div>
-                `;
-            }
         }
+    } catch (error) {
+        console.error('Error al cargar detalles:', error);
+        modalBody.innerHTML = `
+            <div class="loading-detalles">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error de conexión</h3>
+                <p>No se pudieron cargar los detalles de la evaluación</p>
+            </div>
+        `;
+    }
+}
 
-        function closeModalDetalles() {
-            document.getElementById('modalVerDetalles').classList.remove('active');
-            document.body.style.overflow = 'auto';
+function closeModalDetalles() {
+    document.getElementById('modalVerDetalles').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function mostrarDetallesEvaluacion(data) {
+    const modalBody = document.getElementById('modalVerDetalles').querySelector('.modal-body-detalles');
+    
+    // For now, just show a simple message since we're showing rubric-level data
+    modalBody.innerHTML = `
+        <div class="detalles-evaluacion">
+            <div class="rubrica-info-detalles">
+                <h3>${data.nombre_rubrica || 'Detalles de Evaluación'}</h3>
+                <p>Esta vista muestra evaluaciones agrupadas por docente y rúbrica.</p>
+                <p>Para ver detalles individuales de estudiantes, utilice la vista de evaluaciones del docente.</p>
+            </div>
+        </div>
+    `;
+}
+
+// Cerrar modal de detalles con ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modalDetalles = document.getElementById('modalVerDetalles');
+        if (modalDetalles && modalDetalles.classList.contains('active')) {
+            closeModalDetalles();
         }
+    }
+});
 
-        function mostrarDetallesEvaluacion(data) {
-            const modalBody = document.getElementById('modalVerDetalles').querySelector('.modal-body-detalles');
+// Cerrar modal de detalles al hacer clic fuera
+document.getElementById('modalVerDetalles')?.addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeModalDetalles();
+    }
+});
 
-            const evaluacion = data.evaluacion;
-            const estudiante = data.estudiante;
-            const rubrica = data.rubrica;
-            const criterios = data.criterios;
+// ============================================
+// PAGINACIÓN
+// ============================================
 
-            // Información del estudiante
-            const estudianteIniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
-
-            // Calcular calificación total
-            let calificacionTotal = 0;
-            let criteriosHtml = '';
-
-            if (criterios && criterios.length > 0) {
-                criterios.forEach(criterio => {
-                    const nivelSeleccionado = criterio.niveles.find(n => n.seleccionado);
-                    const puntaje = nivelSeleccionado ? nivelSeleccionado.puntaje : 0;
-                    calificacionTotal += puntaje;
-
-                    criteriosHtml += `
-                        <div class="criterio-card-detalles">
-                            <div class="criterio-header-detalles">
-                                <div class="criterio-info-detalles">
-                                    <h5>${criterio.nombre}</h5>
-                                    <div class="criterio-puntaje-detalles">${puntaje} pts</div>
-                                </div>
-                            </div>
-                            ${nivelSeleccionado ? `
-                                <div class="nivel-seleccionado">
-                                    <div class="nivel-nombre-detalles">
-                                        <strong>${nivelSeleccionado.nombre}</strong>
-                                        <div class="nivel-puntaje-detalles">${nivelSeleccionado.puntaje} pts</div>
-                                    </div>
-                                    <div class="nivel-descripcion-detalles">${nivelSeleccionado.descripcion}</div>
-                                </div>
-                            ` : '<p class="text-muted">No evaluado</p>'}
-                        </div>
-                    `;
-                });
-            }
-
-            const html = `
-                <div class="detalles-evaluacion">
-                    <!-- Información del estudiante -->
-                    <div class="estudiante-info-detalles">
-                        <div class="estudiante-avatar-detalles">${estudianteIniciales}</div>
-                        <div class="estudiante-datos-detalles">
-                            <h3>${estudiante.nombre} ${estudiante.apellido}</h3>
-                            <p>CI: ${estudiante.cedula}</p>
-                            <div class="badge-carrera-detalles">${estudiante.carrera}</div>
-                        </div>
-                    </div>
-
-                    <!-- Información de la rúbrica -->
-                    <div class="rubrica-info-detalles">
-                        <div class="rubrica-info-header-detalles">
-                            <i class="fas fa-clipboard-list"></i>
-                            <h4>${rubrica.nombre_rubrica}</h4>
-                        </div>
-                        <div class="rubrica-info-details-detalles">
-                            <div class="rubrica-detail-detalles">
-                                <div class="detail-label-detalles">Materia</div>
-                                <div class="detail-value-detalles">${rubrica.materia}</div>
-                            </div>
-                            <div class="rubrica-detail-detalles">
-                                <div class="detail-label-detalles">Tipo de Evaluación</div>
-                                <div class="detail-value-detalles">${rubrica.tipo_evaluacion}</div>
-                            </div>
-                            <div class="rubrica-detail-detalles">
-                                <div class="detail-label-detalles">Porcentaje</div>
-                                <div class="detail-value-detalles">${rubrica.porcentaje_evaluacion}%</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Criterios evaluados -->
-                    <div class="criterios-evaluados">
-                        <div class="criterios-title-detalles">
-                            <i class="fas fa-tasks"></i>
-                            <span>Criterios Evaluados</span>
-                        </div>
-                        ${criteriosHtml}
-                    </div>
-
-                    <!-- Resumen de calificación -->
-                    <div class="calificacion-resumen-detalles">
-                        <div class="calificacion-item-detalles">
-                            <div class="calificacion-label-detalles">Calificación Total</div>
-                            <div class="calificacion-value-detalles">${evaluacion.puntaje_total} puntos</div>
-                        </div>
-                        <div class="calificacion-total-detalles">
-                            <div class="calificacion-label-detalles">Porcentaje</div>
-                            <div class="calificacion-final-detalles">${rubrica.porcentaje_evaluacion}%</div>
-                        </div>
-                    </div>
-
-                    <!-- Observaciones -->
-                    ${evaluacion.observaciones ? `
-                        <div class="observaciones-detalles">
-                            <div class="observaciones-header-detalles">
-                                <i class="fas fa-comment"></i>
-                                <h4>Observaciones</h4>
-                            </div>
-                            <div class="observaciones-text-detalles">${evaluacion.observaciones}</div>
-                        </div>
-                    ` : ''}
-
-                    <!-- Fecha de evaluación -->
-                    <div class="fecha-evaluacion-detalles">
-                        <i class="fas fa-calendar-alt"></i>
-                        Evaluado el ${new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
-                    </div>
-                </div>
-            `;
-
-            modalBody.innerHTML = html;
-        }
-
-        // Cerrar modal de detalles con ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modalDetalles = document.getElementById('modalVerDetalles');
-                if (modalDetalles.classList.contains('active')) {
-                    closeModalDetalles();
-                }
-            }
+function inicializarPaginacion() {
+    // Guardar todas las filas
+    allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
+    
+    // Event listener para el selector de entradas
+    const entriesSelect = document.getElementById('entriesPerPage');
+    if (entriesSelect) {
+        entriesSelect.addEventListener('change', function() {
+            entriesPerPage = this.value === 'all' ? allRows.length : parseInt(this.value);
+            currentPage = 1;
+            updateTable();
         });
+    }
+    
+    // Inicializar la tabla
+    updateTable();
+}
 
-        // Cerrar modal de detalles al hacer clic fuera
-        document.getElementById('modalVerDetalles')?.addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeModalDetalles();
-            }
-        });
-
-        // Objeto para manejar la paginación de cada sección
-        const paginationState = {};
-
-        // Inicializar paginación al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            initializePagination();
-        });
-
-        function initializePagination() {
-            const seccionGroups = document.querySelectorAll('.seccion-group');
-            
-            seccionGroups.forEach((group, index) => {
-                const seccionId = `seccion-${index}`;
-                group.dataset.seccionId = seccionId;
-                
-                const evaluacionCards = group.querySelectorAll('.evaluacion-card');
-                const evaluacionesArray = Array.from(evaluacionCards).filter(card => card.style.display !== 'none');
-
-                // Si no hay tarjetas visibles en esta sección, no configuramos paginación
-                if (evaluacionesArray.length === 0) {
-                    return;
-                }
-                
-                // Guardar estado de paginación basado en las tarjetas visibles
-                paginationState[seccionId] = {
-                    currentPage: 1,
-                    itemsPerPage: 3,
-                    totalItems: evaluacionesArray.length,
-                    totalPages: Math.ceil(evaluacionesArray.length / 3),
-                    evaluaciones: evaluacionesArray
-                };
-                
-                // Crear contenedor de paginación
-                createPaginationUI(group, seccionId);
-                
-                // Mostrar primera página
-                showPage(seccionId, 1);
-            });
+// Actualizar tabla según paginación
+function updateTable() {
+    const totalEntries = allRows.length;
+    
+    if (totalEntries === 0) return;
+    
+    // Ocultar todas las filas
+    allRows.forEach(row => row.style.display = 'none');
+    
+    // Calcular rango
+    const start = (currentPage - 1) * entriesPerPage;
+    const end = entriesPerPage === totalEntries ? totalEntries : Math.min(start + entriesPerPage, totalEntries);
+    
+    // Mostrar filas del rango actual
+    for (let i = start; i < end; i++) {
+        if (allRows[i]) {
+            allRows[i].style.display = '';
         }
+    }
+    
+    // Actualizar información
+    const showingStart = document.getElementById('showingStart');
+    const showingEnd = document.getElementById('showingEnd');
+    const totalEntriesEl = document.getElementById('totalEntries');
+    
+    if (showingStart) showingStart.textContent = totalEntries > 0 ? start + 1 : 0;
+    if (showingEnd) showingEnd.textContent = end;
+    if (totalEntriesEl) totalEntriesEl.textContent = totalEntries;
+    
+    // Generar botones de paginación
+    generatePaginationButtons();
+}
 
-        function createPaginationUI(group, seccionId) {
-            const state = paginationState[seccionId];
-            
-            if (state.totalPages <= 1) {
-                return; // No mostrar paginación si solo hay una página
-            }
-            
-            const evaluacionesContainer = group.querySelector('.seccion-evaluaciones');
-            
-            // Crear contenedor para las evaluaciones
-            const container = document.createElement('div');
-            container.className = 'evaluaciones-container';
-            container.dataset.seccionId = seccionId;
-            
-            // Mover todas las cards al contenedor
-            state.evaluaciones.forEach(card => {
-                container.appendChild(card);
-            });
-            
-            // Limpiar y agregar el nuevo contenedor
-            evaluacionesContainer.innerHTML = '';
-            evaluacionesContainer.appendChild(container);
-            
-            // Crear controles de paginación
-            const paginationControls = document.createElement('div');
-            paginationControls.className = 'pagination-controls';
-            paginationControls.innerHTML = `
-                <button class="pagination-btn" onclick="changePage('${seccionId}', -1)" data-action="prev">
-                    <i class="fas fa-chevron-left"></i>
-                    Anterior
-                </button>
-                
-                <div class="pagination-info">
-                    <i class="fas fa-file-alt"></i>
-                    Página <span class="current-page">1</span> de ${state.totalPages}
-                </div>
-                
-                <div class="pagination-pages">
-                    ${Array.from({length: state.totalPages}, (_, i) => 
-                        `<button class="pagination-page ${i === 0 ? 'active' : ''}" 
-                            onclick="showPage('${seccionId}', ${i + 1})">${i + 1}</button>`
-                    ).join('')}
-                </div>
-                
-                <button class="pagination-btn" onclick="changePage('${seccionId}', 1)" data-action="next">
-                    Siguiente
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-            
-            evaluacionesContainer.appendChild(paginationControls);
+// Generar botones de paginación
+function generatePaginationButtons() {
+    const totalPages = Math.ceil(allRows.length / entriesPerPage);
+    const paginationContainer = document.getElementById('paginationButtons');
+    
+    if (!paginationContainer) return;
+    
+    paginationContainer.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    // Botón anterior
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.innerHTML = '<i class="fa fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            updateTable();
         }
-
-        function showPage(seccionId, pageNumber) {
-            const state = paginationState[seccionId];
-            
-            if (!state || pageNumber < 1 || pageNumber > state.totalPages) {
-                return;
-            }
-            
-            // Actualizar página actual
-            state.currentPage = pageNumber;
-            
-            // Calcular índices
-            const startIndex = (pageNumber - 1) * state.itemsPerPage;
-            const endIndex = startIndex + state.itemsPerPage;
-            
-            // Obtener contenedor
-            const group = document.querySelector(`[data-seccion-id="${seccionId}"]`);
-            const container = group.querySelector('.evaluaciones-container');
-            
-            // Animación de salida
-            container.classList.add('fade-out');
-            
-            setTimeout(() => {
-                // Ocultar todas las cards
-                state.evaluaciones.forEach((card, index) => {
-                    if (index >= startIndex && index < endIndex) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-                
-                // Actualizar UI de paginación
-                updatePaginationUI(seccionId);
-                
-                // Animación de entrada
-                container.classList.remove('fade-out');
-                container.classList.add('fade-in');
-                
-                setTimeout(() => {
-                    container.classList.remove('fade-in');
-                }, 300);
-            }, 150);
-        }
-
-        function changePage(seccionId, direction) {
-            const state = paginationState[seccionId];
-            const newPage = state.currentPage + direction;
-            
-            if (newPage >= 1 && newPage <= state.totalPages) {
-                showPage(seccionId, newPage);
-            }
-        }
-
-        function updatePaginationUI(seccionId) {
-            const state = paginationState[seccionId];
-            const group = document.querySelector(`[data-seccion-id="${seccionId}"]`);
-            
-            // Actualizar número de página
-            const pageNumber = group.querySelector('.current-page');
-            if (pageNumber) {
-                pageNumber.textContent = state.currentPage;
-            }
-            
-            // Actualizar botones Anterior/Siguiente
-            const prevBtn = group.querySelector('[data-action="prev"]');
-            const nextBtn = group.querySelector('[data-action="next"]');
-            
-            if (prevBtn) {
-                prevBtn.disabled = state.currentPage === 1;
-            }
-            
-            if (nextBtn) {
-                nextBtn.disabled = state.currentPage === state.totalPages;
-            }
-            
-            // Actualizar estado de los botones de página numéricos
-            const pages = group.querySelectorAll('.pagination-page');
-            pages.forEach((pageBtn, index) => {
-                if (index === state.currentPage - 1) {
-                    pageBtn.classList.add('active');
-                } else {
-                    pageBtn.classList.remove('active');
-                }
-            });
-        }
-
-        // Mantener sincronía entre filtrado y paginación (máximo 3 por página siempre)
-        const originalFiltrarEvaluaciones = filtrarEvaluaciones;
-        filtrarEvaluaciones = function() {
-            // Aplicar filtros sobre todas las tarjetas
-            originalFiltrarEvaluaciones();
-
-            // Reinicializar la paginación tomando en cuenta solo las tarjetas visibles
-            setTimeout(() => {
-                initializePagination();
-            }, 100);
+    };
+    paginationContainer.appendChild(prevBtn);
+    
+    // Botones de páginas
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    
+    if (endPage - startPage < maxButtons - 1) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+    
+    // Primera página
+    if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.className = 'pagination-btn';
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => {
+            currentPage = 1;
+            updateTable();
         };
+        paginationContainer.appendChild(firstBtn);
+        
+        if (startPage > 2) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.padding = '0 8px';
+            paginationContainer.appendChild(dots);
+        }
+    }
+    
+    // Páginas del rango
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            updateTable();
+        };
+        paginationContainer.appendChild(pageBtn);
+    }
+    
+    // Última página
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.padding = '0 8px';
+            paginationContainer.appendChild(dots);
+        }
+        
+        const lastBtn = document.createElement('button');
+        lastBtn.className = 'pagination-btn';
+        lastBtn.textContent = totalPages;
+        lastBtn.onclick = () => {
+            currentPage = totalPages;
+            updateTable();
+        };
+        paginationContainer.appendChild(lastBtn);
+    }
+    
+    // Botón siguiente
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.innerHTML = '<i class="fa fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            updateTable();
+        }
+    };
+    paginationContainer.appendChild(nextBtn);
+}

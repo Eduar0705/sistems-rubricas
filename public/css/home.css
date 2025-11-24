@@ -96,6 +96,16 @@ body {
     background-color: #4c6edb;
 }
 
+.detalles{
+    color: #ffffff;
+    background-color: #4cdbab;
+}
+
+.word{
+    color: #ffffff;
+    background-color: #4c6edb;
+}
+
 .excel:hover{
     background-color: #35daa3;
 }
@@ -106,6 +116,40 @@ body {
 
 .listado:hover{
     background-color: #748ee4;
+}
+
+.detalles:hover{
+    background-color: #76dfbc;
+}
+
+.word:hover{
+    background-color: #8aa1ed;
+}
+
+.estado {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.estado-Completada {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.estado-Pendiente {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.estado-En-Progreso {
+    background-color: #cce7ff;
+    color: #004085;
+    border: 1px solid #b3d7ff;
 }
 
 .sidebar-toggle {
