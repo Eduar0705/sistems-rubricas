@@ -2038,3 +2038,149 @@
         padding: 20px;
     }
 }
+/* Estilos específicos para la vista jerárquica */
+.hierarchy-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.carrera-block {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    border-left: 5px solid var(--primary-color);
+}
+
+.carrera-title {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.semestre-block {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.semestre-title {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.materia-block {
+    margin-left: 20px;
+    margin-bottom: 15px;
+    background: rgba(248, 249, 250, 0.5);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.materia-title {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.seccion-block {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.seccion-header-info {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 10px;
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: inline-flex;
+}
+
+.rubrica-block {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.rubrica-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-weight: 600;
+    background: var(--bg-body);
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent-color);
+}
+
+.evaluaciones-grid-mini {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+/* Ajustes a las tarjetas existentes para que se vean bien en mini grid */
+.evaluacion-card {
+    margin: 0; /* Quitar margen si lo tiene */
+}
+
+
+/* Estilos para la paginación por rúbrica */
+.rubrica-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.rubrica-pagination .page-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rubrica-pagination .page-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.rubrica-pagination .page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--bg-body);
+}
+
+.rubrica-pagination .page-info {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+

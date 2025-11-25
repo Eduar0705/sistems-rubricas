@@ -60,6 +60,7 @@ router.get("/teacher/evaluacion", function(req, res) {
                 r.nombre_rubrica,
                 r.porcentaje_evaluacion,
                 m.nombre as materia_nombre,
+                m.semestre as materia_semestre,
                 c.nombre as carrera_nombre,
                 s.codigo as seccion_codigo,
                 s.horario as seccion_horario,
@@ -78,7 +79,7 @@ router.get("/teacher/evaluacion", function(req, res) {
             WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
             AND p.docente_cedula = ?
             AND p.activo = 1
-            ORDER BY c.nombre, s.codigo, ee.fecha_evaluacion DESC
+            ORDER BY c.nombre, m.semestre, m.nombre, s.codigo, r.nombre_rubrica, e.apellido
         `;
         queryParams = [docenteCedula];
     }
@@ -114,12 +115,62 @@ router.get("/teacher/evaluacion", function(req, res) {
             };
         });
 
-        res.render("teacher/evaluaciones", {
-            datos: req.session, 
-            title: 'SGR - Evaluaciones', 
-            currentPage: 'evaluaciones',
-            evaluaciones: evaluacionesFormateadas
-        });
+        if (esAdmin) {
+             res.render("teacher/evaluaciones", {
+                datos: req.session, 
+                title: 'SGR - Evaluaciones', 
+                currentPage: 'evaluaciones',
+                evaluaciones: evaluacionesFormateadas
+            });
+        } else {
+            // Agrupar para docente: Carrera -> Semestre -> Materia -> Sección -> Rúbrica
+            const evaluacionesAgrupadas = {};
+
+            evaluacionesFormateadas.forEach(ev => {
+                // Nivel 1: Carrera
+                if (!evaluacionesAgrupadas[ev.carrera_nombre]) {
+                    evaluacionesAgrupadas[ev.carrera_nombre] = {};
+                }
+
+                // Nivel 2: Semestre
+                const semestreKey = `Semestre ${ev.materia_semestre}`;
+                if (!evaluacionesAgrupadas[ev.carrera_nombre][semestreKey]) {
+                    evaluacionesAgrupadas[ev.carrera_nombre][semestreKey] = {};
+                }
+
+                // Nivel 3: Materia
+                if (!evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre]) {
+                    evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre] = {};
+                }
+
+                // Nivel 4: Sección
+                const seccionKey = `Sección ${ev.seccion_codigo}`;
+                if (!evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre][seccionKey]) {
+                    evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre][seccionKey] = {
+                        info: {
+                            horario: ev.seccion_horario,
+                            aula: ev.seccion_aula
+                        },
+                        rubricas: {}
+                    };
+                }
+
+                // Nivel 5: Rúbrica
+                if (!evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre][seccionKey].rubricas[ev.nombre_rubrica]) {
+                    evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre][seccionKey].rubricas[ev.nombre_rubrica] = [];
+                }
+
+                // Agregar evaluación
+                evaluacionesAgrupadas[ev.carrera_nombre][semestreKey][ev.materia_nombre][seccionKey].rubricas[ev.nombre_rubrica].push(ev);
+            });
+
+            res.render("teacher/evaluaciones_docente", {
+                datos: req.session, 
+                title: 'SGR - Mis Evaluaciones', 
+                currentPage: 'evaluaciones',
+                evaluacionesGrouped: evaluacionesAgrupadas
+            });
+        }
     });
 });
 
@@ -366,28 +417,6 @@ router.post('/api/evaluaciones/crear', (req, res) => {
                 });
             });
         });
-    });
-});
-// API: Obtener carreras activas
-router.get('/api/carreras', (req, res) => {
-    if(!req.session.login){
-        return res.json({ success: false, message: 'No autorizado' });
-    }
-
-    const query = `
-        SELECT codigo, nombre, descripcion
-        FROM carrera
-        WHERE activo = 1
-        ORDER BY nombre
-    `;
-
-    conexion.query(query, (error, carreras) => {
-        if (error) {
-            console.error('Error al obtener carreras:', error);
-            return res.json({ success: false, message: 'Error al obtener carreras' });
-        }
-
-        res.json({ success: true, carreras });
     });
 });
 

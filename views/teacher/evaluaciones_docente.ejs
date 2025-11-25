@@ -22,122 +22,103 @@
             <div class="view-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar evaluaciones...">
+                    <input type="text" id="searchInput" placeholder="Buscar Alumno...">
                 </div>
-                <div class="filter-group">
-                    <select class="form-select" id="filterRubrica">
-                        <option value="">Todas las rúbricas</option>
-                        <% if(typeof evaluaciones !== 'undefined' && evaluaciones.length > 0) { %>
-                            <% 
-                            const rubricas = [...new Set(evaluaciones.map(ev => ev.nombre_rubrica))];
-                            rubricas.forEach(rubrica => { %>
-                                <option value="<%= rubrica %>"><%= rubrica %></option>
-                            <% }); %>
-                        <% } %>
-                    </select>
-                    <select class="form-select" id="filterEstado">
-                        <option value="">Todos los estados</option>
-                        <option value="Completada">Completadas</option>
-                        <option value="Pendiente">Pendientes</option>
-                    </select>
                 <!-- Botones de accion para importar evaluaciones -->
-                <button class="btns excel" onclick="exportarExcel()" title="Exportar a Excel">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-                <button class="btns pdf" onclick="exportarPDF()" title="Exportar a PDF">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
+                <div class="action-buttons">
+                    <button class="btns excel" onclick="exportarExcel()" title="Exportar a Excel">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </button>
+                    <button class="btns pdf" onclick="exportarPDF()" title="Exportar a PDF">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
                 </div>
             </div>
 
-            <div class="evaluaciones-grid">
-                <% if(typeof evaluaciones !== 'undefined' && evaluaciones.length > 0) { %>
-                    <%
-                    // Agrupar evaluaciones por carrera y sección
-                    const evaluacionesAgrupadas = {};
-                    evaluaciones.forEach(ev => {
-                        const clave = `${ev.carrera_nombre} - ${ev.seccion_codigo}`;
-                        if (!evaluacionesAgrupadas[clave]) {
-                            evaluacionesAgrupadas[clave] = {
-                                carrera: ev.carrera_nombre,
-                                seccion: ev.seccion_codigo,
-                                horario: ev.seccion_horario,
-                                aula: ev.seccion_aula,
-                                evaluaciones: []
-                            };
-                        }
-                        evaluacionesAgrupadas[clave].evaluaciones.push(ev);
-                    });
-                    %>
+            <div class="hierarchy-container">
+                <% if(typeof evaluacionesGrouped !== 'undefined' && Object.keys(evaluacionesGrouped).length > 0) { %>
+                    
+                    <% Object.keys(evaluacionesGrouped).forEach(carrera => { %>
+                        <div class="carrera-block">
+                            <h2 class="carrera-title">
+                                <i class="fas fa-graduation-cap"></i> <%= carrera %>
+                            </h2>
 
-                    <% Object.keys(evaluacionesAgrupadas).forEach(clave => { %>
-                        <% const grupo = evaluacionesAgrupadas[clave]; %>
-                        <div class="seccion-group">
-                            <div class="seccion-header">
-                                <h3 class="seccion-title">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <%= grupo.carrera %> - Sección <%= grupo.seccion %>
-                                </h3>
-                                <div class="seccion-info">
-                                    <span class="seccion-detail">
-                                        <i class="fas fa-clock"></i>
-                                        <%= grupo.horario %>
-                                    </span>
-                                    <span class="seccion-detail">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <%= grupo.aula %>
-                                    </span>
-                                    <span class="seccion-count">
-                                        <i class="fas fa-users"></i>
-                                        <%= grupo.evaluaciones.length %> evaluación(es)
-                                    </span>
-                                </div>
-                            </div>
+                            <% Object.keys(evaluacionesGrouped[carrera]).forEach(semestre => { %>
+                                <div class="semestre-block">
+                                    <h3 class="semestre-title"><%= semestre %></h3>
 
-                            <div class="seccion-evaluaciones">
-                                <% grupo.evaluaciones.forEach(ev => { %>
-                                    <div class="evaluacion-card"
-                                            data-rubrica="<%= ev.nombre_rubrica %>"
-                                            data-estado="<%= ev.estado %>"
-                                            data-estudiante="<%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %>">
-                                        <div class="evaluacion-header">
-                                            <div class="evaluacion-student">
-                                                <div class="student-avatar"><%= ev.iniciales %></div>
-                                                <div>
-                                                    <div class="student-name"><%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %></div>
-                                                    <div class="student-id">ID: <%= ev.estudiante_cedula %></div>
+                                    <% Object.keys(evaluacionesGrouped[carrera][semestre]).forEach(materia => { %>
+                                        <div class="materia-block">
+                                            <h4 class="materia-title">
+                                                <i class="fas fa-book"></i> <%= materia %>
+                                            </h4>
+
+                                            <% Object.keys(evaluacionesGrouped[carrera][semestre][materia]).forEach(seccion => { %>
+                                                <div class="seccion-block">
+                                                    <div class="seccion-header-info">
+                                                        <strong><%= seccion %></strong>
+                                                        <span><i class="fas fa-clock"></i> <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.horario %></span>
+                                                        <span><i class="fas fa-map-marker-alt"></i> <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.aula %></span>
+                                                    </div>
+
+                                                    <% Object.keys(evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas).forEach(rubrica => { %>
+                                                        <div class="rubrica-block">
+                                                            <h5 class="rubrica-title">
+                                                                <i class="fas fa-clipboard-check"></i> <%= rubrica %>
+                                                            </h5>
+
+                                                            <div class="evaluaciones-grid-mini">
+                                                                <% evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas[rubrica].forEach(ev => { %>
+                                                                    <div class="evaluacion-card"
+                                                                            data-rubrica="<%= ev.nombre_rubrica %>"
+                                                                            data-estado="<%= ev.estado %>"
+                                                                            data-cedula="<%= ev.estudiante_cedula %>"
+                                                                            data-estudiante="<%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %>">
+                                                                        <div class="evaluacion-header">
+                                                                            <div class="evaluacion-student">
+                                                                                <div class="student-avatar"><%= ev.iniciales %></div>
+                                                                                <div>
+                                                                                    <div class="student-name"><%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %></div>
+                                                                                    <div class="student-id">ID: <%= ev.estudiante_cedula %></div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <span class="badge-status <%= ev.estado === 'Completada' ? 'completed' : 'pending' %>">
+                                                                                <%= ev.estado %>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="evaluacion-body">
+                                                                            <div class="evaluacion-score">
+                                                                                <div class="score-label">Calificación</div>
+                                                                                <div class="score-value"><%= ev.calificacion %></div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="evaluacion-footer">
+                                                                            <span class="evaluacion-date">
+                                                                                <i class="fas fa-calendar"></i>
+                                                                                <%= ev.fecha_formateada %>
+                                                                            </span>
+                                                                            <% if(ev.estado === 'Completada') { %>
+                                                                                <button class="btn-text" onclick="verDetalles('<%= ev.id %>')">Ver Detalles</button>
+                                                                                <button class="btn-text" onclick="evaluar('<%= ev.id %>')"><i class="fas fa-edit"></i> Editar</button>
+                                                                            <% } else { %>
+                                                                                <button class="btn-text" onclick="evaluar('<%= ev.id %>')">Evaluar</button>
+                                                                            <% } %>
+                                                                        </div>
+                                                                    </div>
+                                                                <% }); %>
+                                                            </div>
+                                                        </div>
+                                                    <% }); %>
                                                 </div>
-                                            </div>
-                                            <span class="badge-status <%= ev.estado === 'Completada' ? 'completed' : 'pending' %>">
-                                                <%= ev.estado %>
-                                            </span>
+                                            <% }); %>
                                         </div>
-                                        <div class="evaluacion-body">
-                                            <div class="evaluacion-rubrica">
-                                                <i class="fas fa-file-alt"></i>
-                                                <%= ev.nombre_rubrica %> - <%= ev.materia_nombre %>
-                                            </div>
-                                            <div class="evaluacion-score">
-                                                <div class="score-label">Calificación</div>
-                                                <div class="score-value"><%= ev.calificacion %></div>
-                                            </div>
-                                        </div>
-                                        <div class="evaluacion-footer">
-                                            <span class="evaluacion-date">
-                                                <i class="fas fa-calendar"></i>
-                                                <%= ev.fecha_formateada %>
-                                            </span>
-                                            <% if(ev.estado === 'Completada') { %>
-                                                <button class="btn-text" onclick="verDetalles('<%= ev.id %>')">Ver Detalles</button>
-                                            <% } else { %>
-                                                <button class="btn-text" onclick="evaluar('<%= ev.id %>')">Evaluar</button>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                <% }); %>
-                            </div>
+                                    <% }); %>
+                                </div>
+                            <% }); %>
                         </div>
                     <% }); %>
+
                 <% } else { %>
                     <div class="empty-state">
                         <i class="fas fa-clipboard-list"></i>
@@ -395,8 +376,9 @@
             // Calcular puntaje máximo
             const puntajeMaximo = criterios.reduce((sum, c) => sum + parseFloat(c.puntaje_maximo), 0);
             this.setElementText('puntajeMaximo', puntajeMaximo.toFixed(2));
-            this.setElementText('puntajeObtenido', '0.00');
-            this.setElementText('calificacionFinal', '0.00');
+            
+            // Calcular calificación inicial (si hay datos precargados)
+            this.calcularCalificacion();
             
             console.log('Información cargada correctamente');
         },
@@ -425,6 +407,15 @@
             console.log('Cargando', criterios.length, 'criterios');
             
             criterios.forEach(criterio => {
+                // Verificar si hay un nivel seleccionado para este criterio
+                const nivelSeleccionado = criterio.niveles.find(n => n.seleccionado);
+                if (nivelSeleccionado) {
+                    seleccionesNiveles[criterio.id] = {
+                        nivel_id: nivelSeleccionado.id,
+                        puntaje: parseFloat(nivelSeleccionado.puntaje)
+                    };
+                }
+
                 const criterioCard = document.createElement('div');
                 criterioCard.className = 'criterio-card';
                 criterioCard.innerHTML = `
@@ -446,6 +437,7 @@
                                     value="${nivel.id}"
                                     data-puntaje="${nivel.puntaje}"
                                     data-criterio="${criterio.id}"
+                                    ${nivel.seleccionado ? 'checked' : ''}
                                     onchange="seleccionarNivel(${criterio.id}, ${nivel.id}, ${nivel.puntaje})">
                                 <label for="nivel-${nivel.id}" class="nivel-label">
                                     <div class="nivel-nombre">
@@ -798,101 +790,154 @@
                 <div class="criterios-evaluados">
                     <div class="criterios-title-detalles">
                         <i class="fas fa-tasks"></i>
-                        <span>Criterios Evaluados</span>
+                        <h4>Desglose de Evaluación</h4>
                     </div>
-                    ${criteriosHtml}
-                </div>
-
-                <!-- Resumen de calificación -->
-                <div class="calificacion-resumen-detalles">
-                    <div class="calificacion-item-detalles">
-                        <div class="calificacion-label-detalles">Calificación Total</div>
-                        <div class="calificacion-value-detalles">${evaluacion.puntaje_total} puntos</div>
-                    </div>
-                    <div class="calificacion-total-detalles">
-                        <div class="calificacion-label-detalles">Porcentaje</div>
-                        <div class="calificacion-final-detalles">${rubrica.porcentaje_evaluacion}%</div>
+                    <div class="criterios-list-detalles">
+                        ${criteriosHtml}
                     </div>
                 </div>
 
                 <!-- Observaciones -->
-                ${evaluacion.observaciones ? `
-                    <div class="observaciones-detalles">
-                        <div class="observaciones-header-detalles">
-                            <i class="fas fa-comment"></i>
-                            <h4>Observaciones</h4>
-                        </div>
-                        <div class="observaciones-text-detalles">${evaluacion.observaciones}</div>
+                <div class="observaciones-detalles">
+                    <div class="observaciones-title-detalles">
+                        <i class="fas fa-comment"></i>
+                        <h4>Observaciones</h4>
                     </div>
-                ` : ''}
+                    <p class="observaciones-text-detalles">${evaluacion.observaciones || 'Sin observaciones'}</p>
+                </div>
 
-                <!-- Fecha de evaluación -->
-                <div class="fecha-evaluacion-detalles">
-                    <i class="fas fa-calendar-alt"></i>
-                    Evaluado el ${new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
+                <!-- Calificación Final -->
+                <div class="calificacion-final-detalles">
+                    <div class="calificacion-label-detalles">Calificación Final</div>
+                    <div class="calificacion-value-detalles">${(parseFloat(evaluacion.puntaje_total) || 0).toFixed(2)}/100</div>
                 </div>
             </div>
         `;
 
         modalBody.innerHTML = html;
     }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ==========================================
+            // LÓGICA DE PAGINACIÓN Y BÚSQUEDA
+            // ==========================================
+            const ITEMS_PER_PAGE = 3;
+            const rubricaBlocks = document.querySelectorAll('.rubrica-block');
+            const searchInput = document.getElementById('searchInput');
 
-    // =============================================
-    // INICIALIZACIÓN
-    // =============================================
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM cargado - Inicializando modales');
+            // Inicializar paginación por cada bloque de rúbrica
+            rubricaBlocks.forEach(block => {
+                const grid = block.querySelector('.evaluaciones-grid-mini');
+                if (!grid) return;
 
-        // Cerrar modales con ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                const modalEval = document.getElementById('modalEvaluar');
-                const modalDetalles = document.getElementById('modalVerDetalles');
+                const cards = Array.from(grid.querySelectorAll('.evaluacion-card'));
+                
+                // Si hay 3 o menos tarjetas, no necesitamos paginación
+                if (cards.length <= ITEMS_PER_PAGE) return;
 
-                if (modalEval && modalEval.classList.contains('active')) {
-                    closeModalEvaluar();
-                } else if (modalDetalles && modalDetalles.classList.contains('active')) {
-                    closeModalDetalles();
+                // Crear controles de paginación
+                const paginationContainer = document.createElement('div');
+                paginationContainer.className = 'rubrica-pagination';
+                paginationContainer.innerHTML = `
+                    <button class="page-btn prev-btn" disabled title="Anterior">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="page-info">1 / ${Math.ceil(cards.length / ITEMS_PER_PAGE)}</span>
+                    <button class="page-btn next-btn" title="Siguiente">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                `;
+                block.appendChild(paginationContainer);
+
+                // Estado local de este bloque
+                let currentPage = 1;
+                const totalPages = Math.ceil(cards.length / ITEMS_PER_PAGE);
+                const prevBtn = paginationContainer.querySelector('.prev-btn');
+                const nextBtn = paginationContainer.querySelector('.next-btn');
+                const pageInfo = paginationContainer.querySelector('.page-info');
+
+                // Función para actualizar la visualización
+                block.updatePaginationDisplay = function() {
+                    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+                    const end = start + ITEMS_PER_PAGE;
+
+                    cards.forEach((card, index) => {
+                        if (index >= start && index < end) {
+                            card.style.display = 'flex';
+                            card.classList.add('fade-in');
+                        } else {
+                            card.style.display = 'none';
+                            card.classList.remove('fade-in');
+                        }
+                    });
+
+                    pageInfo.textContent = `${currentPage} / ${totalPages}`;
+                    prevBtn.disabled = currentPage === 1;
+                    nextBtn.disabled = currentPage === totalPages;
+                    paginationContainer.style.display = 'flex'; // Asegurar que se muestre
+                };
+
+                // Event Listeners para botones
+                prevBtn.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        block.updatePaginationDisplay();
+                    }
+                });
+
+                nextBtn.addEventListener('click', () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        block.updatePaginationDisplay();
+                    }
+                });
+
+                // Inicializar vista
+                block.updatePaginationDisplay();
+            });
+
+            // Lógica de Búsqueda
+            searchInput.addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase().trim();
+                
+                if (term.length > 0) {
+                    // MODO BÚSQUEDA: Ocultar paginación y filtrar globalmente
+                    document.querySelectorAll('.rubrica-pagination').forEach(p => p.style.display = 'none');
+                    
+                    document.querySelectorAll('.evaluacion-card').forEach(card => {
+                        const nombre = card.dataset.estudiante ? card.dataset.estudiante.toLowerCase() : '';
+                        const cedula = card.dataset.cedula ? card.dataset.cedula.toString() : '';
+                        
+                        if (nombre.includes(term) || cedula.includes(term)) {
+                            card.style.display = 'flex';
+                            // Asegurar que los contenedores padres estén visibles si hay coincidencias
+                            let parent = card.parentElement;
+                            while(parent && !parent.classList.contains('hierarchy-container')) {
+                                parent.style.display = '';
+                                parent = parent.parentElement;
+                            }
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    // Ocultar bloques vacíos (opcional, para limpieza visual)
+                    // Esto requeriría lógica adicional para verificar si un bloque se quedó sin hijos visibles
+                } else {
+                    // MODO NORMAL: Restaurar paginación
+                    rubricaBlocks.forEach(block => {
+                        if (block.updatePaginationDisplay) {
+                            block.updatePaginationDisplay();
+                        } else {
+                            // Si no tiene paginación (<= 3 items), asegurar que todos se vean
+                            const cards = block.querySelectorAll('.evaluacion-card');
+                            cards.forEach(card => card.style.display = 'flex');
+                        }
+                    });
                 }
-            }
+            });
         });
-
-        // Cerrar modal de evaluación al hacer clic fuera
-        const modalEvaluar = document.getElementById('modalEvaluar');
-        if (modalEvaluar) {
-            modalEvaluar.addEventListener('click', function(event) {
-                if (event.target === this) {
-                    closeModalEvaluar();
-                }
-            });
-        } else {
-            console.warn('Modal #modalEvaluar no encontrado en el DOM');
-        }
-
-        // Cerrar modal de detalles al hacer clic fuera
-        const modalDetalles = document.getElementById('modalVerDetalles');
-        if (modalDetalles) {
-            modalDetalles.addEventListener('click', function(event) {
-                if (event.target === this) {
-                    closeModalDetalles();
-                }
-            });
-        } else {
-            console.warn('Modal #modalVerDetalles no encontrado en el DOM');
-        }
-
-        console.log('Modales inicializados correctamente');
-
-        // Inicializar módulos de filtrado y paginación
-        FiltradoModule.init();
-        PaginationModule.initialize();
-    });
     </script>
 </body>
 </html>
