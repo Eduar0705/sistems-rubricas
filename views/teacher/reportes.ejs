@@ -7,6 +7,337 @@
     <link rel="stylesheet" href="../css/home.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Grid de estadísticas principales */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .stat-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card.primary .icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stat-card.success .icon {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .stat-card.warning .icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .stat-card.info .icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .stat-card .label {
+            color: #6b7280;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Secciones de contenido */
+        .content-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .section-header .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .section-header.success .icon {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .section-header.danger .icon {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .section-header.primary .icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Tablas de estudiantes */
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .students-table thead {
+            background: #f9fafb;
+        }
+
+        .students-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .students-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .students-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #f7b733 0%, #fc4a1a 100%);
+            color: white;
+        }
+
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+            color: white;
+        }
+
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
+            color: white;
+        }
+
+        .rank-badge.default {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .score-badge.excellent {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .score-badge.good {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-badge.average {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-badge.poor {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Grid de gráficos */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-container h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Grid de rúbricas */
+        .rubrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .rubric-item {
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f9fafb;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .rubric-item:hover {
+            background: #f3f4f6;
+            transform: translateX(4px);
+        }
+
+        .rubric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .rubric-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .rubric-materia {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .rubric-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .rubric-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #6b7280;
+        }
+
+        .percentage-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .percentage-badge.high {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .percentage-badge.low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .report-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rubrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            .export-btn {
+                display: none;
+            }
+        }
+    </style>
 </head>
 <body>
     <%- include("../inc/menuTeacher.ejs") %>
@@ -16,61 +347,136 @@
         <!-- Header -->
         <%- include('../inc/headerTeacher.ejs') %>
 
-        <!-- Reportes View -->
-        <div class="view" id="reportes">
-            <div class="view-header">
-                <h2>Reportes y Estadísticas</h2>
-                <button class="btn-primary" onclick="window.print()">
-                    <i class="fas fa-download"></i>
-                    Exportar Reporte
-                </button>
-            </div>
-
-            <div class="content-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Rendimiento por Asignatura</h2>
+        <div class="report-container">
+            <!-- Estadísticas Principales -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="icon">
+                        <i class="fas fa-clipboard-check"></i>
                     </div>
-                    <div class="card-content">
-                        <canvas id="rendimientoChart"></canvas>
-                    </div>
+                    <div class="label">Total Evaluaciones</div>
+                    <div class="value"><%= stats ? stats.totalEvaluaciones : 0 %></div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Estado de Evaluaciones</h2>
+                <div class="stat-card success">
+                    <div class="icon">
+                        <i class="fas fa-star"></i>
                     </div>
-                    <div class="card-content">
-                        <canvas id="estadoChart"></canvas>
+                    <div class="label">Promedio General</div>
+                    <div class="value"><%= stats ? stats.promedioGeneral : 0 %>/20</div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="icon">
+                        <i class="fas fa-hourglass-half"></i>
                     </div>
+                    <div class="label">Pendientes</div>
+                    <div class="value"><%= stats ? stats.pendientes : 0 %></div>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Resumen de Evaluaciones</h2>
-                </div>
-                <div class="card-content">
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <div class="summary-label">Total Evaluaciones</div>
-                            <div class="summary-value"><%= stats ? stats.totalEvaluaciones : 0 %></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Promedio General</div>
-                            <div class="summary-value"><%= stats ? stats.promedioGeneral : 0 %></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Tasa de Aprobación</div>
-                            <div class="summary-value"><%= stats ? stats.tasaAprobacion : 0 %>%</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Pendientes</div>
-                            <div class="summary-value"><%= stats ? stats.pendientes : 0 %></div>
-                        </div>
+            <!-- Mejores Estudiantes -->
+            <div class="content-section">
+                <div class="section-header success">
+                    <div class="icon">
+                        <i class="fas fa-trophy"></i>
                     </div>
+                    <h2>Top 10 - Mejores Estudiantes</h2>
+                </div>
+
+                <% if (stats && stats.mejoresEstudiantes && stats.mejoresEstudiantes.length > 0) { %>
+                    <table class="students-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Posición</th>
+                                <th>Cédula</th>
+                                <th>Nombre Completo</th>
+                                <th>Promedio</th>
+                                <th>Evaluaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% stats.mejoresEstudiantes.forEach((estudiante, index) => { %>
+                                <tr>
+                                    <td>
+                                        <span class="rank-badge <%= index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'default' %>">
+                                            <%= index + 1 %>
+                                        </span>
+                                    </td>
+                                    <td><%= estudiante.cedula %></td>
+                                    <td><strong><%= estudiante.nombre %></strong></td>
+                                    <td>
+                                        <span class="score-badge <%= estudiante.promedio >= 18 ? 'excellent' : estudiante.promedio >= 15 ? 'good' : 'average' %>">
+                                            <%= estudiante.promedio %>/20
+                                        </span>
+                                    </td>
+                                    <td><%= estudiante.evaluaciones %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay datos suficientes para mostrar</p>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-bar"></i> Rendimiento por Asignatura</h3>
+                    <canvas id="rendimientoChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-pie"></i> Estado de Evaluaciones</h3>
+                    <canvas id="estadoChart"></canvas>
                 </div>
             </div>
+
+            <!-- Mejores Rúbricas -->
+            <div class="content-section">
+                <div class="section-header success">
+                    <div class="icon">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <h2>Rúbricas con Mejor Rendimiento</h2>
+                </div>
+
+                <% if (stats && stats.mejoresRubricas && stats.mejoresRubricas.length > 0) { %>
+                    <% stats.mejoresRubricas.forEach((rubrica, index) => { %>
+                        <div class="rubric-item">
+                            <div class="rubric-header">
+                                <div>
+                                    <div class="rubric-name"><%= index + 1 %>. <%= rubrica.rubrica %></div>
+                                    <div class="rubric-materia"><%= rubrica.materia %></div>
+                                </div>
+                                <span class="score-badge excellent">
+                                    <%= rubrica.promedio %>/20
+                                </span>
+                            </div>
+                            <div class="rubric-stats">
+                                <div class="rubric-stat">
+                                    <i class="fas fa-users"></i>
+                                    <%= rubrica.evaluaciones %> evaluaciones
+                                </div>
+                                <div class="rubric-stat">
+                                    <i class="fas fa-medal"></i>
+                                    <span class="percentage-badge high"><%= rubrica.excelencia %>% excelencia</span>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay datos suficientes para mostrar</p>
+                    </div>
+                <% } %>
+            </div>
+
         </div>
     </main>
     
@@ -94,16 +500,36 @@
                         datasets: [{
                             label: 'Promedio de Calificaciones',
                             data: promedios,
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                max: 20
+                                max: 20,
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
                             }
                         }
                     }
@@ -115,16 +541,32 @@
                 const pendientes = stats.pendientes;
 
                 new Chart(estadoCtx, {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
                         labels: ['Completadas', 'Pendientes'],
                         datasets: [{
                             data: [completadas, pendientes],
                             backgroundColor: [
-                                'rgba(54, 162, 235, 0.6)',
-                                'rgba(255, 99, 132, 0.6)'
-                            ]
+                                'rgba(17, 153, 142, 0.8)',
+                                'rgba(245, 87, 108, 0.8)'
+                            ],
+                            borderWidth: 0
                         }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    padding: 15
+                                }
+                            }
+                        }
                     }
                 });
             }

@@ -2,333 +2,264 @@ const express = require('express');
 const router = express.Router();
 const conexion = require('../models/conetion');
 
-// =============================================
-// GET - Obtener detalles de evaluación para modal
-// =============================================
-router.get('/api/evaluacion/:id/detalles', (req, res) => {
+
+// =====================================================================
+// 🔹 FUNCIONES AUXILIARES
+// =====================================================================
+function sendError(res, msg, err) {
+    if (err) console.error(msg, err);
+    return res.json({ success: false, message: msg });
+}
+
+function query(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        conexion.query(sql, params, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+        });
+    });
+}
+
+
+// =====================================================================
+// 🔹 GET — Obtener datos completos de una evaluación
+// =====================================================================
+router.get('/api/evaluacion/:id/detalles', async (req, res) => {
     const evaluacionId = req.params.id;
 
-    // Consulta para obtener información de la evaluación
-    const queryEvaluacion = `
-        SELECT 
-            ee.id,
-            ee.rubrica_id,
-            ee.estudiante_cedula,
-            ee.observaciones,
-            ee.puntaje_total,
-            ee.fecha_evaluacion,
-            re.nombre_rubrica,
-            re.tipo_evaluacion,
-            re.porcentaje_evaluacion,
-            re.instrucciones,
-            re.competencias,
-            m.nombre as materia_nombre,
-            m.codigo as materia_codigo
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
-        INNER JOIN materia m ON re.materia_codigo = m.codigo
-        WHERE ee.id = ?
-    `;
+    try {
+        // =====================
+        // 1. Obtener evaluación
+        // =====================
+        const evalSQL = `
+            SELECT 
+                ee.id,
+                ee.rubrica_id,
+                ee.estudiante_cedula,
+                ee.observaciones,
+                ee.puntaje_total,
+                ee.fecha_evaluacion,
+                re.nombre_rubrica,
+                re.tipo_evaluacion,
+                re.porcentaje_evaluacion,
+                re.instrucciones,
+                re.competencias,
+                m.nombre AS materia_nombre,
+                m.codigo AS materia_codigo
+            FROM evaluacion_estudiante ee
+            INNER JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
+            INNER JOIN materia m ON re.materia_codigo = m.codigo
+            WHERE ee.id = ?
+        `;
 
-    conexion.query(queryEvaluacion, [evaluacionId], (err, resultEvaluacion) => {
-        if (err) {
-            console.error('Error al obtener evaluación:', err);
-            return res.json({ 
-                success: false, 
-                message: 'Error al obtener la evaluación' 
-            });
-        }
+        const evalData = await query(evalSQL, [evaluacionId]);
+        if (evalData.length === 0) return sendError(res, 'Evaluación no encontrada');
 
-        if (resultEvaluacion.length === 0) {
-            return res.json({ 
-                success: false, 
-                message: 'Evaluación no encontrada' 
-            });
-        }
+        const evaluacion = evalData[0];
 
-        const evaluacion = resultEvaluacion[0];
 
-        // Consulta para obtener información del estudiante
-        const queryEstudiante = `
+        // =====================
+        // 2. Obtener estudiante
+        // =====================
+        const estSQL = `
             SELECT 
                 e.cedula,
                 e.nombre,
                 e.apellido,
                 e.email,
-                c.nombre as carrera
+                c.nombre AS carrera
             FROM estudiante e
             INNER JOIN carrera c ON e.carrera_codigo = c.codigo
             WHERE e.cedula = ?
         `;
 
-        conexion.query(queryEstudiante, [evaluacion.estudiante_cedula], (err, resultEstudiante) => {
-            if (err) {
-                console.error('Error al obtener estudiante:', err);
-                return res.json({ 
-                    success: false, 
-                    message: 'Error al obtener información del estudiante' 
-                });
-            }
+        const estudiantes = await query(estSQL, [evaluacion.estudiante_cedula]);
+        if (estudiantes.length === 0) return sendError(res, 'Estudiante no encontrado');
 
-            if (resultEstudiante.length === 0) {
-                return res.json({ 
-                    success: false, 
-                    message: 'Estudiante no encontrado' 
-                });
-            }
+        const estudiante = estudiantes[0];
 
-            const estudiante = resultEstudiante[0];
 
-            // Consulta para obtener criterios con sus niveles de desempeño
-            const queryCriterios = `
-                SELECT 
-                    ce.id,
-                    ce.descripcion,
-                    ce.puntaje_maximo,
-                    ce.orden
-                FROM criterio_evaluacion ce
-                WHERE ce.rubrica_id = ?
-                ORDER BY ce.orden ASC
-            `;
+        // =====================
+        // 3. Obtener criterios
+        // =====================
+        const criteriosSQL = `
+            SELECT id, descripcion, puntaje_maximo, orden
+            FROM criterio_evaluacion
+            WHERE rubrica_id = ?
+            ORDER BY orden
+        `;
 
-            conexion.query(queryCriterios, [evaluacion.rubrica_id], (err, resultCriterios) => {
-                if (err) {
-                    console.error('Error al obtener criterios:', err);
-                    return res.json({ 
-                        success: false, 
-                        message: 'Error al obtener criterios de evaluación' 
-                    });
-                }
+        const criterios = await query(criteriosSQL, [evaluacion.rubrica_id]);
+        if (criterios.length === 0) return sendError(res, 'No hay criterios configurados');
 
-                    // Obtener niveles de desempeño para cada criterio
-                const criteriosIds = resultCriterios.map(c => c.id);
 
-                if (criteriosIds.length === 0) {
-                    return res.json({
-                        success: false,
-                        message: 'No hay criterios de evaluación configurados'
-                    });
-                }
+        // =====================
+        // 4. Obtener niveles
+        // =====================
+        const criteriosIds = criterios.map(c => c.id);
 
-                const queryNiveles = `
-                    SELECT
-                        nd.id,
-                        nd.criterio_id,
-                        nd.nombre_nivel,
-                        nd.descripcion,
-                        nd.puntaje,
-                        nd.orden
-                    FROM nivel_desempeno nd
-                    WHERE nd.criterio_id IN (?)
-                    ORDER BY nd.criterio_id ASC, nd.orden ASC
-                `;
+        const nivelesSQL = `
+            SELECT
+                id, criterio_id, nombre_nivel,
+                descripcion, puntaje, orden
+            FROM nivel_desempeno
+            WHERE criterio_id IN (?)
+            ORDER BY criterio_id, orden
+        `;
 
-                conexion.query(queryNiveles, [criteriosIds], (err, resultNiveles) => {
-                    if (err) {
-                        console.error('Error al obtener niveles:', err);
-                        return res.json({
-                            success: false,
-                            message: 'Error al obtener niveles de desempeño'
-                        });
-                    }
+        const niveles = await query(nivelesSQL, [criteriosIds]);
 
-                    // Obtener detalles de evaluación para saber qué niveles fueron seleccionados
-                    const queryDetalles = `
-                        SELECT
-                            de.criterio_id,
-                            de.nivel_seleccionado,
-                            de.puntaje_obtenido
-                        FROM detalle_evaluacion de
-                        WHERE de.evaluacion_id = ?
-                    `;
 
-                    conexion.query(queryDetalles, [evaluacionId], (err, resultDetalles) => {
-                        if (err) {
-                            console.error('Error al obtener detalles de evaluación:', err);
-                            return res.json({
-                                success: false,
-                                message: 'Error al obtener detalles de evaluación'
-                            });
-                        }
+        // =====================
+        // 5. Obtener detalles guardados
+        // =====================
+        const detallesSQL = `
+            SELECT
+                criterio_id,
+                nivel_seleccionado,
+                puntaje_obtenido
+            FROM detalle_evaluacion
+            WHERE evaluacion_id = ?
+        `;
 
-                        // Crear mapa de detalles por criterio
-                        const detallesMap = {};
-                        resultDetalles.forEach(detalle => {
-                            detallesMap[detalle.criterio_id] = {
-                                nivel_seleccionado: detalle.nivel_seleccionado,
-                                puntaje_obtenido: detalle.puntaje_obtenido
-                            };
-                        });
+        const detalles = await query(detallesSQL, [evaluacionId]);
 
-                        // Agrupar niveles por criterio y marcar seleccionado
-                        const criteriosConNiveles = resultCriterios.map(criterio => {
-                            const niveles = resultNiveles.filter(
-                                nivel => nivel.criterio_id === criterio.id
-                            ).map(nivel => ({
-                                id: nivel.id,
-                                nombre: nivel.nombre_nivel,
-                                descripcion: nivel.descripcion,
-                                puntaje: nivel.puntaje,
-                                orden: nivel.orden,
-                                seleccionado: detallesMap[criterio.id] ? detallesMap[criterio.id].nivel_seleccionado === nivel.id : false
-                            }));
-
-                            return {
-                                id: criterio.id,
-                                nombre: criterio.descripcion,
-                                descripcion: criterio.descripcion,
-                                puntaje_maximo: criterio.puntaje_maximo,
-                                orden: criterio.orden,
-                                niveles: niveles
-                            };
-                        });
-
-                        // Preparar respuesta
-                        const response = {
-                            success: true,
-                            evaluacion: {
-                                id: evaluacion.id,
-                                rubrica_id: evaluacion.rubrica_id,
-                                estudiante_cedula: evaluacion.estudiante_cedula,
-                                observaciones: evaluacion.observaciones,
-                                puntaje_total: evaluacion.puntaje_total,
-                                fecha_evaluacion: evaluacion.fecha_evaluacion
-                            },
-                            estudiante: {
-                                cedula: estudiante.cedula,
-                                nombre: estudiante.nombre,
-                                apellido: estudiante.apellido,
-                                email: estudiante.email,
-                                carrera: estudiante.carrera
-                            },
-                            rubrica: {
-                                nombre_rubrica: evaluacion.nombre_rubrica,
-                                tipo_evaluacion: evaluacion.tipo_evaluacion,
-                                porcentaje_evaluacion: evaluacion.porcentaje_evaluacion,
-                                instrucciones: evaluacion.instrucciones,
-                                competencias: evaluacion.competencias,
-                                materia: evaluacion.materia_nombre,
-                                materia_codigo: evaluacion.materia_codigo
-                            },
-                            criterios: criteriosConNiveles
-                        };
-
-                        res.json(response);
-                    });
-                });
-            });
+        const detallesMap = {};
+        detalles.forEach(d => {
+            detallesMap[d.criterio_id] = {
+                nivel_seleccionado: d.nivel_seleccionado,
+                puntaje_obtenido: d.puntaje_obtenido
+            };
         });
-    });
+
+
+        // =====================
+        // 6. Unir criterios + niveles + selección
+        // =====================
+        const criteriosFinal = criterios.map(c => {
+            const nivelesCriterio = niveles
+                .filter(n => n.criterio_id === c.id)
+                .map(n => ({
+                    id: n.id,
+                    nombre: n.nombre_nivel,
+                    descripcion: n.descripcion,
+                    puntaje: n.puntaje,
+                    orden: n.orden,
+                    seleccionado: detallesMap[c.id]?.nivel_seleccionado === n.id
+                }));
+
+            return {
+                id: c.id,
+                nombre: c.descripcion,
+                descripcion: c.descripcion,
+                puntaje_maximo: c.puntaje_maximo,
+                orden: c.orden,
+                niveles: nivelesCriterio
+            };
+        });
+
+
+        // =====================
+        // 7. Respuesta final
+        // =====================
+        return res.json({
+            success: true,
+            evaluacion: {
+                id: evaluacion.id,
+                rubrica_id: evaluacion.rubrica_id,
+                estudiante_cedula: evaluacion.estudiante_cedula,
+                observaciones: evaluacion.observaciones,
+                puntaje_total: evaluacion.puntaje_total,
+                fecha_evaluacion: evaluacion.fecha_evaluacion
+            },
+            estudiante,
+            rubrica: {
+                nombre_rubrica: evaluacion.nombre_rubrica,
+                tipo_evaluacion: evaluacion.tipo_evaluacion,
+                porcentaje_evaluacion: evaluacion.porcentaje_evaluacion,
+                instrucciones: evaluacion.instrucciones,
+                competencias: evaluacion.competencias,
+                materia: evaluacion.materia_nombre,
+                materia_codigo: evaluacion.materia_codigo
+            },
+            criterios: criteriosFinal
+        });
+
+    } catch (err) {
+        return sendError(res, 'Error al obtener la evaluación', err);
+    }
 });
 
-// =============================================
-// POST - Guardar evaluación
-// =============================================
+
+
+
+// =====================================================================
+// 🔹 POST — Guardar evaluación
+// =====================================================================
 router.post('/api/evaluacion/:id/guardar', (req, res) => {
     const evaluacionId = req.params.id;
     const { observaciones, puntaje_total, detalles } = req.body;
 
-    // Validar que vengan los datos necesarios
     if (!detalles || detalles.length === 0) {
-        return res.json({ 
-            success: false, 
-            message: 'No se recibieron los detalles de la evaluación' 
-        });
+        return sendError(res, 'No se recibieron los detalles de evaluación');
     }
 
-    // Iniciar transacción
-    conexion.beginTransaction((err) => {
-        if (err) {
-            console.error('Error al iniciar transacción:', err);
-            return res.json({ 
-                success: false, 
-                message: 'Error al procesar la evaluación' 
-            });
-        }
+    conexion.beginTransaction(async err => {
+        if (err) return sendError(res, 'Error al iniciar transacción', err);
 
-        // Actualizar la evaluación principal
-        const queryUpdateEvaluacion = `
-            UPDATE evaluacion_estudiante 
-            SET observaciones = ?, 
-                puntaje_total = ?
-            WHERE id = ?
-        `;
+        try {
+            // ========================
+            // 1. Actualizar evaluación
+            // ========================
+            await query(`
+                UPDATE evaluacion_estudiante 
+                SET observaciones = ?, puntaje_total = ?
+                WHERE id = ?
+            `, [observaciones, puntaje_total, evaluacionId]);
 
-        conexion.query(queryUpdateEvaluacion, [observaciones, puntaje_total, evaluacionId], (err) => {
-            if (err) {
-                console.error('Error al actualizar evaluación:', err);
-                return conexion.rollback(() => {
-                    res.json({ 
-                        success: false, 
-                        message: 'Error al guardar la evaluación' 
-                    });
-                });
-            }
 
-            // Eliminar detalles anteriores (por si se está re-evaluando)
-            const queryDeleteDetalles = `
-                DELETE FROM detalle_evaluacion 
-                WHERE evaluacion_id = ?
-            `;
+            // ========================
+            // 2. Borrar detalles previos
+            // ========================
+            await query(`DELETE FROM detalle_evaluacion WHERE evaluacion_id = ?`, [evaluacionId]);
 
-            conexion.query(queryDeleteDetalles, [evaluacionId], (err) => {
+
+            // ========================
+            // 3. Insertar nuevos
+            // ========================
+            const values = detalles.map(d => [
+                evaluacionId,
+                d.criterio_id,
+                d.nivel_id,
+                d.puntaje_obtenido
+            ]);
+
+            await query(`
+                INSERT INTO detalle_evaluacion 
+                (evaluacion_id, criterio_id, nivel_seleccionado, puntaje_obtenido)
+                VALUES ?
+            `, [values]);
+
+
+            conexion.commit(err => {
                 if (err) {
-                    console.error('Error al eliminar detalles anteriores:', err);
-                    return conexion.rollback(() => {
-                        res.json({ 
-                            success: false, 
-                            message: 'Error al procesar los detalles' 
-                        });
-                    });
+                    return conexion.rollback(() =>
+                        sendError(res, 'Error al finalizar el guardado', err)
+                    );
                 }
 
-                // Insertar nuevos detalles
-                const queryInsertDetalle = `
-                    INSERT INTO detalle_evaluacion 
-                    (evaluacion_id, criterio_id, nivel_seleccionado, puntaje_obtenido) 
-                    VALUES ?
-                `;
-
-                const detallesValues = detalles.map(detalle => [
-                    evaluacionId,
-                    detalle.criterio_id,
-                    detalle.nivel_id,
-                    detalle.puntaje_obtenido
-                ]);
-
-                conexion.query(queryInsertDetalle, [detallesValues], (err) => {
-                    if (err) {
-                        console.error('Error al insertar detalles:', err);
-                        return conexion.rollback(() => {
-                            res.json({ 
-                                success: false, 
-                                message: 'Error al guardar los detalles de evaluación' 
-                            });
-                        });
-                    }
-
-                    // Confirmar transacción
-                    conexion.commit((err) => {
-                        if (err) {
-                            console.error('Error al confirmar transacción:', err);
-                            return conexion.rollback(() => {
-                                res.json({ 
-                                    success: false, 
-                                    message: 'Error al finalizar el guardado' 
-                                });
-                            });
-                        }
-
-                        res.json({
-                            success: true,
-                            message: 'Evaluación guardada correctamente',
-                            puntaje_total: puntaje_total
-                        });
-                    });
+                return res.json({
+                    success: true,
+                    message: 'Evaluación guardada correctamente',
+                    puntaje_total
                 });
             });
-        });
+
+        } catch (error) {
+            conexion.rollback(() => sendError(res, 'Error al guardar evaluación', error));
+        }
     });
 });
+
 
 module.exports = router;

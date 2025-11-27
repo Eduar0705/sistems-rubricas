@@ -130,6 +130,67 @@ const getTeacherReports = (req, res) => {
             FROM evaluacion_estudiante ee
             JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
             WHERE re.docente_cedula = ? AND ee.puntaje_total IS NULL
+        `,
+        mejoresEstudiantes: `
+            SELECT 
+                e.cedula,
+                CONCAT(e.nombre, ' ', e.apellido) as nombre_completo,
+                AVG(ee.puntaje_total) as promedio,
+                COUNT(ee.id) as total_evaluaciones
+            FROM evaluacion_estudiante ee
+            JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
+            JOIN estudiante e ON ee.estudiante_cedula = e.cedula
+            WHERE re.docente_cedula = ? AND ee.puntaje_total IS NOT NULL
+            GROUP BY e.cedula, e.nombre, e.apellido
+            ORDER BY promedio DESC
+            LIMIT 10
+        `,
+        peoresEstudiantes: `
+            SELECT 
+                e.cedula,
+                CONCAT(e.nombre, ' ', e.apellido) as nombre_completo,
+                AVG(ee.puntaje_total) as promedio,
+                COUNT(ee.id) as total_evaluaciones
+            FROM evaluacion_estudiante ee
+            JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
+            JOIN estudiante e ON ee.estudiante_cedula = e.cedula
+            WHERE re.docente_cedula = ? AND ee.puntaje_total IS NOT NULL
+            GROUP BY e.cedula, e.nombre, e.apellido
+            HAVING COUNT(ee.id) >= 2
+            ORDER BY promedio ASC
+            LIMIT 10
+        `,
+        mejoresRubricas: `
+            SELECT 
+                re.nombre_rubrica as rubrica,
+                m.nombre as materia,
+                AVG(ee.puntaje_total) as promedio,
+                COUNT(ee.id) as total_evaluaciones,
+                (SUM(CASE WHEN ee.puntaje_total >= 15 THEN 1 ELSE 0 END) / COUNT(*)) * 100 as porcentaje_excelencia
+            FROM evaluacion_estudiante ee
+            JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
+            JOIN materia m ON re.materia_codigo = m.codigo
+            WHERE re.docente_cedula = ? AND ee.puntaje_total IS NOT NULL
+            GROUP BY re.id, re.nombre_rubrica, m.nombre
+            HAVING COUNT(ee.id) >= 3
+            ORDER BY promedio DESC
+            LIMIT 5
+        `,
+        peoresRubricas: `
+            SELECT 
+                re.nombre_rubrica as rubrica,
+                m.nombre as materia,
+                AVG(ee.puntaje_total) as promedio,
+                COUNT(ee.id) as total_evaluaciones,
+                (SUM(CASE WHEN ee.puntaje_total < 10 THEN 1 ELSE 0 END) / COUNT(*)) * 100 as porcentaje_reprobados
+            FROM evaluacion_estudiante ee
+            JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
+            JOIN materia m ON re.materia_codigo = m.codigo
+            WHERE re.docente_cedula = ? AND ee.puntaje_total IS NOT NULL
+            GROUP BY re.id, re.nombre_rubrica, m.nombre
+            HAVING COUNT(ee.id) >= 3
+            ORDER BY promedio ASC
+            LIMIT 5
         `
     };
 
@@ -154,7 +215,33 @@ const getTeacherReports = (req, res) => {
                 promedioGeneral: parseFloat(data.promedioDocente[0].promedio || 0).toFixed(1),
                 rendimientoMateria: data.rendimientoMateria,
                 tasaAprobacion: parseFloat(data.tasaAprobacion[0].tasa || 0).toFixed(1),
-                pendientes: data.pendientes[0].total
+                pendientes: data.pendientes[0].total,
+                mejoresEstudiantes: data.mejoresEstudiantes.map(e => ({
+                    cedula: e.cedula,
+                    nombre: e.nombre_completo,
+                    promedio: parseFloat(e.promedio).toFixed(2),
+                    evaluaciones: e.total_evaluaciones
+                })),
+                peoresEstudiantes: data.peoresEstudiantes.map(e => ({
+                    cedula: e.cedula,
+                    nombre: e.nombre_completo,
+                    promedio: parseFloat(e.promedio).toFixed(2),
+                    evaluaciones: e.total_evaluaciones
+                })),
+                mejoresRubricas: data.mejoresRubricas.map(r => ({
+                    rubrica: r.rubrica,
+                    materia: r.materia,
+                    promedio: parseFloat(r.promedio).toFixed(2),
+                    evaluaciones: r.total_evaluaciones,
+                    excelencia: parseFloat(r.porcentaje_excelencia).toFixed(1)
+                })),
+                peoresRubricas: data.peoresRubricas.map(r => ({
+                    rubrica: r.rubrica,
+                    materia: r.materia,
+                    promedio: parseFloat(r.promedio).toFixed(2),
+                    evaluaciones: r.total_evaluaciones,
+                    reprobados: parseFloat(r.porcentaje_reprobados).toFixed(1)
+                }))
             };
 
             res.render("teacher/reportes", {
