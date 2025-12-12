@@ -5,19 +5,122 @@ const conexion = require('../models/conetion');
 // =============================================
 const getAdminReports = (req, res) => {
     if (!req.session.login) {
-        return res.redirect('/login');
+        const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
+        return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
 
-    // Consultas para estadísticas de administrador
+    // Consultas comprehensivas para reportes de administrador enfocados en profesores
     const queries = {
+        // Estadísticas generales
         totalEstudiantes: "SELECT COUNT(*) as total FROM estudiante WHERE activo = 1",
         totalDocentes: "SELECT COUNT(*) as total FROM docente WHERE activo = 1",
         totalRubricas: "SELECT COUNT(*) as total FROM rubrica_evaluacion WHERE activo = 1",
+        totalEvaluaciones: "SELECT COUNT(*) as total FROM evaluacion_estudiante WHERE puntaje_total IS NOT NULL",
         promedioGeneral: `
             SELECT AVG(puntaje_total) as promedio 
             FROM evaluacion_estudiante 
             WHERE puntaje_total IS NOT NULL
         `,
+
+        // Top profesores por número de rúbricas creadas
+        topProfesoresPorRubricas: `
+            SELECT 
+                d.cedula,
+                CONCAT(d.nombre, ' ', d.apellido) as nombre_completo,
+                d.especializacion,
+                COUNT(r.id) as total_rubricas,
+                COUNT(DISTINCT r.materia_codigo) as materias_distintas
+            FROM docente d
+            LEFT JOIN rubrica_evaluacion r ON d.cedula = r.docente_cedula AND r.activo = TRUE
+            WHERE d.activo = 1
+            GROUP BY d.cedula, d.nombre, d.apellido, d.especializacion
+            ORDER BY total_rubricas DESC
+            LIMIT 10
+        `,
+
+        // Top profesores por número de evaluaciones completadas
+        topProfesoresPorEvaluaciones: `
+            SELECT 
+                d.cedula,
+                CONCAT(d.nombre, ' ', d.apellido) as nombre_completo,
+                d.especializacion,
+                COUNT(ee.id) as total_evaluaciones,
+                AVG(ee.puntaje_total) as promedio_calificaciones
+            FROM docente d
+            INNER JOIN rubrica_evaluacion r ON d.cedula = r.docente_cedula
+            INNER JOIN evaluacion_estudiante ee ON r.id = ee.rubrica_id
+            WHERE d.activo = 1 AND r.activo = TRUE AND ee.puntaje_total IS NOT NULL
+            GROUP BY d.cedula, d.nombre, d.apellido, d.especializacion
+            ORDER BY total_evaluaciones DESC
+            LIMIT 10
+        `,
+
+        // Profesores inactivos (sin rúbricas)
+        profesoresInactivos: `
+            SELECT 
+                d.cedula,
+                CONCAT(d.nombre, ' ', d.apellido) as nombre_completo,
+                d.especializacion,
+                d.email
+            FROM docente d
+            LEFT JOIN rubrica_evaluacion r ON d.cedula = r.docente_cedula AND r.activo = TRUE
+            WHERE d.activo = 1
+            GROUP BY d.cedula, d.nombre, d.apellido, d.especializacion, d.email
+            HAVING COUNT(r.id) = 0
+            ORDER BY d.nombre, d.apellido
+        `,
+
+        // Profesores con baja actividad (sin evaluaciones recientes en 30 días)
+        profesoresBajaActividad: `
+            SELECT 
+                d.cedula,
+                CONCAT(d.nombre, ' ', d.apellido) as nombre_completo,
+                d.especializacion,
+                MAX(ee.fecha_evaluacion) as ultima_evaluacion,
+                DATEDIFF(NOW(), MAX(ee.fecha_evaluacion)) as dias_inactivo
+            FROM docente d
+            INNER JOIN rubrica_evaluacion r ON d.cedula = r.docente_cedula
+            LEFT JOIN evaluacion_estudiante ee ON r.id = ee.rubrica_id AND ee.puntaje_total IS NOT NULL
+            WHERE d.activo = 1 AND r.activo = TRUE
+            GROUP BY d.cedula, d.nombre, d.apellido, d.especializacion
+            HAVING MAX(ee.fecha_evaluacion) IS NULL OR DATEDIFF(NOW(), MAX(ee.fecha_evaluacion)) > 30
+            ORDER BY dias_inactivo DESC
+        `,
+
+        // Tasa de completitud de evaluaciones por profesor
+        tasaCompletitudPorProfesor: `
+            SELECT 
+                d.cedula,
+                CONCAT(d.nombre, ' ', d.apellido) as nombre_completo,
+                COUNT(ee.id) as total_asignadas,
+                SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) as completadas,
+                ROUND((SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) / COUNT(ee.id)) * 100, 1) as porcentaje_completitud
+            FROM docente d
+            INNER JOIN rubrica_evaluacion r ON d.cedula = r.docente_cedula
+            INNER JOIN evaluacion_estudiante ee ON r.id = ee.rubrica_id
+            WHERE d.activo = 1 AND r.activo = TRUE
+            GROUP BY d.cedula, d.nombre, d.apellido
+            HAVING COUNT(ee.id) > 0
+            ORDER BY porcentaje_completitud DESC
+            LIMIT 15
+        `,
+
+        // Actividad mensual (últimos 6 meses)
+        actividadMensual: `
+            SELECT 
+                DATE_FORMAT(ee.fecha_evaluacion, '%Y-%m') as mes,
+                COUNT(DISTINCT r.docente_cedula) as profesores_activos,
+                COUNT(ee.id) as total_evaluaciones,
+                COUNT(DISTINCT r.id) as rubricas_usadas
+            FROM evaluacion_estudiante ee
+            INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
+            WHERE ee.puntaje_total IS NOT NULL 
+              AND ee.fecha_evaluacion >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(ee.fecha_evaluacion, '%Y-%m')
+            ORDER BY mes ASC
+        `,
+
+        // Rendimiento por carrera
         rendimientoCarrera: `
             SELECT c.nombre, AVG(ee.puntaje_total) as promedio
             FROM evaluacion_estudiante ee
@@ -25,7 +128,10 @@ const getAdminReports = (req, res) => {
             JOIN carrera c ON e.carrera_codigo = c.codigo
             WHERE ee.puntaje_total IS NOT NULL
             GROUP BY c.nombre
+            ORDER BY promedio DESC
         `,
+
+        // Distribución de notas
         distribucionNotas: `
             SELECT 
                 CASE 
@@ -38,6 +144,29 @@ const getAdminReports = (req, res) => {
             FROM evaluacion_estudiante
             WHERE puntaje_total IS NOT NULL
             GROUP BY rango
+            ORDER BY 
+                CASE rango
+                    WHEN 'Sobresaliente (18-20)' THEN 1
+                    WHEN 'Notable (15-17)' THEN 2
+                    WHEN 'Aprobado (10-14)' THEN 3
+                    ELSE 4
+                END
+        `,
+
+        // Uso de rúbricas por materia
+        usoRubricasPorMateria: `
+            SELECT 
+                m.nombre as materia,
+                COUNT(DISTINCT r.id) as total_rubricas,
+                COUNT(DISTINCT r.docente_cedula) as profesores_distintos,
+                COUNT(ee.id) as total_evaluaciones
+            FROM materia m
+            LEFT JOIN rubrica_evaluacion r ON m.codigo = r.materia_codigo AND r.activo = TRUE
+            LEFT JOIN evaluacion_estudiante ee ON r.id = ee.rubrica_id AND ee.puntaje_total IS NOT NULL
+            GROUP BY m.codigo, m.nombre
+            HAVING COUNT(DISTINCT r.id) > 0
+            ORDER BY total_rubricas DESC
+            LIMIT 10
         `
     };
 
@@ -60,12 +189,34 @@ const getAdminReports = (req, res) => {
 
             // Procesar datos para la vista
             const stats = {
+                // Estadísticas generales
                 totalEstudiantes: data.totalEstudiantes[0].total,
                 totalDocentes: data.totalDocentes[0].total,
                 totalRubricas: data.totalRubricas[0].total,
+                totalEvaluaciones: data.totalEvaluaciones[0].total,
                 promedioGeneral: parseFloat(data.promedioGeneral[0].promedio || 0).toFixed(1),
+
+                // Rankings de profesores
+                topProfesoresPorRubricas: data.topProfesoresPorRubricas,
+                topProfesoresPorEvaluaciones: data.topProfesoresPorEvaluaciones.map(p => ({
+                    ...p,
+                    promedio_calificaciones: parseFloat(p.promedio_calificaciones || 0).toFixed(1)
+                })),
+
+                // Profesores inactivos
+                profesoresInactivos: data.profesoresInactivos,
+                profesoresBajaActividad: data.profesoresBajaActividad,
+
+                // Tasas de completitud
+                tasaCompletitudPorProfesor: data.tasaCompletitudPorProfesor,
+
+                // Tendencias
+                actividadMensual: data.actividadMensual,
+
+                // Otros reportes
                 rendimientoCarrera: data.rendimientoCarrera,
-                distribucionNotas: data.distribucionNotas
+                distribucionNotas: data.distribucionNotas,
+                usoRubricasPorMateria: data.usoRubricasPorMateria
             };
 
             res.render("admin/reportes", {

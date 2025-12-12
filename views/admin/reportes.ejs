@@ -1,139 +1,596 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Rubricas' %></title>
+    <title>
+        <%= title || 'Rubricas' %>
+    </title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card-large {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card-large .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-large .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0.5rem 0;
+        }
+
+        .stat-card-large .label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .alert-section {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .alert-section.danger {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .alert-section h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .alert-section.danger h3 {
+            color: #721c24;
+        }
+
+        .teacher-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .teacher-list li {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .teacher-list li:last-child {
+            border-bottom: none;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 1rem 0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
+
 <body>
     <%- include('../inc/menu.ejs') %>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <%- include('../inc/headerAdmin.ejs') %>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <%- include('../inc/headerAdmin.ejs') %>
 
-        <!-- Reportes View -->
-        <div class="view" id="reportes">
-            <div class="view-header">
-                <h2>Reportes y Estadísticas</h2>
-                <button class="btn-primary" onclick="window.print()">
-                    <i class="fas fa-download"></i>
-                    Exportar Reporte
-                </button>
-            </div>
+                <!-- Reportes View -->
+                <div class="view" id="reportes">
+                    <div class="view-header">
+                        <button class="btn-primary" onclick="window.print()">
+                            <i class="fas fa-download"></i>
+                            Exportar Reporte
+                        </button>
+                    </div>
 
-            <div class="content-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Rendimiento por Carrera</h2>
-                    </div>
-                    <div class="card-content">
-                        <canvas id="rendimientoChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Distribución de Calificaciones</h2>
-                    </div>
-                    <div class="card-content">
-                        <canvas id="distribucionChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Resumen General</h2>
-                </div>
-                <div class="card-content">
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <div class="summary-label">Total Estudiantes</div>
-                            <div class="summary-value"><%= stats ? stats.totalEstudiantes : 0 %></div>
+                    <% if (stats) { %>
+                        <!-- Estadísticas Generales -->
+                        <div class="stats-overview">
+                            <div class="stat-card-large">
+                                <div class="icon" style="color: #3498db;">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </div>
+                                <div class="value">
+                                    <%= stats.totalDocentes %>
+                                </div>
+                                <div class="label">Docentes Activos</div>
+                            </div>
+                            <div class="stat-card-large">
+                                <div class="icon" style="color: #9b59b6;">
+                                    <i class="fas fa-table"></i>
+                                </div>
+                                <div class="value">
+                                    <%= stats.totalRubricas %>
+                                </div>
+                                <div class="label">Rúbricas Creadas</div>
+                            </div>
+                            <div class="stat-card-large">
+                                <div class="icon" style="color: #e74c3c;">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <div class="value">
+                                    <%= stats.totalEvaluaciones %>
+                                </div>
+                                <div class="label">Evaluaciones Completadas</div>
+                            </div>
                         </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Total Docentes</div>
-                            <div class="summary-value"><%= stats ? stats.totalDocentes : 0 %></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Total Rúbricas</div>
-                            <div class="summary-value"><%= stats ? stats.totalRubricas : 0 %></div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Promedio General</div>
-                            <div class="summary-value"><%= stats ? stats.promedioGeneral : 0 %></div>
-                        </div>
-                    </div>
+
+                        <!-- Alertas de Profesores Inactivos -->
+                        <% if (stats.profesoresInactivos && stats.profesoresInactivos.length> 0) { %>
+                            <div class="alert-section danger">
+                                <h3><i class="fas fa-exclamation-triangle"></i> Profesores Sin Rúbricas (<%=
+                                        stats.profesoresInactivos.length %>)</h3>
+                                <p>Los siguientes profesores no han creado ninguna rúbrica en el sistema:</p>
+                                <ul class="teacher-list">
+                                    <% stats.profesoresInactivos.slice(0, 5).forEach(function(prof) { %>
+                                        <li>
+                                            <strong>
+                                                <%= prof.nombre_completo %>
+                                            </strong> - <%= prof.especializacion %>
+                                                <% if (prof.email) { %>
+                                                    (<a href="mailto:<%= prof.email %>">
+                                                        <%= prof.email %>
+                                                    </a>)
+                                                    <% } %>
+                                        </li>
+                                        <% }); %>
+                                            <% if (stats.profesoresInactivos.length> 5) { %>
+                                                <li><em>... y <%= stats.profesoresInactivos.length - 5 %> más</em></li>
+                                                <% } %>
+                                </ul>
+                            </div>
+                            <% } %>
+
+                                <% if (stats.profesoresBajaActividad && stats.profesoresBajaActividad.length> 0) { %>
+                                    <div class="alert-section">
+                                        <h3><i class="fas fa-clock"></i> Profesores con Baja Actividad Reciente (<%=
+                                                stats.profesoresBajaActividad.length %>)</h3>
+                                        <p>Profesores sin evaluaciones en los últimos 30 días:</p>
+                                        <ul class="teacher-list">
+                                            <% stats.profesoresBajaActividad.slice(0, 5).forEach(function(prof) { %>
+                                                <li>
+                                                    <strong>
+                                                        <%= prof.nombre_completo %>
+                                                    </strong> - <%= prof.especializacion %>
+                                                        <% if (prof.dias_inactivo) { %>
+                                                            (Inactivo por <%= prof.dias_inactivo %> días)
+                                                                <% } else { %>
+                                                                    (Sin evaluaciones completadas)
+                                                                    <% } %>
+                                                </li>
+                                                <% }); %>
+                                                    <% if (stats.profesoresBajaActividad.length> 5) { %>
+                                                        <li><em>... y <%= stats.profesoresBajaActividad.length - 5 %>
+                                                                    más</em></li>
+                                                        <% } %>
+                                        </ul>
+                                    </div>
+                                    <% } %>
+
+                                        <!-- Gráficas y Rankings -->
+                                        <div class="content-grid">
+                                            <!-- Top Profesores por Rúbricas -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h2 class="card-title"><i class="fas fa-trophy"></i> Top 10
+                                                        Profesores por Rúbricas Creadas</h2>
+                                                </div>
+                                                <div class="card-content">
+                                                    <div class="chart-container">
+                                                        <canvas id="topRubricasChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Top Profesores por Evaluaciones -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h2 class="card-title"><i class="fas fa-medal"></i> Top 10
+                                                        Profesores por Evaluaciones Completadas</h2>
+                                                </div>
+                                                <div class="card-content">
+                                                    <div class="chart-container">
+                                                        <canvas id="topEvaluacionesChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tendencias de Actividad -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h2 class="card-title"><i class="fas fa-chart-area"></i> Tendencia de
+                                                    Actividad (Últimos 6 Meses)</h2>
+                                            </div>
+                                            <div class="card-content">
+                                                <div class="chart-container">
+                                                    <canvas id="actividadMensualChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tasa de Completitud por Profesor -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h2 class="card-title"><i class="fas fa-tasks"></i> Tasa de Completitud
+                                                    de Evaluaciones</h2>
+                                            </div>
+                                            <div class="card-content">
+                                                <% if (stats.tasaCompletitudPorProfesor &&
+                                                    stats.tasaCompletitudPorProfesor.length> 0) { %>
+                                                    <table class="data-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Profesor</th>
+                                                                <th>Asignadas</th>
+                                                                <th>Completadas</th>
+                                                                <th>% Completitud</th>
+                                                                <th>Estado</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <% stats.tasaCompletitudPorProfesor.forEach(function(prof) {
+                                                                %>
+                                                                <tr>
+                                                                    <td><strong>
+                                                                            <%= prof.nombre_completo %>
+                                                                        </strong></td>
+                                                                    <td>
+                                                                        <%= prof.total_asignadas %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= prof.completadas %>
+                                                                    </td>
+                                                                    <td>
+                                                                        <%= prof.porcentaje_completitud %>%
+                                                                    </td>
+                                                                    <td>
+                                                                        <% if (prof.porcentaje_completitud>= 80) { %>
+                                                                            <span
+                                                                                class="badge badge-success">Excelente</span>
+                                                                            <% } else if (prof.porcentaje_completitud>=
+                                                                                50) { %>
+                                                                                <span
+                                                                                    class="badge badge-warning">Regular</span>
+                                                                                <% } else { %>
+                                                                                    <span
+                                                                                        class="badge badge-danger">Bajo</span>
+                                                                                    <% } %>
+                                                                    </td>
+                                                                </tr>
+                                                                <% }); %>
+                                                        </tbody>
+                                                    </table>
+                                                    <% } else { %>
+                                                        <p>No hay datos de completitud disponibles.</p>
+                                                        <% } %>
+                                            </div>
+                                        </div>
+
+                                        <!-- Gráficas Adicionales -->
+                                        <div class="content-grid">
+                                            <!-- Uso de Rúbricas por Materia -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h2 class="card-title">Uso de Rúbricas por Materia</h2>
+                                                </div>
+                                                <div class="card-content">
+                                                    <div class="chart-container">
+                                                        <canvas id="usoMateriasChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Distribución de Calificaciones -->
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h2 class="card-title">Distribución de Calificaciones</h2>
+                                                </div>
+                                                <div class="card-content">
+                                                    <div class="chart-container">
+                                                        <canvas id="distribucionChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Rendimiento por Carrera -->
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h2 class="card-title">Rendimiento por Carrera</h2>
+                                            </div>
+                                            <div class="card-content">
+                                                <div class="chart-container">
+                                                    <canvas id="rendimientoChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <% } else { %>
+                                            <div class="card">
+                                                <div class="card-content">
+                                                    <p style="text-align: center; color: #e74c3c;">
+                                                        <i class="fas fa-exclamation-circle"></i>
+                                                        Error al cargar los reportes. Por favor, intenta nuevamente.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <% } %>
                 </div>
-            </div>
-        </div>
-    </main>
+        </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script id="stats-data" type="application/json"><%- stats ? JSON.stringify(stats) : 'null' %></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const statsElement = document.getElementById('stats-data');
-            const stats = statsElement ? JSON.parse(statsElement.textContent) : null;
-            
-            if (stats) { 
-                // Rendimiento por Carrera Chart
-                const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
-                const carreras = stats.rendimientoCarrera.map(r => r.nombre);
-                const promedios = stats.rendimientoCarrera.map(r => r.promedio);
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script id="stats-data" type="application/json"><%- stats ? JSON.stringify(stats) : 'null' %></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const statsElement = document.getElementById('stats-data');
+                const stats = statsElement ? JSON.parse(statsElement.textContent) : null;
 
-                new Chart(rendimientoCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: carreras,
-                        datasets: [{
-                            label: 'Promedio de Calificaciones',
-                            data: promedios,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 20 // Assuming 20 is max grade
+                if (stats) {
+                    // Configuración común de colores
+                    const colors = {
+                        primary: 'rgba(54, 162, 235, 0.8)',
+                        success: 'rgba(75, 192, 192, 0.8)',
+                        warning: 'rgba(255, 206, 86, 0.8)',
+                        danger: 'rgba(255, 99, 132, 0.8)',
+                        purple: 'rgba(153, 102, 255, 0.8)',
+                        orange: 'rgba(255, 159, 64, 0.8)'
+                    };
+
+                    // Top Profesores por Rúbricas
+                    if (stats.topProfesoresPorRubricas && stats.topProfesoresPorRubricas.length > 0) {
+                        const ctx1 = document.getElementById('topRubricasChart').getContext('2d');
+                        new Chart(ctx1, {
+                            type: 'bar',
+                            data: {
+                                labels: stats.topProfesoresPorRubricas.map(p => p.nombre_completo),
+                                datasets: [{
+                                    label: 'Rúbricas Creadas',
+                                    data: stats.topProfesoresPorRubricas.map(p => p.total_rubricas),
+                                    backgroundColor: colors.purple,
+                                    borderColor: 'rgba(153, 102, 255, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                    }
+                                }
                             }
-                        }
+                        });
                     }
-                });
 
-                // Distribución de Notas Chart
-                const distribucionCtx = document.getElementById('distribucionChart').getContext('2d');
-                const rangos = stats.distribucionNotas.map(d => d.rango);
-                const cantidades = stats.distribucionNotas.map(d => d.cantidad);
-
-                new Chart(distribucionCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: rangos,
-                        datasets: [{
-                            data: cantidades,
-                            backgroundColor: [
-                                'rgba(75, 192, 192, 0.6)', // Sobresaliente
-                                'rgba(54, 162, 235, 0.6)', // Notable
-                                'rgba(255, 206, 86, 0.6)', // Aprobado
-                                'rgba(255, 99, 132, 0.6)'  // Reprobado
-                            ]
-                        }]
+                    // Top Profesores por Evaluaciones
+                    if (stats.topProfesoresPorEvaluaciones && stats.topProfesoresPorEvaluaciones.length > 0) {
+                        const ctx2 = document.getElementById('topEvaluacionesChart').getContext('2d');
+                        new Chart(ctx2, {
+                            type: 'bar',
+                            data: {
+                                labels: stats.topProfesoresPorEvaluaciones.map(p => p.nombre_completo),
+                                datasets: [{
+                                    label: 'Evaluaciones Completadas',
+                                    data: stats.topProfesoresPorEvaluaciones.map(p => p.total_evaluaciones),
+                                    backgroundColor: colors.success,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                    }
+                                }
+                            }
+                        });
                     }
-                });
-            }
-        });
-    </script>
 
-    <script src="../js/home.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                    // Actividad Mensual
+                    if (stats.actividadMensual && stats.actividadMensual.length > 0) {
+                        const ctx3 = document.getElementById('actividadMensualChart').getContext('2d');
+                        new Chart(ctx3, {
+                            type: 'line',
+                            data: {
+                                labels: stats.actividadMensual.map(m => m.mes),
+                                datasets: [
+                                    {
+                                        label: 'Evaluaciones',
+                                        data: stats.actividadMensual.map(m => m.total_evaluaciones),
+                                        borderColor: colors.primary,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                        fill: true,
+                                        tension: 0.4
+                                    },
+                                    {
+                                        label: 'Profesores Activos',
+                                        data: stats.actividadMensual.map(m => m.profesores_activos),
+                                        borderColor: colors.success,
+                                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                        fill: true,
+                                        tension: 0.4
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Uso de Rúbricas por Materia
+                    if (stats.usoRubricasPorMateria && stats.usoRubricasPorMateria.length > 0) {
+                        const ctx4 = document.getElementById('usoMateriasChart').getContext('2d');
+                        new Chart(ctx4, {
+                            type: 'bar',
+                            data: {
+                                labels: stats.usoRubricasPorMateria.map(m => m.materia),
+                                datasets: [{
+                                    label: 'Rúbricas',
+                                    data: stats.usoRubricasPorMateria.map(m => m.total_rubricas),
+                                    backgroundColor: colors.orange,
+                                    borderColor: 'rgba(255, 159, 64, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: { stepSize: 1 }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Distribución de Notas
+                    if (stats.distribucionNotas && stats.distribucionNotas.length > 0) {
+                        const ctx5 = document.getElementById('distribucionChart').getContext('2d');
+                        new Chart(ctx5, {
+                            type: 'doughnut',
+                            data: {
+                                labels: stats.distribucionNotas.map(d => d.rango),
+                                datasets: [{
+                                    data: stats.distribucionNotas.map(d => d.cantidad),
+                                    backgroundColor: [
+                                        colors.success,
+                                        colors.primary,
+                                        colors.warning,
+                                        colors.danger
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                    }
+
+                    // Rendimiento por Carrera
+                    if (stats.rendimientoCarrera && stats.rendimientoCarrera.length > 0) {
+                        const ctx6 = document.getElementById('rendimientoChart').getContext('2d');
+                        new Chart(ctx6, {
+                            type: 'bar',
+                            data: {
+                                labels: stats.rendimientoCarrera.map(r => r.nombre),
+                                datasets: [{
+                                    label: 'Promedio de Calificaciones',
+                                    data: stats.rendimientoCarrera.map(r => r.promedio),
+                                    backgroundColor: colors.primary,
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 20
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        </script>
+
+        <script src="../js/home.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 const conexion = require('../models/conetion');
 
-router.get("/home", function(req, res) {
-    if(!req.session.login){
+router.get("/home", function (req, res) {
+    if (!req.session.login) {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
@@ -30,7 +30,7 @@ router.get("/home", function(req, res) {
                 FROM evaluacion_estudiante 
                 WHERE puntaje_total IS NULL
             `;
-            
+
             conexion.query(countEvaluacionesPendientes, (err, evaluacionesResult) => {
                 if (err) {
                     console.log('Error al contar evaluaciones pendientes: ', err);
@@ -52,7 +52,7 @@ router.get("/home", function(req, res) {
                     ORDER BY r.fecha_creacion DESC
                     LIMIT 4
                 `;
-                
+
                 conexion.query(recentRubricasQuery, (err, recentRubricasResult) => {
                     if (err) {
                         console.log('Error al obtener rúbricas recientes: ', err);
@@ -71,19 +71,65 @@ router.get("/home", function(req, res) {
                         };
                     });
 
-                    const totalProfesores = profesResult[0].totalProfesores;
-                    const totalRubricas = rubricasResult[0].totalRubricas;
-                    const totalEvaluacionesPendientes = evaluacionesResult[0].totalEvaluacionesPendientes;
-                    
-                    // Renderizar con todos los datos obtenidos
-                    res.render("home/index", {
-                        datos: req.session,
-                        title: 'Sistema de Gestión de Rúbricas',
-                        totalProfesores: totalProfesores,
-                        totalRubricas: totalRubricas,
-                        totalEvaluacionesPendientes: totalEvaluacionesPendientes, // **NUEVA VARIABLE**
-                        rubricasRecientes: rubricasRecientes,
-                        currentPage: 'home'
+                    // Obtener actividad reciente (últimas evaluaciones completadas por profesores)
+                    let recentActivityQuery = `
+                        SELECT 
+                            ee.id,
+                            ee.fecha_evaluacion,
+                            ee.puntaje_total,
+                            e.nombre AS estudiante_nombre,
+                            e.apellido AS estudiante_apellido,
+                            r.nombre_rubrica,
+                            m.nombre AS materia_nombre,
+                            d.nombre AS docente_nombre,
+                            d.apellido AS docente_apellido
+                        FROM evaluacion_estudiante ee
+                        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
+                        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
+                        INNER JOIN materia m ON r.materia_codigo = m.codigo
+                        INNER JOIN docente d ON r.docente_cedula = d.cedula
+                        WHERE ee.puntaje_total IS NOT NULL
+                          AND r.activo = TRUE
+                          AND e.activo = 1
+                        ORDER BY ee.fecha_evaluacion DESC
+                        LIMIT 4
+                    `;
+
+                    conexion.query(recentActivityQuery, (err, activityResult) => {
+                        if (err) {
+                            console.log('Error al obtener actividad reciente: ', err);
+                            activityResult = [];
+                        }
+
+                        const actividadReciente = activityResult.map(actividad => {
+                            return {
+                                id: actividad.id,
+                                estudiante_nombre: actividad.estudiante_nombre,
+                                estudiante_apellido: actividad.estudiante_apellido,
+                                rubrica_nombre: actividad.nombre_rubrica,
+                                materia_nombre: actividad.materia_nombre,
+                                docente_nombre: actividad.docente_nombre,
+                                docente_apellido: actividad.docente_apellido,
+                                puntaje_total: actividad.puntaje_total,
+                                tiempo_transcurrido: calcularTiempoTranscurrido(actividad.fecha_evaluacion)
+                            };
+                        });
+
+                        const totalProfesores = profesResult[0].totalProfesores;
+                        const totalRubricas = rubricasResult[0].totalRubricas;
+                        const totalEvaluacionesPendientes = evaluacionesResult[0].totalEvaluacionesPendientes;
+
+                        // Renderizar con todos los datos obtenidos
+                        res.render("home/index", {
+                            datos: req.session,
+                            title: 'Sistema de Gestión de Rúbricas',
+                            totalProfesores: totalProfesores,
+                            totalRubricas: totalRubricas,
+                            totalEvaluacionesPendientes: totalEvaluacionesPendientes,
+                            rubricasRecientes: rubricasRecientes,
+                            actividadReciente: actividadReciente,
+                            currentPage: 'home'
+                        });
                     });
                 });
             });
@@ -96,14 +142,14 @@ function calcularTiempoTranscurrido(fecha) {
     const ahora = new Date();
     const fechaRubrica = new Date(fecha);
     const diferencia = ahora - fechaRubrica;
-    
+
     const segundos = Math.floor(diferencia / 1000);
     const minutos = Math.floor(segundos / 60);
     const horas = Math.floor(minutos / 60);
     const dias = Math.floor(horas / 24);
     const semanas = Math.floor(dias / 7);
     const meses = Math.floor(dias / 30);
-    
+
     if (meses > 0) {
         return meses === 1 ? 'hace 1 mes' : `hace ${meses} meses`;
     } else if (semanas > 0) {
