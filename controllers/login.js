@@ -3,11 +3,11 @@ const routers = express.Router();
 const conexion = require('../models/conetion');
 
 routers.post('/verifLogin', (req, res) => {
-    const { cedula, password, forzarCierre } = req.body;
+    const { cedula, password } = req.body;
 
     // Validar que cedula y password no estén vacíos
     if (!cedula || !password) {
-        return res.render('auth/login', { 
+        return res.render('auth/login', {
             mensaje: 'Por favor, ingresa tu cédula y contraseña.',
             sesionActiva: false
         });
@@ -16,33 +16,11 @@ routers.post('/verifLogin', (req, res) => {
     // Obtener el objeto de sesiones activas
     const sesionesActivas = req.app.locals.sesionesActivas;
 
-    // Verificar si ya existe una sesión activa para esta cédula
-    if (sesionesActivas.has(cedula) && !forzarCierre) {
-        const sesionExistente = sesionesActivas.get(cedula);
-        const tiempoTranscurrido = Date.now() - (sesionExistente.ultimaActividad || sesionExistente.inicioSesion);
-        const tiempoRestante = Math.ceil((600000 - tiempoTranscurrido) / 1000 / 60); // en minutos
-        
-        // Devolver información para mostrar modal de confirmación
-        return res.render('auth/login', { 
-            sesionActiva: true,
-            cedula: cedula,
-            password: password, // Necesario para reenviar
-            tiempoRestante: tiempoRestante > 0 ? tiempoRestante : 1,
-            mensaje: null
-        });
-    }
-
-    // Si se forzó el cierre, eliminar la sesión anterior
-    if (forzarCierre && sesionesActivas.has(cedula)) {
-        sesionesActivas.delete(cedula);
-        console.log(`🔄 Sesión anterior forzada a cerrar para: ${cedula}`);
-    }
-
     // Primero buscar en usuario (profesores, administradores)
     const queryUsuario = 'SELECT * FROM usuario WHERE cedula = ? AND password = ?';
     conexion.query(queryUsuario, [cedula, password], (err, resultsUsuario) => {
         let mensaje;
-        
+
         if (err) {
             console.log('Error en la consulta de usuario: ' + err);
             mensaje = 'Error en el servidor. Por favor, inténtalo de nuevo más tarde.';
@@ -86,7 +64,7 @@ routers.post('/verifLogin', (req, res) => {
 
                     // Configurar sesión para estudiante
                     configurarSesionEstudiante(req, estudiante, sesionesActivas);
-                    
+
                     console.log('Sesión de estudiante:', req.session);
                     return res.redirect('/student');
                 } else {
@@ -110,18 +88,20 @@ function configurarSesionUsuario(req, user, sesionesActivas) {
     req.session.activo = user.activo;
     req.session.ultimaActividad = ahora;
     req.session.tipo = 'usuario';
-    
+
     console.log('\n============================================')
     console.log('Usuario autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
     console.log('Rol:', req.session.id_rol === 1 ? 'Administrador' : req.session.id_rol === 2 ? 'Profesor' : 'Desconocido');
     console.log('============================================')
 
+    // Registrar la sesión usando sessionID como clave
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
-        sesionesActivas.set(req.session.cedula, {
+        sesionesActivas.set(req.sessionID, {
             inicioSesion: ahora,
             ultimaActividad: ahora,
             sessionID: req.sessionID,
+            cedula: user.cedula,
             tipo: 'usuario',
             username: user.username
         });
@@ -141,17 +121,19 @@ function configurarSesionEstudiante(req, estudiante, sesionesActivas) {
     req.session.activo = estudiante.activo;
     req.session.ultimaActividad = ahora;
     req.session.tipo = 'estudiante';
-    
+
     console.log('\n============================================')
     console.log('Estudiante autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
     console.log('============================================')
 
+    // Registrar la sesión usando sessionID como clave
     if (sesionesActivas && typeof sesionesActivas.set === 'function') {
-        sesionesActivas.set(req.session.cedula, {
+        sesionesActivas.set(req.sessionID, {
             inicioSesion: ahora,
             ultimaActividad: ahora,
             sessionID: req.sessionID,
+            cedula: estudiante.cedula,
             tipo: 'estudiante',
             username: req.session.username
         });

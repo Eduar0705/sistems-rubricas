@@ -13,7 +13,7 @@ const EvaluacionModule = {
     async open(evaluacionId) {
         try {
             console.log('Abriendo modal para evaluación ID:', evaluacionId);
-            
+
             // Mostrar loading
             Swal.fire({
                 title: 'Cargando evaluación...',
@@ -23,21 +23,21 @@ const EvaluacionModule = {
 
             // Obtener datos de la evaluación
             const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('Datos recibidos:', data);
 
             if (data.success) {
                 evaluacionActual = data.evaluacion;
                 criteriosData = data.criterios;
-                
+
                 // Llenar información del modal
                 this.llenarInformacion(data);
-                
+
                 // Mostrar modal
                 const modal = document.getElementById('modalEvaluar');
                 if (modal) {
@@ -46,7 +46,7 @@ const EvaluacionModule = {
                 } else {
                     console.error('Modal #modalEvaluar no encontrado');
                 }
-                
+
                 Swal.close();
             } else {
                 Swal.fire('Error', data.message || 'No se pudo cargar la evaluación', 'error');
@@ -60,22 +60,22 @@ const EvaluacionModule = {
     // Llenar información en el modal
     llenarInformacion(data) {
         const { evaluacion, criterios, estudiante, rubrica } = data;
-        
+
         console.log('Llenando información del modal...');
-        
+
         // Información del estudiante
         const iniciales = `${estudiante.nombre.charAt(0)}${estudiante.apellido.charAt(0)}`.toUpperCase();
         this.setElementText('evalEstudianteAvatar', iniciales);
         this.setElementText('evalEstudianteNombre', `${estudiante.nombre} ${estudiante.apellido}`);
         this.setElementText('evalEstudianteCedula', `CI: ${estudiante.cedula}`);
         this.setElementText('evalEstudianteCarrera', estudiante.carrera);
-        
+
         // Información de la rúbrica
         this.setElementText('evalRubricaNombre', rubrica.nombre_rubrica);
         this.setElementText('evalRubricaMateria', rubrica.materia);
         this.setElementText('evalRubricaTipo', rubrica.tipo_evaluacion);
         this.setElementText('evalRubricaPorcentaje', `${rubrica.porcentaje_evaluacion}%`);
-        
+
         // Instrucciones
         const instruccionesCard = document.getElementById('instruccionesCard');
         if (rubrica.instrucciones && rubrica.instrucciones.trim() !== '') {
@@ -84,23 +84,23 @@ const EvaluacionModule = {
         } else {
             instruccionesCard.style.display = 'none';
         }
-        
+
         // Observaciones existentes
         const obsTextarea = document.getElementById('evalObservaciones');
         if (obsTextarea) {
             obsTextarea.value = evaluacion.observaciones || '';
         }
-        
+
         // Cargar criterios
         this.cargarCriterios(criterios);
-        
+
         // Calcular puntaje máximo
         const puntajeMaximo = criterios.reduce((sum, c) => sum + parseFloat(c.puntaje_maximo), 0);
         this.setElementText('puntajeMaximo', puntajeMaximo.toFixed(2));
-        
+
         // Calcular calificación inicial (si hay datos precargados)
         this.calcularCalificacion();
-        
+
         console.log('Información cargada correctamente');
     },
 
@@ -121,12 +121,12 @@ const EvaluacionModule = {
             console.error('Container #criteriosList no encontrado');
             return;
         }
-        
+
         container.innerHTML = '';
         seleccionesNiveles = {};
-        
+
         console.log('Cargando', criterios.length, 'criterios');
-        
+
         criterios.forEach(criterio => {
             // Verificar si hay un nivel seleccionado para este criterio
             const nivelSeleccionado = criterio.niveles.find(n => n.seleccionado);
@@ -177,13 +177,13 @@ const EvaluacionModule = {
 
     // Seleccionar nivel de desempeño
     seleccionarNivel(criterioId, nivelId, puntaje) {
-        console.log('Nivel seleccionado:', {criterioId, nivelId, puntaje});
-        
+        console.log('Nivel seleccionado:', { criterioId, nivelId, puntaje });
+
         seleccionesNiveles[criterioId] = {
             nivel_id: nivelId,
             puntaje: parseFloat(puntaje)
         };
-        
+
         this.calcularCalificacion();
     },
 
@@ -191,18 +191,18 @@ const EvaluacionModule = {
     calcularCalificacion() {
         const puntajeObtenido = Object.values(seleccionesNiveles)
             .reduce((sum, sel) => sum + sel.puntaje, 0);
-        
+
         const puntajeMaximo = parseFloat(document.getElementById('puntajeMaximo').textContent);
-        
+
         // Calcular calificación directamente sobre 100
         const calificacionFinal = puntajeMaximo > 0 ? (puntajeObtenido / puntajeMaximo) * 100 : 0;
-        
+
         console.log('Cálculo:', {
             puntajeObtenido,
             puntajeMaximo,
             calificacionFinal: calificacionFinal.toFixed(2)
         });
-        
+
         document.getElementById('puntajeObtenido').textContent = puntajeObtenido.toFixed(2);
         document.getElementById('calificacionFinal').textContent = calificacionFinal.toFixed(2);
     },
@@ -247,21 +247,21 @@ const EvaluacionModule = {
             const detalles = criteriosData.map(criterio => {
                 // Buscar el nivel "Insuficiente" para este criterio
                 // Primero intenta por nombre, luego por el puntaje mínimo
-                let nivelInsuficiente = criterio.niveles.find(n => 
+                let nivelInsuficiente = criterio.niveles.find(n =>
                     n.nombre.toLowerCase().includes('insuficiente')
                 );
-                
+
                 // Si no encuentra por nombre, busca el nivel con menor puntaje
                 if (!nivelInsuficiente) {
-                    nivelInsuficiente = criterio.niveles.reduce((min, nivel) => 
+                    nivelInsuficiente = criterio.niveles.reduce((min, nivel) =>
                         parseFloat(nivel.puntaje) < parseFloat(min.puntaje) ? nivel : min
                     );
                 }
-                
+
                 if (!nivelInsuficiente) {
                     throw new Error(`No se encontró nivel insuficiente para criterio ${criterio.id}`);
                 }
-                
+
                 return {
                     criterio_id: criterio.id,
                     nivel_id: nivelInsuficiente.id,
@@ -369,16 +369,16 @@ const EvaluacionModule = {
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#667eea'
         });
-        
+
         if (!result.isConfirmed) return;
-        
+
         // Mostrar loading
         Swal.fire({
             title: 'Guardando evaluación...',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
-        
+
         try {
             // Preparar datos de los detalles
             const detalles = criteriosData.map(criterio => {
@@ -392,15 +392,15 @@ const EvaluacionModule = {
                     puntaje_obtenido: seleccion.puntaje
                 };
             });
-            
+
             const payload = {
                 observaciones: observacionesElement.value || '',
                 puntaje_total: puntajeTotal,
                 detalles: detalles
             };
-            
+
             console.log('Enviando datos:', payload);
-            
+
             const response = await fetch(`/api/evaluacion/${evaluacionActual.id}/guardar`, {
                 method: 'POST',
                 headers: {
@@ -408,14 +408,14 @@ const EvaluacionModule = {
                 },
                 body: JSON.stringify(payload)
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('Respuesta del servidor:', data);
-            
+
             if (data.success) {
                 Swal.fire({
                     icon: 'success',
@@ -646,7 +646,7 @@ function mostrarDetallesEvaluacion(data) {
 // =============================================
 // PAGINACIÓN Y BÚSQUEDA
 // =============================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const ITEMS_PER_PAGE = 3;
     const rubricaBlocks = document.querySelectorAll('.rubrica-block');
     const searchInput = document.getElementById('searchInput');
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!grid) return;
 
         const cards = Array.from(grid.querySelectorAll('.evaluacion-card'));
-        
+
         // Si hay 3 o menos tarjetas, no necesitamos paginación
         if (cards.length <= ITEMS_PER_PAGE) return;
 
@@ -683,7 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const pageInfo = paginationContainer.querySelector('.page-info');
 
         // Función para actualizar la visualización
-        block.updatePaginationDisplay = function() {
+        block.updatePaginationDisplay = function () {
             const start = (currentPage - 1) * ITEMS_PER_PAGE;
             const end = start + ITEMS_PER_PAGE;
 
@@ -724,21 +724,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Lógica de Búsqueda
     if (searchInput) {
-        searchInput.addEventListener('input', function(e) {
+        searchInput.addEventListener('input', function (e) {
             const term = e.target.value.toLowerCase().trim();
-            
+
             if (term.length > 0) {
                 // MODO BÚSQUEDA: Ocultar paginación y filtrar globalmente
                 document.querySelectorAll('.rubrica-pagination').forEach(p => p.style.display = 'none');
-                
+
                 document.querySelectorAll('.evaluacion-card').forEach(card => {
                     const nombre = card.dataset.estudiante ? card.dataset.estudiante.toLowerCase() : '';
                     const cedula = card.dataset.cedula ? card.dataset.cedula.toString() : '';
-                    
+
                     if (nombre.includes(term) || cedula.includes(term)) {
                         card.style.display = 'flex';
                         let parent = card.parentElement;
-                        while(parent && !parent.classList.contains('hierarchy-container')) {
+                        while (parent && !parent.classList.contains('hierarchy-container')) {
                             parent.style.display = '';
                             parent = parent.parentElement;
                         }

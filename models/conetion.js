@@ -1,51 +1,59 @@
 const mysql = require('mysql2');
 
-let conexion;
+// Crear pool de conexiones (más robusto que una sola conexión)
+const pool = mysql.createPool({
+    host: 'mysql-sistems.alwaysdata.net',
+    user: 'sistems',
+    password: '31466704',
+    database: 'sistems_rubricas',
+    waitForConnections: true,
+    connectionLimit: 10, // Máximo 10 conexiones simultáneas
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000, // 10 segundos
+    connectTimeout: 20000, // 20 segundos para conectar
+    acquireTimeout: 20000, // 20 segundos para adquirir conexión del pool
+    timeout: 60000, // 60 segundos timeout para queries
+});
 
-function crearConexion() {
-    conexion = mysql.createConnection({
-        host: 'mysql-sistems.alwaysdata.net',
-        user: 'sistems',
-        password: '31466704',
-        database: 'sistems_rubricas',
-        connectTimeout: 10000, // 10 segundos
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 0
-    });
+// Configurar conexiones del pool silenciosamente
+pool.on('connection', (connection) => {
+    // Configurar la conexión sin logs innecesarios
+    connection.query('SET SESSION wait_timeout = 28800'); // 8 horas
+    connection.query('SET SESSION interactive_timeout = 28800');
+});
 
-    conexion.connect((err) => {
-        if (err) {
-            console.log('Error de conexión:', err.message);
-            setTimeout(crearConexion, 2000); // Reintentar en 2 segundos
-        } else {
-            console.log('Conexión exitosa a la base de datos :D');
-        }
-    });
-
-    conexion.on('error', (err) => {
-        console.log('Error MySQL:', err.code);
-        if (err.code === 'PROTOCOL_CONNECTION_LOST' ||
-            err.code === 'ECONNRESET' ||
-            err.code === 'ETIMEDOUT') {
-            console.log('Reconectando...');
-            crearConexion();
-        }
-    });
-}
-
-// Iniciar conexión
-crearConexion();
-
-// Ping cada 4 minutos
-setInterval(() => {
-    if (conexion && conexion.state !== 'disconnected') {
-        conexion.ping((err) => {
-            if (err) {
-                console.log('Ping falló, reconectando...');
-                crearConexion();
-            }
-        });
+// Verificar conexión inicial
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('❌ Error al conectar con MySQL:', err.message);
+        console.error('Verifica que el servidor MySQL esté accesible');
+    } else {
+        console.log('✅ Conectado a la base de datos MySQL exitosamente');
+        connection.release(); // Liberar la conexión de prueba
     }
-}, 240000);
+});
 
-module.exports = conexion;
+// Ping periódico para mantener conexiones activas (cada 5 minutos) - silencioso
+setInterval(() => {
+    pool.query('SELECT 1', (err) => {
+        if (err) {
+            console.error('❌ Error crítico: Conexión a MySQL perdida -', err.message);
+        }
+        // Ping exitoso silencioso
+    });
+}, 300000); // 5 minutos
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+    pool.end((err) => {
+        if (err) {
+            console.error('Error al cerrar pool:', err);
+        } else {
+            console.log('Pool de conexiones cerrado correctamente');
+        }
+        process.exit(err ? 1 : 0);
+    });
+});
+
+module.exports = pool;

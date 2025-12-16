@@ -48,14 +48,14 @@ const PaginationModule = {
 
     initialize() {
         const seccionGroups = document.querySelectorAll('.seccion-group');
-        
+
         seccionGroups.forEach((group, index) => {
             const seccionId = `seccion-${index}`;
             group.dataset.seccionId = seccionId;
-            
+
             const evaluacionCards = Array.from(group.querySelectorAll('.evaluacion-card'));
             const visibleCards = evaluacionCards.filter(card => card.style.display !== 'none');
-            
+
             this.state[seccionId] = {
                 currentPage: 1,
                 itemsPerPage: this.itemsPerPage,
@@ -63,7 +63,7 @@ const PaginationModule = {
                 totalPages: Math.ceil(visibleCards.length / this.itemsPerPage),
                 evaluaciones: visibleCards
             };
-            
+
             this.createUI(group, seccionId);
             this.showPage(seccionId, 1);
         });
@@ -71,21 +71,21 @@ const PaginationModule = {
 
     createUI(group, seccionId) {
         const state = this.state[seccionId];
-        
+
         if (state.totalPages <= 1) return;
-        
+
         const evaluacionesContainer = group.querySelector('.seccion-evaluaciones');
-        
+
         // Crear contenedor
         const container = document.createElement('div');
         container.className = 'evaluaciones-container';
         container.dataset.seccionId = seccionId;
-        
+
         state.evaluaciones.forEach(card => container.appendChild(card));
-        
+
         evaluacionesContainer.innerHTML = '';
         evaluacionesContainer.appendChild(container);
-        
+
         // Crear controles
         const paginationControls = document.createElement('div');
         paginationControls.className = 'pagination-controls';
@@ -101,10 +101,10 @@ const PaginationModule = {
             </div>
             
             <div class="pagination-dots">
-                ${Array.from({length: state.totalPages}, (_, i) => 
-                    `<div class="pagination-dot ${i === 0 ? 'active' : ''}" 
+                ${Array.from({ length: state.totalPages }, (_, i) =>
+            `<div class="pagination-dot ${i === 0 ? 'active' : ''}" 
                         onclick="PaginationModule.showPage('${seccionId}', ${i + 1})"></div>`
-                ).join('')}
+        ).join('')}
             </div>
             
             <button class="pagination-btn" onclick="PaginationModule.changePage('${seccionId}', 1)" data-action="next">
@@ -112,35 +112,35 @@ const PaginationModule = {
                 <i class="fas fa-chevron-right"></i>
             </button>
         `;
-        
+
         evaluacionesContainer.appendChild(paginationControls);
     },
 
     showPage(seccionId, pageNumber) {
         const state = this.state[seccionId];
-        
+
         if (!state || pageNumber < 1 || pageNumber > state.totalPages) return;
-        
+
         state.currentPage = pageNumber;
-        
+
         const startIndex = (pageNumber - 1) * state.itemsPerPage;
         const endIndex = startIndex + state.itemsPerPage;
-        
+
         const group = document.querySelector(`[data-seccion-id="${seccionId}"]`);
         const container = group.querySelector('.evaluaciones-container');
-        
+
         container.classList.add('fade-out');
-        
+
         setTimeout(() => {
             state.evaluaciones.forEach((card, index) => {
                 card.style.display = (index >= startIndex && index < endIndex) ? 'block' : 'none';
             });
-            
+
             this.updateUI(seccionId);
-            
+
             container.classList.remove('fade-out');
             container.classList.add('fade-in');
-            
+
             setTimeout(() => container.classList.remove('fade-in'), 300);
         }, 150);
     },
@@ -148,7 +148,7 @@ const PaginationModule = {
     changePage(seccionId, direction) {
         const state = this.state[seccionId];
         const newPage = state.currentPage + direction;
-        
+
         if (newPage >= 1 && newPage <= state.totalPages) {
             this.showPage(seccionId, newPage);
         }
@@ -157,16 +157,16 @@ const PaginationModule = {
     updateUI(seccionId) {
         const state = this.state[seccionId];
         const group = document.querySelector(`[data-seccion-id="${seccionId}"]`);
-        
+
         const pageNumber = group.querySelector('.current-page');
         if (pageNumber) pageNumber.textContent = state.currentPage;
-        
+
         const prevBtn = group.querySelector('[data-action="prev"]');
         const nextBtn = group.querySelector('[data-action="next"]');
-        
+
         if (prevBtn) prevBtn.disabled = state.currentPage === 1;
         if (nextBtn) nextBtn.disabled = state.currentPage === state.totalPages;
-        
+
         const dots = group.querySelectorAll('.pagination-dot');
         dots.forEach((dot, index) => {
             dot.classList.toggle('active', index === state.currentPage - 1);
@@ -194,7 +194,7 @@ const ModalAddEvaluacionModule = {
         document.getElementById('rubricaInfo').style.display = 'none';
         document.getElementById('materia_codigo').disabled = true;
         document.getElementById('seccion_id').disabled = true;
-        document.getElementById('estudiantesPreview').innerHTML = 
+        document.getElementById('estudiantesPreview').innerHTML =
             '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
         document.getElementById('btnGuardarEvaluacion').disabled = true;
         this.estudiantesSeleccionados = [];
@@ -204,11 +204,11 @@ const ModalAddEvaluacionModule = {
         try {
             const response = await fetch('/api/teacher/rubricas/activas');
             const data = await response.json();
-            
+
             if (data.success) {
                 const select = document.getElementById('rubrica_id');
                 select.innerHTML = '<option value="">Seleccione una rúbrica</option>';
-                
+
                 data.rubricas.forEach(rubrica => {
                     const option = document.createElement('option');
                     option.value = rubrica.id;
@@ -227,11 +227,11 @@ const ModalAddEvaluacionModule = {
         try {
             const response = await fetch('/api/teacher/carreras');
             const data = await response.json();
-            
+
             if (data.success) {
                 const select = document.getElementById('carrera_codigo');
                 select.innerHTML = '<option value="">Seleccione una carrera</option>';
-                
+
                 data.carreras.forEach(carrera => {
                     const option = document.createElement('option');
                     option.value = carrera.codigo;
@@ -249,7 +249,7 @@ const ModalAddEvaluacionModule = {
         document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre;
         document.getElementById('rubricaTipo').textContent = rubrica.tipo_evaluacion;
         document.getElementById('rubricaPorcentaje').textContent = rubrica.porcentaje_evaluacion + '%';
-        document.getElementById('rubricaModalidad').textContent = rubrica.modalidad + 
+        document.getElementById('rubricaModalidad').textContent = rubrica.modalidad +
             (rubrica.cantidad_personas > 1 ? ` (${rubrica.cantidad_personas} personas)` : '');
         document.getElementById('rubricaInfo').style.display = 'block';
     },
@@ -258,10 +258,10 @@ const ModalAddEvaluacionModule = {
         try {
             const response = await fetch(`/api/teacher/carrera/${carreraCodigo}/materias`);
             const data = await response.json();
-            
+
             const select = document.getElementById('materia_codigo');
             select.innerHTML = '<option value="">Seleccione una materia</option>';
-            
+
             if (data.success && data.materias.length > 0) {
                 data.materias.forEach(materia => {
                     const option = document.createElement('option');
@@ -282,10 +282,10 @@ const ModalAddEvaluacionModule = {
         try {
             const response = await fetch(`/api/teacher/materia/${materiaCodigo}/secciones`);
             const data = await response.json();
-            
+
             const select = document.getElementById('seccion_id');
             select.innerHTML = '<option value="">Seleccione una sección</option>';
-            
+
             if (data.success && data.secciones.length > 0) {
                 data.secciones.forEach(seccion => {
                     const option = document.createElement('option');
@@ -303,24 +303,24 @@ const ModalAddEvaluacionModule = {
     },
 
     async cargarEstudiantes(seccionId) {
-        document.getElementById('estudiantesPreview').innerHTML = 
+        document.getElementById('estudiantesPreview').innerHTML =
             '<div class="loading-estudiantes"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>';
-        
+
         try {
             const response = await fetch(`/api/teacher/seccion/${seccionId}/estudiantes`);
             const data = await response.json();
-            
+
             if (data.success && data.estudiantes.length > 0) {
                 this.estudiantesSeleccionados = data.estudiantes.map(e => e.cedula);
                 this.mostrarEstudiantes(data.estudiantes);
             } else {
-                document.getElementById('estudiantesPreview').innerHTML = 
+                document.getElementById('estudiantesPreview').innerHTML =
                     '<div class="loading-estudiantes"><i class="fas fa-exclamation-circle"></i> No hay estudiantes inscritos en esta sección</div>';
                 this.estudiantesSeleccionados = [];
             }
         } catch (error) {
             console.error('Error al cargar estudiantes:', error);
-            document.getElementById('estudiantesPreview').innerHTML = 
+            document.getElementById('estudiantesPreview').innerHTML =
                 '<div class="loading-estudiantes"><i class="fas fa-exclamation-triangle"></i> Error al cargar estudiantes</div>';
             this.estudiantesSeleccionados = [];
         }
@@ -357,7 +357,7 @@ const ModalAddEvaluacionModule = {
     verificarFormularioCompleto() {
         const rubricaId = document.getElementById('rubrica_id').value;
         const btnGuardar = document.getElementById('btnGuardarEvaluacion');
-        
+
         btnGuardar.disabled = !(rubricaId && this.estudiantesSeleccionados.length > 0);
     },
 
@@ -658,7 +658,7 @@ function closeModalEvaluacion() {
 // =============================================
 // EVENT LISTENERS
 // =============================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Inicializar módulos
     FiltradoModule.init();
     PaginationModule.initialize();
@@ -666,9 +666,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners para modal de agregar evaluación
     const rubricaSelect = document.getElementById('rubrica_id');
     if (rubricaSelect) {
-        rubricaSelect.addEventListener('change', function() {
+        rubricaSelect.addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
-            
+
             if (selectedOption.value) {
                 const rubrica = JSON.parse(selectedOption.dataset.rubrica);
                 ModalAddEvaluacionModule.mostrarInfoRubrica(rubrica);
@@ -681,19 +681,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const carreraSelect = document.getElementById('carrera_codigo');
     if (carreraSelect) {
-        carreraSelect.addEventListener('change', async function() {
+        carreraSelect.addEventListener('change', async function () {
             const carreraCodigo = this.value;
             const materiaSelect = document.getElementById('materia_codigo');
             const seccionSelect = document.getElementById('seccion_id');
-            
+
             if (carreraCodigo) {
                 materiaSelect.disabled = false;
                 await ModalAddEvaluacionModule.cargarMaterias(carreraCodigo);
-                
+
                 materiaSelect.value = '';
                 seccionSelect.disabled = true;
                 seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
-                document.getElementById('estudiantesPreview').innerHTML = 
+                document.getElementById('estudiantesPreview').innerHTML =
                     '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione materia y sección</div>';
             } else {
                 materiaSelect.disabled = true;
@@ -707,10 +707,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const materiaSelect = document.getElementById('materia_codigo');
     if (materiaSelect) {
-        materiaSelect.addEventListener('change', async function() {
+        materiaSelect.addEventListener('change', async function () {
             const materiaCodigo = this.value;
             const seccionSelect = document.getElementById('seccion_id');
-            
+
             if (materiaCodigo) {
                 seccionSelect.disabled = false;
                 await ModalAddEvaluacionModule.cargarSecciones(materiaCodigo);
@@ -724,7 +724,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const seccionSelect = document.getElementById('seccion_id');
     if (seccionSelect) {
-        seccionSelect.addEventListener('change', async function() {
+        seccionSelect.addEventListener('change', async function () {
             if (this.value) {
                 await ModalAddEvaluacionModule.cargarEstudiantes(this.value);
             }
@@ -733,15 +733,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Cerrar modales con ESC
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             const modalAdd = document.getElementById('modalAddEvaluacion');
             const modalEval = document.getElementById('modalEvaluar');
-            
+
             if (modalAdd && modalAdd.classList.contains('active')) {
                 closeModalEvaluacion();
             }
-            
+
             if (modalEval && modalEval.classList.contains('active')) {
                 closeModalEvaluar();
             }
@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Cerrar modal al hacer clic fuera
-    document.getElementById('modalAddEvaluacion')?.addEventListener('click', function(event) {
+    document.getElementById('modalAddEvaluacion')?.addEventListener('click', function (event) {
         if (event.target === this) closeModalEvaluacion();
     });
 });

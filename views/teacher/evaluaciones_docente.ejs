@@ -1,316 +1,387 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Rubricas' %></title>
+    <title>
+        <%= title || 'Rubricas' %>
+    </title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="stylesheet" href="../css/evaluacion.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <style>
-/* Botón de reprobar */
-.btn-danger {
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+    /* Botón de reprobar */
+    .btn-danger {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-.btn-danger:hover {
-    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-}
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
 
-.btn-danger:active {
-    transform: translateY(0);
-}
+    .btn-danger:active {
+        transform: translateY(0);
+    }
 
-.btn-danger i {
-    font-size: 1rem;
-}
+    .btn-danger i {
+        font-size: 1rem;
+    }
 </style>
+
 <body>
     <%- include("../inc/menuTeacher.ejs") %>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <%- include('../inc/headerTeacher.ejs') %>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <%- include('../inc/headerTeacher.ejs') %>
 
-        <!-- Evaluaciones View -->
-        <div class="view" id="evaluaciones">
-            <div class="view-header">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Buscar Alumno...">
-                </div>
-                <!-- Botones de accion para importar evaluaciones -->
-                <div class="action-buttons">
-                    <button class="btns excel" onclick="exportarExcel()" title="Exportar a Excel">
-                        <i class="fas fa-file-excel"></i> Excel
-                    </button>
-                    <button class="btns pdf" onclick="exportarPDF()" title="Exportar a PDF">
-                        <i class="fas fa-file-pdf"></i> PDF
-                    </button>
-                </div>
-            </div>
+                <!-- Evaluaciones View -->
+                <div class="view" id="evaluaciones">
+                    <div class="view-header">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Buscar Alumno...">
+                        </div>
+                        <!-- Botones de accion para importar evaluaciones -->
+                        <div class="action-buttons">
+                            <button class="btns excel" onclick="exportarExcel()" title="Exportar a Excel">
+                                <i class="fas fa-file-excel"></i> Excel
+                            </button>
+                            <button class="btns pdf" onclick="exportarPDF()" title="Exportar a PDF">
+                                <i class="fas fa-file-pdf"></i> PDF
+                            </button>
+                        </div>
+                    </div>
 
-            <div class="hierarchy-container">
-                <% if(typeof evaluacionesGrouped !== 'undefined' && Object.keys(evaluacionesGrouped).length > 0) { %>
-                    
-                    <% Object.keys(evaluacionesGrouped).forEach(carrera => { %>
-                        <div class="carrera-block">
-                            <h2 class="carrera-title">
-                                <i class="fas fa-graduation-cap"></i> <%= carrera %>
-                            </h2>
+                    <div class="hierarchy-container">
+                        <% if(typeof evaluacionesGrouped !=='undefined' && Object.keys(evaluacionesGrouped).length> 0) {
+                            %>
 
-                            <% Object.keys(evaluacionesGrouped[carrera]).forEach(semestre => { %>
-                                <div class="semestre-block">
-                                    <h3 class="semestre-title"><%= semestre %></h3>
+                            <% Object.keys(evaluacionesGrouped).forEach(carrera=> { %>
+                                <div class="carrera-block">
+                                    <h2 class="carrera-title" onclick="toggleCarrera('<%= carrera %>')"
+                                        style="cursor: pointer; justify-content: space-between;">
+                                        <span><i class="fas fa-graduation-cap"></i>
+                                            <%= carrera %>
+                                        </span>
+                                        <i class="fas fa-chevron-up toggle-icon" id="icon-<%= carrera %>"></i>
+                                    </h2>
 
-                                    <% Object.keys(evaluacionesGrouped[carrera][semestre]).forEach(materia => { %>
-                                        <div class="materia-block">
-                                            <h4 class="materia-title">
-                                                <i class="fas fa-book"></i> <%= materia %>
-                                            </h4>
+                                    <div id="content-<%= carrera %>" class="carrera-content">
+                                        <!-- Old H2 removed -->
 
-                                            <% Object.keys(evaluacionesGrouped[carrera][semestre][materia]).forEach(seccion => { %>
-                                                <div class="seccion-block">
-                                                    <div class="seccion-header-info">
-                                                        <strong><%= seccion %></strong>
-                                                        <span><i class="fas fa-clock"></i> <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.horario %></span>
-                                                        <span><i class="fas fa-map-marker-alt"></i> <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.aula %></span>
-                                                    </div>
+                                        <% Object.keys(evaluacionesGrouped[carrera]).forEach(semestre=> { %>
+                                            <div class="semestre-block">
+                                                <h3 class="semestre-title">
+                                                    <%= semestre %>
+                                                </h3>
 
-                                                    <% Object.keys(evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas).forEach(rubrica => { %>
-                                                        <div class="rubrica-block">
-                                                            <h5 class="rubrica-title">
-                                                                <i class="fas fa-clipboard-check"></i> <%= rubrica %>
-                                                            </h5>
+                                                <% Object.keys(evaluacionesGrouped[carrera][semestre]).forEach(materia=>
+                                                    {
+                                                    %>
+                                                    <div class="materia-block">
+                                                        <h4 class="materia-title">
+                                                            <i class="fas fa-book"></i>
+                                                            <%= materia %>
+                                                        </h4>
 
-                                                            <div class="evaluaciones-grid-mini">
-                                                                <% evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas[rubrica].forEach(ev => { %>
-                                                                    <div class="evaluacion-card"
-                                                                            data-rubrica="<%= ev.nombre_rubrica %>"
-                                                                            data-estado="<%= ev.estado %>"
-                                                                            data-cedula="<%= ev.estudiante_cedula %>"
-                                                                            data-estudiante="<%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %>">
-                                                                        <div class="evaluacion-header">
-                                                                            <div class="evaluacion-student">
-                                                                                <div class="student-avatar"><%= ev.iniciales %></div>
-                                                                                <div>
-                                                                                    <div class="student-name"><%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %></div>
-                                                                                    <div class="student-id">ID: <%= ev.estudiante_cedula %></div>
+                                                        <%
+                                                            Object.keys(evaluacionesGrouped[carrera][semestre][materia]).forEach(seccion=>
+                                                            { %>
+                                                            <div class="seccion-block">
+                                                                <div class="seccion-header-info">
+                                                                    <strong>
+                                                                        <%= seccion %>
+                                                                    </strong>
+                                                                    <span><i class="fas fa-clock"></i>
+                                                                        <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.horario
+                                                                            %>
+                                                                    </span>
+                                                                    <span><i class="fas fa-map-marker-alt"></i>
+                                                                        <%= evaluacionesGrouped[carrera][semestre][materia][seccion].info.aula
+                                                                            %>
+                                                                    </span>
+                                                                </div>
+
+                                                                <%
+                                                                    Object.keys(evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas).forEach(rubrica=>
+                                                                    { %>
+                                                                    <div class="rubrica-block">
+                                                                        <h5 class="rubrica-title">
+                                                                            <i class="fas fa-clipboard-check"></i>
+                                                                            <%= rubrica %>
+                                                                        </h5>
+
+                                                                        <div class="evaluaciones-grid-mini">
+                                                                            <%
+                                                                                evaluacionesGrouped[carrera][semestre][materia][seccion].rubricas[rubrica].forEach(ev=>
+                                                                                { %>
+                                                                                <div class="evaluacion-card"
+                                                                                    data-rubrica="<%= ev.nombre_rubrica %>"
+                                                                                    data-estado="<%= ev.estado %>"
+                                                                                    data-cedula="<%= ev.estudiante_cedula %>"
+                                                                                    data-estudiante="<%= ev.estudiante_nombre %> <%= ev.estudiante_apellido %>">
+                                                                                    <div class="evaluacion-header">
+                                                                                        <div class="evaluacion-student">
+                                                                                            <div class="student-avatar">
+                                                                                                <%= ev.iniciales %>
+                                                                                            </div>
+                                                                                            <div>
+                                                                                                <div
+                                                                                                    class="student-name">
+                                                                                                    <%= ev.estudiante_nombre
+                                                                                                        %>
+                                                                                                        <%= ev.estudiante_apellido
+                                                                                                            %>
+                                                                                                </div>
+                                                                                                <div class="student-id">
+                                                                                                    ID:
+                                                                                                    <%= ev.estudiante_cedula
+                                                                                                        %>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <span
+                                                                                            class="badge-status <%= ev.estado === 'Completada' ? 'completed' : 'pending' %>">
+                                                                                            <%= ev.estado %>
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div class="evaluacion-body">
+                                                                                        <div class="evaluacion-score">
+                                                                                            <div class="score-label">
+                                                                                                Calificación</div>
+                                                                                            <div class="score-value">
+                                                                                                <%= ev.calificacion %>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="evaluacion-footer">
+                                                                                        <span class="evaluacion-date">
+                                                                                            <i
+                                                                                                class="fas fa-calendar"></i>
+                                                                                            <%= ev.fecha_formateada %>
+                                                                                        </span>
+                                                                                        <% if(ev.estado==='Completada' )
+                                                                                            { %>
+                                                                                            <button class="btn-text"
+                                                                                                onclick="verDetalles('<%= ev.id %>')">Ver
+                                                                                                Detalles</button>
+                                                                                            <button class="btn-text"
+                                                                                                onclick="evaluar('<%= ev.id %>')"><i
+                                                                                                    class="fas fa-edit"></i>
+                                                                                                Editar</button>
+                                                                                            <% } else { %>
+                                                                                                <button class="btn-text"
+                                                                                                    onclick="evaluar('<%= ev.id %>')">Evaluar</button>
+                                                                                                <% } %>
+                                                                                    </div>
                                                                                 </div>
-                                                                            </div>
-                                                                            <span class="badge-status <%= ev.estado === 'Completada' ? 'completed' : 'pending' %>">
-                                                                                <%= ev.estado %>
-                                                                            </span>
-                                                                        </div>
-                                                                        <div class="evaluacion-body">
-                                                                            <div class="evaluacion-score">
-                                                                                <div class="score-label">Calificación</div>
-                                                                                <div class="score-value"><%= ev.calificacion %></div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="evaluacion-footer">
-                                                                            <span class="evaluacion-date">
-                                                                                <i class="fas fa-calendar"></i>
-                                                                                <%= ev.fecha_formateada %>
-                                                                            </span>
-                                                                            <% if(ev.estado === 'Completada') { %>
-                                                                                <button class="btn-text" onclick="verDetalles('<%= ev.id %>')">Ver Detalles</button>
-                                                                                <button class="btn-text" onclick="evaluar('<%= ev.id %>')"><i class="fas fa-edit"></i> Editar</button>
-                                                                            <% } else { %>
-                                                                                <button class="btn-text" onclick="evaluar('<%= ev.id %>')">Evaluar</button>
-                                                                            <% } %>
+                                                                                <% }); %>
                                                                         </div>
                                                                     </div>
-                                                                <% }); %>
+                                                                    <% }); %>
                                                             </div>
-                                                        </div>
+                                                            <% }); %>
+                                                    </div>
                                                     <% }); %>
-                                                </div>
+                                            </div>
                                             <% }); %>
-                                        </div>
-                                    <% }); %>
+                                    </div>
                                 </div>
-                            <% }); %>
-                        </div>
-                    <% }); %>
+                                <% }); %>
 
-                <% } else { %>
-                    <div class="empty-state">
-                        <i class="fas fa-clipboard-list"></i>
-                        <h3>No hay evaluaciones registradas</h3>
-                        <p>Aún no se han realizado evaluaciones a estudiantes</p>
+                                    <% } else { %>
+                                        <div class="empty-state">
+                                            <i class="fas fa-clipboard-list"></i>
+                                            <h3>No hay evaluaciones registradas</h3>
+                                            <p>Aún no se han realizado evaluaciones a estudiantes</p>
+                                        </div>
+                                        <% } %>
                     </div>
-                <% } %>
+                </div>
+        </main>
+
+        <!-- Modal de Evaluar -->
+        <div class="modal" id="modalEvaluar">
+            <div class="modal-content modal-evaluar-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        Evaluar Estudiante
+                    </h2>
+                    <button class="modal-close" onclick="closeModalEvaluar()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Información del Estudiante -->
+                    <div class="estudiante-info-card">
+                        <div class="estudiante-avatar-large" id="evalEstudianteAvatar">ES</div>
+                        <div class="estudiante-datos">
+                            <h3 id="evalEstudianteNombre">Nombre del Estudiante</h3>
+                            <p id="evalEstudianteCedula">CI: 12345678</p>
+                            <span class="badge-carrera" id="evalEstudianteCarrera">Carrera</span>
+                        </div>
+                    </div>
+
+                    <!-- Información de la Rúbrica -->
+                    <div class="rubrica-info-card">
+                        <div class="rubrica-info-header">
+                            <i class="fas fa-file-alt"></i>
+                            <h4>Información de la Rúbrica</h4>
+                        </div>
+                        <div class="rubrica-info-details">
+                            <div class="rubrica-detail">
+                                <span class="detail-label">Rúbrica:</span>
+                                <span class="detail-value" id="evalRubricaNombre">-</span>
+                            </div>
+                            <div class="rubrica-detail">
+                                <span class="detail-label">Materia:</span>
+                                <span class="detail-value" id="evalRubricaMateria">-</span>
+                            </div>
+                            <div class="rubrica-detail">
+                                <span class="detail-label">Tipo:</span>
+                                <span class="detail-value" id="evalRubricaTipo">-</span>
+                            </div>
+                            <div class="rubrica-detail">
+                                <span class="detail-label">Porcentaje:</span>
+                                <span class="detail-value" id="evalRubricaPorcentaje">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones -->
+                    <div class="instrucciones-card" id="instruccionesCard" style="display: none;">
+                        <div class="instrucciones-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h4>Instrucciones</h4>
+                        </div>
+                        <p id="evalInstrucciones" class="instrucciones-text"></p>
+                    </div>
+
+                    <!-- Criterios de Evaluación -->
+                    <div class="criterios-evaluacion" id="criteriosContainer">
+                        <h4 class="criterios-title">
+                            <i class="fas fa-list-check"></i>
+                            Criterios de Evaluación
+                        </h4>
+                        <div id="criteriosList">
+                            <!-- Los criterios se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Resumen de Calificación -->
+                    <div class="calificacion-resumen">
+                        <div class="calificacion-item">
+                            <span class="calificacion-label">Puntaje Obtenido:</span>
+                            <span class="calificacion-value" id="puntajeObtenido">0.00</span>
+                        </div>
+                        <div class="calificacion-item">
+                            <span class="calificacion-label">Puntaje Máximo:</span>
+                            <span class="calificacion-value" id="puntajeMaximo">0.00</span>
+                        </div>
+                        <div class="calificacion-total">
+                            <span class="calificacion-label">Calificación Final:</span>
+                            <span class="calificacion-final">
+                                <span id="calificacionFinal">0.00</span>
+                                <small>/100</small>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-comment"></i>
+                            Observaciones
+                        </label>
+                        <textarea id="evalObservaciones" class="form-textarea" rows="4"
+                            placeholder="Escriba observaciones adicionales sobre la evaluación..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeModalEvaluar()">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button class="btn-danger" onclick="reprobarEstudiante()" id="btnReprobarEst">
+                        <i class="fas fa-times-circle"></i>
+                        Reprobar (0.25)
+                    </button>
+                    <button class="btn-primary" onclick="guardarEvaluacion()" id="btnGuardarEval">
+                        <i class="fas fa-save"></i>
+                        Guardar Evaluación
+                    </button>
+                </div>
             </div>
         </div>
-    </main>
 
-    <!-- Modal de Evaluar -->
-    <div class="modal" id="modalEvaluar">
-        <div class="modal-content modal-evaluar-content">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="fas fa-clipboard-check"></i>
-                    Evaluar Estudiante
-                </h2>
-                <button class="modal-close" onclick="closeModalEvaluar()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+        <!-- Modal Ver Detalles de Evaluación -->
+        <div class="modal-verdetalles" id="modalVerDetalles">
+            <div class="modal-content-detalles">
+                <div class="modal-header-detalles">
+                    <h2><i class="fas fa-eye"></i> Detalles de Evaluación</h2>
+                    <button class="modal-close" onclick="closeModalDetalles()" aria-label="Cerrar modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
 
-            <div class="modal-body">
-                <!-- Información del Estudiante -->
-                <div class="estudiante-info-card">
-                    <div class="estudiante-avatar-large" id="evalEstudianteAvatar">ES</div>
-                    <div class="estudiante-datos">
-                        <h3 id="evalEstudianteNombre">Nombre del Estudiante</h3>
-                        <p id="evalEstudianteCedula">CI: 12345678</p>
-                        <span class="badge-carrera" id="evalEstudianteCarrera">Carrera</span>
+                <div class="modal-body-detalles" id="modalBodyDetalles">
+                    <!-- Contenido se carga dinámicamente -->
+                    <div class="loading-detalles">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Cargando detalles...</p>
                     </div>
                 </div>
 
-                <!-- Información de la Rúbrica -->
-                <div class="rubrica-info-card">
-                    <div class="rubrica-info-header">
-                        <i class="fas fa-file-alt"></i>
-                        <h4>Información de la Rúbrica</h4>
-                    </div>
-                    <div class="rubrica-info-details">
-                        <div class="rubrica-detail">
-                            <span class="detail-label">Rúbrica:</span>
-                            <span class="detail-value" id="evalRubricaNombre">-</span>
-                        </div>
-                        <div class="rubrica-detail">
-                            <span class="detail-label">Materia:</span>
-                            <span class="detail-value" id="evalRubricaMateria">-</span>
-                        </div>
-                        <div class="rubrica-detail">
-                            <span class="detail-label">Tipo:</span>
-                            <span class="detail-value" id="evalRubricaTipo">-</span>
-                        </div>
-                        <div class="rubrica-detail">
-                            <span class="detail-label">Porcentaje:</span>
-                            <span class="detail-value" id="evalRubricaPorcentaje">-</span>
-                        </div>
-                    </div>
+                <div class="modal-footer-detalles">
+                    <button type="button" class="btn-secondary" onclick="closeModalDetalles()">
+                        <i class="fas fa-times"></i>
+                        Cerrar
+                    </button>
                 </div>
-
-                <!-- Instrucciones -->
-                <div class="instrucciones-card" id="instruccionesCard" style="display: none;">
-                    <div class="instrucciones-header">
-                        <i class="fas fa-info-circle"></i>
-                        <h4>Instrucciones</h4>
-                    </div>
-                    <p id="evalInstrucciones" class="instrucciones-text"></p>
-                </div>
-
-                <!-- Criterios de Evaluación -->
-                <div class="criterios-evaluacion" id="criteriosContainer">
-                    <h4 class="criterios-title">
-                        <i class="fas fa-list-check"></i>
-                        Criterios de Evaluación
-                    </h4>
-                    <div id="criteriosList">
-                        <!-- Los criterios se cargarán dinámicamente -->
-                    </div>
-                </div>
-
-                <!-- Resumen de Calificación -->
-                <div class="calificacion-resumen">
-                    <div class="calificacion-item">
-                        <span class="calificacion-label">Puntaje Obtenido:</span>
-                        <span class="calificacion-value" id="puntajeObtenido">0.00</span>
-                    </div>
-                    <div class="calificacion-item">
-                        <span class="calificacion-label">Puntaje Máximo:</span>
-                        <span class="calificacion-value" id="puntajeMaximo">0.00</span>
-                    </div>
-                    <div class="calificacion-total">
-                        <span class="calificacion-label">Calificación Final:</span>
-                        <span class="calificacion-final">
-                            <span id="calificacionFinal">0.00</span>
-                            <small>/100</small>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Observaciones -->
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-comment"></i>
-                        Observaciones
-                    </label>
-                    <textarea 
-                        id="evalObservaciones" 
-                        class="form-textarea" 
-                        rows="4"
-                        placeholder="Escriba observaciones adicionales sobre la evaluación..."></textarea>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModalEvaluar()">
-                    <i class="fas fa-times"></i>
-                    Cancelar
-                </button>
-                <button class="btn-danger" onclick="reprobarEstudiante()" id="btnReprobarEst">
-                    <i class="fas fa-times-circle"></i>
-                    Reprobar (0.25)
-                </button>
-                <button class="btn-primary" onclick="guardarEvaluacion()" id="btnGuardarEval">
-                    <i class="fas fa-save"></i>
-                    Guardar Evaluación
-                </button>
             </div>
         </div>
-    </div>
 
-    <!-- Modal Ver Detalles de Evaluación -->
-    <div class="modal-verdetalles" id="modalVerDetalles">
-        <div class="modal-content-detalles">
-            <div class="modal-header-detalles">
-                <h2><i class="fas fa-eye"></i> Detalles de Evaluación</h2>
-                <button class="modal-close" onclick="closeModalDetalles()" aria-label="Cerrar modal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+        <script>
+            function toggleCarrera(carreraId) {
+                const content = document.getElementById('content-' + carreraId);
+                const icon = document.getElementById('icon-' + carreraId);
 
-            <div class="modal-body-detalles" id="modalBodyDetalles">
-                <!-- Contenido se carga dinámicamente -->
-                <div class="loading-detalles">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Cargando detalles...</p>
-                </div>
-            </div>
-
-            <div class="modal-footer-detalles">
-                <button type="button" class="btn-secondary" onclick="closeModalDetalles()">
-                    <i class="fas fa-times"></i>
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/home.js"></script>
-    <script src="../js/evaluacion.js"></script>
-    <script src="../js/evaluacion-docente.js"></script>
+                if (content.style.display === "none") {
+                    content.style.display = "block";
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                } else {
+                    content.style.display = "none";
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                }
+            }
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="../js/home.js"></script>
+        <script src="../js/evaluacion.js"></script>
+        <script src="../js/evaluacion-docente.js"></script>
 </body>
+
 </html>

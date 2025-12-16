@@ -1,579 +1,799 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Rubricas' %></title>
+    <title>
+        <%= title || 'Rubricas' %>
+    </title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* Grid de estadísticas principales */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-
-        .stat-card .icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .stat-card.primary .icon {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .stat-card.success .icon {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .stat-card.warning .icon {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .stat-card.info .icon {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        .stat-card .label {
-            color: #6b7280;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        /* Secciones de contenido */
-        .content-section {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .section-header .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .section-header.success .icon {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-        }
-
-        .section-header.danger .icon {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-            color: white;
-        }
-
-        .section-header.primary .icon {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .section-header h2 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        /* Tablas de estudiantes */
-        .students-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .students-table thead {
-            background: #f9fafb;
-        }
-
-        .students-table th {
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        .students-table td {
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .students-table tbody tr:hover {
-            background: #f9fafb;
-        }
-
-        .rank-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-weight: 700;
-            font-size: 0.875rem;
-        }
-
-        .rank-badge.gold {
-            background: linear-gradient(135deg, #f7b733 0%, #fc4a1a 100%);
-            color: white;
-        }
-
-        .rank-badge.silver {
-            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
-            color: white;
-        }
-
-        .rank-badge.bronze {
-            background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
-            color: white;
-        }
-
-        .rank-badge.default {
-            background: #e5e7eb;
-            color: #6b7280;
-        }
-
-        .score-badge {
-            display: inline-block;
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        .score-badge.excellent {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .score-badge.good {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .score-badge.average {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .score-badge.poor {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Grid de gráficos */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .chart-container h3 {
-            margin: 0 0 1rem 0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        /* Grid de rúbricas */
-        .rubrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .rubric-item {
-            padding: 1rem;
-            border-radius: 8px;
-            background: #f9fafb;
-            margin-bottom: 0.75rem;
-            transition: all 0.3s ease;
-        }
-
-        .rubric-item:hover {
-            background: #f3f4f6;
-            transform: translateX(4px);
-        }
-
-        .rubric-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .rubric-name {
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .rubric-materia {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-
-        .rubric-stats {
-            display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .rubric-stat {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            color: #6b7280;
-        }
-
-        .percentage-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-        }
-
-        .percentage-badge.high {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .percentage-badge.low {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            .report-header {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .rubrics-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media print {
-            .export-btn {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/reportes.css">
 </head>
+
 <body>
     <%- include("../inc/menuTeacher.ejs") %>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <%- include('../inc/headerTeacher.ejs') %>
+        <main class="main-content">
+            <%- include('../inc/headerTeacher.ejs') %>
 
-        <div class="report-container">
-            <!-- Estadísticas Principales -->
-            <div class="stats-grid">
-                <div class="stat-card primary">
-                    <div class="icon">
-                        <i class="fas fa-clipboard-check"></i>
+                <div class="report-container">
+                    <!-- Tabs de navegación -->
+                    <div class="tabs-container">
+                        <div class="tabs">
+                            <button class="tab active" onclick="switchTab('general')">
+                                <i class="fas fa-chart-line"></i> General
+                            </button>
+                            <button class="tab" onclick="switchTab('estudiantes')">
+                                <i class="fas fa-users"></i> Estudiantes
+                            </button>
+                            <button class="tab" onclick="switchTab('actividades')">
+                                <i class="fas fa-clipboard-list"></i> Actividades
+                            </button>
+                            <button class="tab" onclick="switchTab('analisis')">
+                                <i class="fas fa-chart-bar"></i> Análisis
+                            </button>
+                        </div>
                     </div>
-                    <div class="label">Total Evaluaciones</div>
-                    <div class="value"><%= stats ? stats.totalEvaluaciones : 0 %></div>
-                </div>
 
-                <div class="stat-card success">
-                    <div class="icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <div class="label">Promedio General</div>
-                    <div class="value"><%= stats ? stats.promedioGeneral : 0 %>/20</div>
-                </div>
-
-                <div class="stat-card warning">
-                    <div class="icon">
-                        <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div class="label">Pendientes</div>
-                    <div class="value"><%= stats ? stats.pendientes : 0 %></div>
-                </div>
-            </div>
-
-            <!-- Mejores Estudiantes -->
-            <div class="content-section">
-                <div class="section-header success">
-                    <div class="icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <h2>Top 10 - Mejores Estudiantes</h2>
-                </div>
-
-                <% if (stats && stats.mejoresEstudiantes && stats.mejoresEstudiantes.length > 0) { %>
-                    <table class="students-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 60px;">Posición</th>
-                                <th>Cédula</th>
-                                <th>Nombre Completo</th>
-                                <th>Promedio</th>
-                                <th>Evaluaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% stats.mejoresEstudiantes.forEach((estudiante, index) => { %>
-                                <tr>
-                                    <td>
-                                        <span class="rank-badge <%= index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'default' %>">
-                                            <%= index + 1 %>
-                                        </span>
-                                    </td>
-                                    <td><%= estudiante.cedula %></td>
-                                    <td><strong><%= estudiante.nombre %></strong></td>
-                                    <td>
-                                        <span class="score-badge <%= estudiante.promedio >= 18 ? 'excellent' : estudiante.promedio >= 15 ? 'good' : 'average' %>">
-                                            <%= estudiante.promedio %>/20
-                                        </span>
-                                    </td>
-                                    <td><%= estudiante.evaluaciones %></td>
-                                </tr>
-                            <% }); %>
-                        </tbody>
-                    </table>
-                <% } else { %>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>No hay datos suficientes para mostrar</p>
-                    </div>
-                <% } %>
-            </div>
-
-            <!-- Gráficos -->
-            <div class="charts-grid">
-                <div class="chart-container">
-                    <h3><i class="fas fa-chart-bar"></i> Rendimiento por Asignatura</h3>
-                    <canvas id="rendimientoChart"></canvas>
-                </div>
-
-                <div class="chart-container">
-                    <h3><i class="fas fa-chart-pie"></i> Estado de Evaluaciones</h3>
-                    <canvas id="estadoChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Mejores Rúbricas -->
-            <div class="content-section">
-                <div class="section-header success">
-                    <div class="icon">
-                        <i class="fas fa-thumbs-up"></i>
-                    </div>
-                    <h2>Rúbricas con Mejor Rendimiento</h2>
-                </div>
-
-                <% if (stats && stats.mejoresRubricas && stats.mejoresRubricas.length > 0) { %>
-                    <% stats.mejoresRubricas.forEach((rubrica, index) => { %>
-                        <div class="rubric-item">
-                            <div class="rubric-header">
-                                <div>
-                                    <div class="rubric-name"><%= index + 1 %>. <%= rubrica.rubrica %></div>
-                                    <div class="rubric-materia"><%= rubrica.materia %></div>
-                                </div>
-                                <span class="score-badge excellent">
-                                    <%= rubrica.promedio %>/20
-                                </span>
-                            </div>
-                            <div class="rubric-stats">
-                                <div class="rubric-stat">
+                    <!-- Tab: General -->
+                    <div id="tab-general" class="tab-content active">
+                        <!-- Estadísticas Principales -->
+                        <div class="stats-grid">
+                            <div class="stat-card primary">
+                                <div class="icon">
                                     <i class="fas fa-users"></i>
-                                    <%= rubrica.evaluaciones %> evaluaciones
                                 </div>
-                                <div class="rubric-stat">
-                                    <i class="fas fa-medal"></i>
-                                    <span class="percentage-badge high"><%= rubrica.excelencia %>% excelencia</span>
+                                <div class="label">Total Estudiantes</div>
+                                <div class="value">
+                                    <%= stats ? stats.totalEstudiantes : 0 %>
+                                </div>
+                            </div>
+
+                            <div class="stat-card success">
+                                <div class="icon">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <div class="label">Evaluaciones Completadas</div>
+                                <div class="value">
+                                    <%= stats ? stats.totalEvaluaciones : 0 %>
+                                </div>
+                            </div>
+
+                            <div class="stat-card info">
+                                <div class="icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="label">Promedio General</div>
+                                <div class="value">
+                                    <%= stats ? stats.promedioGeneral : 0 %>/20
+                                </div>
+                            </div>
+
+                            <div class="stat-card warning">
+                                <div class="icon">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </div>
+                                <div class="label">Pendientes</div>
+                                <div class="value">
+                                    <%= stats ? stats.pendientes : 0 %>
+                                </div>
+                            </div>
+
+                            <div class="stat-card danger">
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="label">Estudiantes en Riesgo</div>
+                                <div class="value">
+                                    <%= stats && stats.estudiantesRiesgo ? stats.estudiantesRiesgo.length : 0 %>
                                 </div>
                             </div>
                         </div>
-                    <% }); %>
-                <% } else { %>
-                    <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p>No hay datos suficientes para mostrar</p>
-                    </div>
-                <% } %>
-            </div>
 
-        </div>
-    </main>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script id="stats-data" type="application/json"><%- stats ? JSON.stringify(stats) : 'null' %></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const statsElement = document.getElementById('stats-data');
-            const stats = statsElement ? JSON.parse(statsElement.textContent) : null;
-            
-            if (stats) {
-                // Rendimiento por Materia Chart
-                const rendimientoCtx = document.getElementById('rendimientoChart').getContext('2d');
-                const materias = stats.rendimientoMateria.map(m => m.nombre);
-                const promedios = stats.rendimientoMateria.map(m => m.promedio);
+                        <!-- Gráficos -->
+                        <div class="charts-grid">
+                            <div class="chart-container">
+                                <h3><i class="fas fa-chart-bar"></i> Rendimiento por Materia</h3>
+                                <canvas id="rendimientoChart"></canvas>
+                            </div>
 
-                new Chart(rendimientoCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: materias,
-                        datasets: [{
-                            label: 'Promedio de Calificaciones',
-                            data: promedios,
-                            backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            borderWidth: 2,
-                            borderRadius: 8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 20,
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
-                            x: {
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
+                            <div class="chart-container">
+                                <h3><i class="fas fa-chart-pie"></i> Distribución de Calificaciones</h3>
+                                <canvas id="distribucionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <h3><i class="fas fa-chart-line"></i> Progreso Temporal (Últimos 6 Meses)</h3>
+                            <canvas id="progresoChart"></canvas>
+                        </div>
+
+                        <!-- Top Estudiantes -->
+                        <div class="content-section">
+                            <div class="section-header">
+                                <div class="section-title">
+                                    <div class="icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <h2>Top 10 - Mejores Estudiantes</h2>
+                                </div>
+                                <div class="export-buttons">
+                                    <button class="btn-export excel" onclick="exportToExcel('mejoresEstudiantes')">
+                                        <i class="fas fa-file-excel"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <% if (stats && stats.mejoresEstudiantes && stats.mejoresEstudiantes.length> 0) { %>
+                                <div class="table-wrapper">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Posición</th>
+                                                <th>Cédula</th>
+                                                <th>Nombre</th>
+                                                <th>Promedio</th>
+                                                <th>Evaluaciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% stats.mejoresEstudiantes.forEach((estudiante, index)=> { %>
+                                                <tr>
+                                                    <td><strong>#<%= index + 1 %></strong></td>
+                                                    <td>
+                                                        <%= estudiante.cedula %>
+                                                    </td>
+                                                    <td>
+                                                        <%= estudiante.nombre %>
+                                                    </td>
+                                                    <td>
+                                                        <% const promedioNum=parseFloat(estudiante.promedio); %>
+                                                            <span
+                                                                class="badge <%= promedioNum >= 18 ? 'excellent' : promedioNum >= 15 ? 'good' : 'regular' %>">
+                                                                <%= estudiante.promedio %>/20
+                                                            </span>
+                                                    </td>
+                                                    <td>
+                                                        <%= estudiante.evaluaciones %>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                        </tbody>
+                                    </table>
+                                    <% } else { %>
+                                        <div class="empty-state">
+                                            <i class="fas fa-inbox"></i>
+                                            <p>No hay datos suficientes para mostrar</p>
+                                        </div>
+                                        <% } %>
+                                </div>
+                        </div>
+
+                        <!-- Tab: Estudiantes -->
+                        <div id="tab-estudiantes" class="tab-content">
+                            <div class="content-section">
+                                <div class="section-header">
+                                    <div class="section-title">
+                                        <div class="icon">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                        <h2>Lista Detallada de Estudiantes</h2>
+                                    </div>
+                                    <div class="export-buttons">
+                                        <button class="btn-export excel" onclick="exportToExcel('estudiantesDetalle')">
+                                            <i class="fas fa-file-excel"></i> Excel
+                                        </button>
+                                        <button class="btn-export pdf" onclick="exportToPDF('estudiantesDetalle')">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Filtros -->
+                                <div class="filters-bar">
+                                    <div class="filter-group">
+                                        <label>Buscar</label>
+                                        <input type="text" id="searchStudent"
+                                            placeholder="Buscar por nombre o cédula...">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label>Sección</label>
+                                        <select id="filterSeccion">
+                                            <option value="">Todas las secciones</option>
+                                            <% if (stats && stats.secciones) { %>
+                                                <% stats.secciones.forEach(seccion=> { %>
+                                                    <option value="<%= seccion.codigo %>">
+                                                        <%= seccion.codigo %> - <%= seccion.materia %>
+                                                    </option>
+                                                    <% }); %>
+                                                        <% } %>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label>Estado</label>
+                                        <select id="filterEstado">
+                                            <option value="">Todos</option>
+                                            <option value="Excelente">Excelente</option>
+                                            <option value="Bueno">Bueno</option>
+                                            <option value="Regular">Regular</option>
+                                            <option value="En Riesgo">En Riesgo</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <% if (stats && stats.estudiantesDetalle && stats.estudiantesDetalle.length> 0) { %>
+                                    <div class="table-wrapper">
+                                        <table class="data-table" id="estudiantesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Cédula</th>
+                                                    <th>Nombre</th>
+                                                    <th>Sección</th>
+                                                    <th>Materia</th>
+                                                    <th>Promedio</th>
+                                                    <th>Evaluaciones</th>
+                                                    <th>Última Evaluación</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% stats.estudiantesDetalle.forEach(estudiante=> { %>
+                                                    <tr data-seccion="<%= estudiante.seccion %>"
+                                                        data-estado="<%= estudiante.estado %>">
+                                                        <td>
+                                                            <%= estudiante.cedula %>
+                                                        </td>
+                                                        <td><strong>
+                                                                <%= estudiante.nombre_completo %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= estudiante.seccion %>
+                                                        </td>
+                                                        <td>
+                                                            <%= estudiante.materia %>
+                                                        </td>
+                                                        <td>
+                                                            <%= parseFloat(estudiante.promedio).toFixed(2) %>
+                                                        </td>
+                                                        <td>
+                                                            <%= estudiante.total_evaluaciones %>
+                                                        </td>
+                                                        <td>
+                                                            <%= estudiante.ultima_evaluacion ? new
+                                                                Date(estudiante.ultima_evaluacion).toLocaleDateString('es-ES')
+                                                                : 'N/A' %>
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                class="badge <%= estudiante.estado === 'Excelente' ? 'excellent' : estudiante.estado === 'Bueno' ? 'good' : estudiante.estado === 'Regular' ? 'regular' : 'risk' %>">
+                                                                <%= estudiante.estado %>
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                            </tbody>
+                                        </table>
+                                        <% } else { %>
+                                            <div class="empty-state">
+                                                <i class="fas fa-inbox"></i>
+                                                <p>No hay estudiantes para mostrar</p>
+                                            </div>
+                                            <% } %>
+                                    </div>
+
+                                    <!-- Estudiantes en Riesgo -->
+                                    <% if (stats && stats.estudiantesRiesgo && stats.estudiantesRiesgo.length> 0) { %>
+                                        <div class="content-section">
+                                            <div class="section-header">
+                                                <div class="section-title">
+                                                    <div class="icon"
+                                                        style="background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);">
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                    </div>
+                                                    <h2>Estudiantes en Riesgo (Promedio < 10)</h2>
+                                                </div>
+                                                <div class="export-buttons">
+                                                    <button class="btn-export excel"
+                                                        onclick="exportToExcel('estudiantesRiesgo')">
+                                                        <i class="fas fa-file-excel"></i> Excel
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Cédula</th>
+                                                        <th>Nombre</th>
+                                                        <th>Sección</th>
+                                                        <th>Materia</th>
+                                                        <th>Promedio</th>
+                                                        <th>Evaluaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <% stats.estudiantesRiesgo.forEach(estudiante=> { %>
+                                                        <tr>
+                                                            <td>
+                                                                <%= estudiante.cedula %>
+                                                            </td>
+                                                            <td><strong>
+                                                                    <%= estudiante.nombre %>
+                                                                </strong></td>
+                                                            <td>
+                                                                <%= estudiante.seccion %>
+                                                            </td>
+                                                            <td>
+                                                                <%= estudiante.materia %>
+                                                            </td>
+                                                            <td><span class="badge risk">
+                                                                    <%= estudiante.promedio %>/20
+                                                                </span></td>
+                                                            <td>
+                                                                <%= estudiante.evaluaciones %>
+                                                            </td>
+                                                        </tr>
+                                                        <% }); %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <% } %>
+                            </div>
+
+                            <!-- Tab: Actividades -->
+                            <div id="tab-actividades" class="tab-content">
+                                <div class="content-section">
+                                    <div class="section-header">
+                                        <div class="section-title">
+                                            <div class="icon">
+                                                <i class="fas fa-history"></i>
+                                            </div>
+                                            <h2>Actividades Recientes</h2>
+                                        </div>
+                                    </div>
+
+                                    <% if (stats && stats.actividadesRecientes && stats.actividadesRecientes.length> 0)
+                                        { %>
+                                        <div class="timeline">
+                                            <% stats.actividadesRecientes.forEach(actividad=> { %>
+                                                <div class="timeline-item">
+                                                    <div class="timeline-content">
+                                                        <div class="timeline-date">
+                                                            <i class="fas fa-calendar"></i>
+                                                            <%= new
+                                                                Date(actividad.fecha_evaluacion).toLocaleDateString('es-ES',
+                                                                { year: 'numeric' , month: 'long' , day: 'numeric' }) %>
+                                                        </div>
+                                                        <div><strong>
+                                                                <%= actividad.estudiante %>
+                                                            </strong></div>
+                                                        <div>
+                                                            <%= actividad.rubrica %> - <%= actividad.materia %>
+                                                        </div>
+                                                        <div>
+                                                            Calificación:
+                                                            <span
+                                                                class="badge <%= actividad.calificacion >= 18 ? 'excellent' : actividad.calificacion >= 15 ? 'good' : actividad.calificacion >= 10 ? 'regular' : 'risk' %>">
+                                                                <%= actividad.calificacion %>/20
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <% }); %>
+                                        </div>
+                                        <% } else { %>
+                                            <div class="empty-state">
+                                                <i class="fas fa-inbox"></i>
+                                                <p>No hay actividades recientes</p>
+                                            </div>
+                                            <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Tab: Análisis -->
+                            <div id="tab-analisis" class="tab-content">
+                                <!-- Rendimiento por Materia -->
+                                <div class="content-section">
+                                    <div class="section-header">
+                                        <div class="section-title">
+                                            <div class="icon">
+                                                <i class="fas fa-book"></i>
+                                            </div>
+                                            <h2>Rendimiento por Materia</h2>
+                                        </div>
+                                    </div>
+
+                                    <% if (stats && stats.rendimientoMateria && stats.rendimientoMateria.length> 0) { %>
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Materia</th>
+                                                    <th>Estudiantes</th>
+                                                    <th>Evaluaciones</th>
+                                                    <th>Promedio</th>
+                                                    <th>Tasa Aprobación</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% stats.rendimientoMateria.forEach(materia=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= materia.nombre %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= materia.estudiantes %>
+                                                        </td>
+                                                        <td>
+                                                            <%= materia.evaluaciones %>
+                                                        </td>
+                                                        <td>
+                                                            <%= materia.promedio %>/20
+                                                        </td>
+                                                        <td>
+                                                            <%= materia.tasaAprobacion %>%
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                            </tbody>
+                                        </table>
+                                        <% } else { %>
+                                            <div class="empty-state">
+                                                <i class="fas fa-inbox"></i>
+                                                <p>No hay datos suficientes</p>
+                                            </div>
+                                            <% } %>
+                                </div>
+
+                                <!-- Comparativa por Sección -->
+                                <% if (stats && stats.comparativaSecciones && stats.comparativaSecciones.length> 0) { %>
+                                    <div class="content-section">
+                                        <div class="section-header">
+                                            <div class="section-title">
+                                                <div class="icon">
+                                                    <i class="fas fa-chart-bar"></i>
+                                                </div>
+                                                <h2>Comparativa por Sección</h2>
+                                            </div>
+                                        </div>
+
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sección</th>
+                                                    <th>Materia</th>
+                                                    <th>Estudiantes</th>
+                                                    <th>Promedio</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% stats.comparativaSecciones.forEach(seccion=> { %>
+                                                    <tr>
+                                                        <td><strong>
+                                                                <%= seccion.seccion %>
+                                                            </strong></td>
+                                                        <td>
+                                                            <%= seccion.materia %>
+                                                        </td>
+                                                        <td>
+                                                            <%= seccion.estudiantes %>
+                                                        </td>
+                                                        <td>
+                                                            <%= parseFloat(seccion.promedio).toFixed(2) %>/20
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <% } %>
+
+                                        <!-- Mejores Rúbricas -->
+                                        <% if (stats && stats.mejoresRubricas && stats.mejoresRubricas.length> 0) { %>
+                                            <div class="content-section">
+                                                <div class="section-header">
+                                                    <div class="section-title">
+                                                        <div class="icon"
+                                                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                                                            <i class="fas fa-thumbs-up"></i>
+                                                        </div>
+                                                        <h2>Rúbricas con Mejor Rendimiento</h2>
+                                                    </div>
+                                                </div>
+
+                                                <table class="data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rúbrica</th>
+                                                            <th>Materia</th>
+                                                            <th>Promedio</th>
+                                                            <th>Evaluaciones</th>
+                                                            <th>% Excelencia</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <% stats.mejoresRubricas.forEach(rubrica=> { %>
+                                                            <tr>
+                                                                <td><strong>
+                                                                        <%= rubrica.rubrica %>
+                                                                    </strong></td>
+                                                                <td>
+                                                                    <%= rubrica.materia %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= rubrica.promedio %>/20
+                                                                </td>
+                                                                <td>
+                                                                    <%= rubrica.evaluaciones %>
+                                                                </td>
+                                                                <td>
+                                                                    <%= rubrica.excelencia %>%
+                                                                </td>
+                                                            </tr>
+                                                            <% }); %>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <% } %>
+                            </div>
+                        </div>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script id="stats-data" type="application/json"><%- stats ? JSON.stringify(stats) : 'null' %></script>
+        <script>
+            // Función para cambiar de tab
+            function switchTab(tabName) {
+                // Remover clase active de todos los tabs
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.remove('active');
                 });
 
-                // Estado de Evaluaciones Chart (Completadas vs Pendientes)
-                const estadoCtx = document.getElementById('estadoChart').getContext('2d');
-                const completadas = stats.totalEvaluaciones - stats.pendientes;
-                const pendientes = stats.pendientes;
+                // Mostrar el tab seleccionado
+                const tabContent = document.getElementById('tab-' + tabName);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                }
 
-                new Chart(estadoCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Completadas', 'Pendientes'],
-                        datasets: [{
-                            data: [completadas, pendientes],
-                            backgroundColor: [
-                                'rgba(17, 153, 142, 0.8)',
-                                'rgba(245, 87, 108, 0.8)'
-                            ],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    font: {
-                                        size: 12
-                                    },
-                                    padding: 15
-                                }
-                            }
-                        }
+                // Activar el botón correspondiente
+                const buttons = document.querySelectorAll('.tab');
+                buttons.forEach(button => {
+                    if (button.getAttribute('onclick').includes(tabName)) {
+                        button.classList.add('active');
                     }
                 });
             }
-        });
-    </script>
-    
-    <script src="../js/home.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+            // Filtros de estudiantes
+            const searchStudent = document.getElementById('searchStudent');
+            const filterSeccion = document.getElementById('filterSeccion');
+            const filterEstado = document.getElementById('filterEstado');
+
+            function filterStudents() {
+                const searchTerm = searchStudent?.value.toLowerCase() || '';
+                const seccionFilter = filterSeccion?.value || '';
+                const estadoFilter = filterEstado?.value || '';
+
+                const rows = document.querySelectorAll('#estudiantesTable tbody tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const seccion = row.dataset.seccion || '';
+                    const estado = row.dataset.estado || '';
+
+                    const matchesSearch = text.includes(searchTerm);
+                    const matchesSeccion = !seccionFilter || seccion === seccionFilter;
+                    const matchesEstado = !estadoFilter || estado === estadoFilter;
+
+                    row.style.display = (matchesSearch && matchesSeccion && matchesEstado) ? '' : 'none';
+                });
+            }
+
+            if (searchStudent) searchStudent.addEventListener('input', filterStudents);
+            if (filterSeccion) filterSeccion.addEventListener('change', filterStudents);
+            if (filterEstado) filterEstado.addEventListener('change', filterStudents);
+
+            // Gráficos
+            document.addEventListener('DOMContentLoaded', function () {
+                const statsElement = document.getElementById('stats-data');
+                const stats = statsElement ? JSON.parse(statsElement.textContent) : null;
+
+                if (stats) {
+                    // Rendimiento por Materia
+                    if (stats.rendimientoMateria && stats.rendimientoMateria.length > 0) {
+                        const ctx1 = document.getElementById('rendimientoChart').getContext('2d');
+                        new Chart(ctx1, {
+                            type: 'bar',
+                            data: {
+                                labels: stats.rendimientoMateria.map(m => m.nombre),
+                                datasets: [{
+                                    label: 'Promedio',
+                                    data: stats.rendimientoMateria.map(m => m.promedio),
+                                    backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                                    borderColor: 'rgba(102, 126, 234, 1)',
+                                    borderWidth: 2,
+                                    borderRadius: 8
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 20
+                                    }
+                                },
+                                plugins: {
+                                    legend: { display: false }
+                                }
+                            }
+                        });
+                    }
+
+                    // Distribución de Calificaciones
+                    if (stats.distribucionCalificaciones && stats.distribucionCalificaciones.length > 0) {
+                        const ctx2 = document.getElementById('distribucionChart').getContext('2d');
+                        new Chart(ctx2, {
+                            type: 'doughnut',
+                            data: {
+                                labels: stats.distribucionCalificaciones.map(d => d.rango),
+                                datasets: [{
+                                    data: stats.distribucionCalificaciones.map(d => d.cantidad),
+                                    backgroundColor: [
+                                        'rgba(17, 153, 142, 0.8)',
+                                        'rgba(79, 172, 254, 0.8)',
+                                        'rgba(255, 206, 86, 0.8)',
+                                        'rgba(245, 87, 108, 0.8)'
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Progreso Temporal
+                    if (stats.progresoTemporal && stats.progresoTemporal.length > 0) {
+                        const ctx3 = document.getElementById('progresoChart').getContext('2d');
+                        new Chart(ctx3, {
+                            type: 'line',
+                            data: {
+                                labels: stats.progresoTemporal.map(p => p.mes),
+                                datasets: [{
+                                    label: 'Promedio',
+                                    data: stats.progresoTemporal.map(p => p.promedio),
+                                    borderColor: 'rgba(102, 126, 234, 1)',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                    fill: true,
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 20
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            // =============================================
+            // FUNCIONES DE EXPORTAR
+            // =============================================
+
+            // Exportar a Excel (CSV)
+            function exportToExcel(tableName) {
+                let data = [];
+                let filename = '';
+
+                if (tableName === 'mejoresEstudiantes' && stats && stats.mejoresEstudiantes) {
+                    filename = 'mejores_estudiantes.csv';
+                    data.push(['Posición', 'Cédula', 'Nombre', 'Promedio', 'Evaluaciones']);
+                    stats.mejoresEstudiantes.forEach((est, index) => {
+                        data.push([
+                            index + 1,
+                            est.cedula,
+                            est.nombre,
+                            est.promedio,
+                            est.evaluaciones
+                        ]);
+                    });
+                } else if (tableName === 'estudiantesDetalle' && stats && stats.estudiantesDetalle) {
+                    filename = 'estudiantes_detalle.csv';
+                    data.push(['Cédula', 'Nombre', 'Sección', 'Materia', 'Promedio', 'Evaluaciones', 'Última Evaluación', 'Estado']);
+                    stats.estudiantesDetalle.forEach(est => {
+                        data.push([
+                            est.cedula,
+                            est.nombre_completo,
+                            est.seccion,
+                            est.materia,
+                            est.promedio,
+                            est.total_evaluaciones,
+                            est.ultima_evaluacion ? new Date(est.ultima_evaluacion).toLocaleDateString('es-ES') : 'N/A',
+                            est.estado
+                        ]);
+                    });
+                } else if (tableName === 'estudiantesRiesgo' && stats && stats.estudiantesRiesgo) {
+                    filename = 'estudiantes_riesgo.csv';
+                    data.push(['Cédula', 'Nombre', 'Sección', 'Materia', 'Promedio', 'Evaluaciones']);
+                    stats.estudiantesRiesgo.forEach(est => {
+                        data.push([
+                            est.cedula,
+                            est.nombre,
+                            est.seccion,
+                            est.materia,
+                            est.promedio,
+                            est.evaluaciones
+                        ]);
+                    });
+                }
+
+                if (data.length === 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin datos',
+                        text: 'No hay datos para exportar'
+                    });
+                    return;
+                }
+
+                // Convertir a CSV
+                const csvContent = data.map(row =>
+                    row.map(cell => `"${cell}"`).join(',')
+                ).join('\n');
+
+                // Crear blob y descargar
+                const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Exportado',
+                    text: 'Archivo descargado exitosamente',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+
+            // Exportar a PDF
+            function exportToPDF(tableName) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Generando PDF',
+                    text: 'Use Ctrl+P o Cmd+P para imprimir/guardar como PDF',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Imprimir'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.print();
+                    }
+                });
+            }
+        </script>
+
+        <script src="../js/home.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
+
 </html>

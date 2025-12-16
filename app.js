@@ -1,22 +1,44 @@
 const express = require('express');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const conexionPool = require('./models/conetion');
 const app = express();
 const title = 'APP';
 const PORT = process.env.PORT || 3008;
 
-// Objeto para rastrear sesiones activas por usuario
+// Configurar el almacenamiento de sesiones en MySQL
+const sessionStore = new MySQLStore({
+    clearExpired: true,
+    checkExpirationInterval: 900000, // Limpiar sesiones expiradas cada 15 minutos
+    expiration: 1200000, // 20 minutos (igual que cookie.maxAge)
+    createDatabaseTable: true, // Crear tabla automáticamente si no existe
+    schema: {
+        tableName: 'sessions',
+        columnNames: {
+            session_id: 'session_id',
+            expires: 'expires',
+            data: 'data'
+        }
+    }
+}, conexionPool);
+
+// Manejar errores del session store
+sessionStore.on('error', (error) => {
+    console.error('❌ Error en session store:', error.message);
+});
+
+// Objeto para rastrear sesiones activas por sessionID (permite múltiples sesiones del mismo usuario)
 const sesionesActivas = new Map();
 
-// Función para limpiar sesiones expiradas
+// Función para limpiar sesiones expiradas del Map
 function limpiarSesionesExpiradas() {
     const ahora = Date.now();
     const TIMEOUT_SESION = 300000; // 5 minutos
-    
-    for (const [cedula, sesion] of sesionesActivas.entries()) {
+
+    for (const [sessionID, sesion] of sesionesActivas.entries()) {
         const tiempoInactivo = ahora - (sesion.ultimaActividad || sesion.inicioSesion);
         if (tiempoInactivo > TIMEOUT_SESION) {
-            console.log(`🧹 Limpiando sesión expirada de: ${cedula}`);
-            sesionesActivas.delete(cedula);
+            sesionesActivas.delete(sessionID);
         }
     }
 }
@@ -30,14 +52,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 
-// Sesiones
+// Configuración de sesiones con MySQL Store
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'mi-secreto',
+    key: 'session_cookie_name',
+    secret: process.env.SESSION_SECRET || 'mi-secreto-super-seguro-2024',
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,
-        maxAge: 1000 * 60 * 20  // 20 minutos de inactividad
+        secure: false, // Cambiar a true si usas HTTPS
+        httpOnly: true, // Previene acceso desde JavaScript del cliente
+        maxAge: 1200000,  // 20 minutos de inactividad
+        sameSite: 'lax' // Protección CSRF
     }
 }));
 
@@ -47,31 +73,30 @@ app.use((req, res, next) => {
         const ahora = Date.now();
         const ultimaActividad = req.session.ultimaActividad || ahora;
         const tiempoInactivo = ahora - ultimaActividad;
-        
+
         // Si han pasado más de 5 minutos (300000 ms)
         if (tiempoInactivo > 300000) {
-            const cedula = req.session.cedula;
+            const sessionID = req.sessionID;
             req.session.destroy((err) => {
                 if (err) {
-                    console.error('Error al destruir la sesión:', err);
+                    console.error('❌ Error al destruir la sesión:', err);
                 }
-                // Eliminar la sesión activa del mapa
-                if (cedula) {
-                    sesionesActivas.delete(cedula);
-                    console.log(`⏱️ Sesión expirada por inactividad: ${cedula}`);
+                // Eliminar la sesión activa del mapa usando sessionID
+                if (sessionID) {
+                    sesionesActivas.delete(sessionID);
                 }
                 return res.redirect('/login?mensaje=' + encodeURIComponent('Tu sesión ha expirado por inactividad.'));
             });
         } else {
-            // Actualizar la última actividad en la sesión y en el Map
+            // Actualizar la última actividad en la sesión
             req.session.ultimaActividad = ahora;
-            
-            // Actualizar también en el Map de sesiones activas
-            if (req.session.cedula && sesionesActivas.has(req.session.cedula)) {
-                const sesionActiva = sesionesActivas.get(req.session.cedula);
+
+            // Actualizar también en el Map de sesiones activas usando sessionID
+            if (req.sessionID && sesionesActivas.has(req.sessionID)) {
+                const sesionActiva = sesionesActivas.get(req.sessionID);
                 sesionActiva.ultimaActividad = ahora;
             }
-            
+
             next();
         }
     } else {
@@ -100,6 +125,7 @@ app.use(require('./controllers/deleteUserControllers'))
 app.use(require('./controllers/createRubricaAdmin'));
 app.use(require('./controllers/createRubricaTeacher'));
 app.use(require('./controllers/updateRubricas'));
+app.use(require('./controllers/evaluacionDocenteController'));
 
 // RUTAS DE ADMINISTRADOR
 app.use(require('./routers/admin'));
@@ -130,7 +156,7 @@ app.use(require('./routers/calificacionesStudents'));
 
 // MANEJO DE ERROR 404 
 app.use((req, res, next) => {
-    res.status(404).render('error/404', { 
+    res.status(404).render('error/404', {
         title: `${title} - Página No Encontrada`,
         url: req.originalUrl
     });
@@ -139,7 +165,7 @@ app.use((req, res, next) => {
 // MANEJO DE ERROR 500
 app.use((err, req, res, next) => {
     console.error('Error 500:', err.stack);
-    res.status(500).render('error/500', { 
+    res.status(500).render('error/500', {
         title: `${title} - Error del Servidor`,
         error: process.env.NODE_ENV === 'development' ? err : null
     });

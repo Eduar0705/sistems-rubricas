@@ -1,275 +1,357 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Rubricas' %></title>
+    <title>
+        <%= title || 'Rubricas' %>
+    </title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="stylesheet" href="../css/modalConfig.css">
     <link rel="stylesheet" href="../css/evaluacionDocente.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+
 <body>
     <%- include('../inc/menu.ejs') %>
 
-    <main class="main-content">
-        <!-- Header -->
-        <%- include('../inc/headerAdmin.ejs') %>
+        <main class="main-content">
+            <!-- Header -->
+            <%- include('../inc/headerAdmin.ejs') %>
 
-        <div class="view active" id="config">
+                <div class="view active" id="config">
 
-            <div class="view-header">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="buscar-Docente" placeholder="Buscar docente">
-                </div>
-                <button class="btn-primary">
-                    <i class="fas fa-plus"></i>
-                    Nueva Evaluación
-                </button>
-            </div>
+                    <div class="view-header">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="buscar-Docente" placeholder="Buscar docente">
+                        </div>
+                        <button class="btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Nueva Evaluación
+                        </button>
+                    </div>
 
-            <div class="pagination-controls">
-                <div class="entries-control">
-                    <label for="entriesPerPage">Mostrar:</label>
-                    <select id="entriesPerPage" class="entries-select">
-                        <option value="5" selected>5</option>
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="all">Todos</option>
-                    </select>
-                    <span>evaluaciones</span>
-                </div>
-                <div class="pagination-info">
-                    Mostrando <span id="showingStart">1</span> a <span id="showingEnd">5</span> de <span id="totalEntries"><%= (typeof evaluaciones !== 'undefined' ? evaluaciones.length : 0) %></span> evaluaciones
-                </div>
-            </div>
+                    <div class="pagination-controls">
+                        <div class="entries-control">
+                            <label for="entriesPerPage">Mostrar:</label>
+                            <select id="entriesPerPage" class="entries-select">
+                                <option value="5" selected>5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="all">Todos</option>
+                            </select>
+                            <span>evaluaciones</span>
+                        </div>
+                        <div class="pagination-info">
+                            Mostrando <span id="showingStart">1</span> a <span id="showingEnd">5</span> de <span
+                                id="totalEntries">
+                                <%= (typeof evaluaciones !=='undefined' ? evaluaciones.length : 0) %>
+                            </span> evaluaciones
+                        </div>
+                    </div>
 
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Docente</th>
-                            <th>Rubrica</th>
-                            <th>Fecha</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (typeof evaluaciones !== 'undefined' && evaluaciones.length > 0) { %>
-                            <% evaluaciones.forEach(function(evaluacion) { %>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
                                 <tr>
-                                    <td><%= evaluacion.docente_nombre %></td>
-                                    <td><%= evaluacion.rubrica_nombre %></td>
-                                    <td><%= new Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES') %></td>
-                                    <td>
-                                        <button class="btns open-modal-btn" data-cedula="<%= evaluacion.cedula %>" data-nombre="<%= evaluacion.docente_nombre %>">
-                                            <i class="fas fa-clipboard-check"></i> Evaluar
-                                        </button>
-                                    </td>
+                                    <th>Docente</th>
+                                    <th>Estado</th>
+                                    <th>Última Evaluación</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            <% }); %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: 20px;">
-                                    No hay evaluaciones disponibles
-                                </td>
-                            </tr>
-                        <% } %>
-                    </tbody>
-                </table>
-            </div>
-            <div class="pagination-buttons" id="paginationButtons">
-                <!-- Se generarán dinámicamente con JavaScript -->
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal -->
-    <div id="evaluationModal" class="modal">
-        <div class="modal-content">
-        <span class="close">&times;</span>
-        
-        <h2 class="form-title" style="text-align: center; padding: 10px; margin-top: 15px;">4. APLICACIÓN DE LOS INSTRUMENTOS DE EVALUACIÓN EN ESTE CORTE</h2>
-
-        <div class="form-body">
-            <!-- Información básica -->
-            <div class="info-section">
-                <div class="info-row">
-                    <div class="info-field">
-                        <label>Docente</label>
-                        <input type="text" id="docente_nombre" readonly />
-                        <input type="hidden" id="docente_cedula" />
+                            </thead>
+                            <tbody>
+                                <% if (typeof evaluaciones !=='undefined' && evaluaciones.length> 0) { %>
+                                    <% evaluaciones.forEach(function(evaluacion) { %>
+                                        <tr>
+                                            <td>
+                                                <%= evaluacion.docente_nombre %>
+                                                    <% if (evaluacion.especializacion) { %>
+                                                        <br><small style="color: #666;">
+                                                            <%= evaluacion.especializacion %>
+                                                        </small>
+                                                        <% } %>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge <%= evaluacion.estado === 'Evaluado' ? 'badge-success' : 'badge-warning' %>">
+                                                    <%= evaluacion.estado %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (evaluacion.fecha_evaluacion && evaluacion.estado==='Evaluado' ) {
+                                                    %>
+                                                    <%= new
+                                                        Date(evaluacion.fecha_evaluacion).toLocaleDateString('es-ES') %>
+                                                        <% if (evaluacion.rubrica_nombre) { %>
+                                                            <br><small style="color: #666;">
+                                                                <%= evaluacion.rubrica_nombre %>
+                                                            </small>
+                                                            <% } %>
+                                                                <% } else { %>
+                                                                    <span style="color: #999;">Sin evaluar</span>
+                                                                    <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (evaluacion.estado==='Evaluado' ) { %>
+                                                    <button class="btns btn-edit"
+                                                        data-evaluacion-id="<%= evaluacion.evaluacion_id %>"
+                                                        data-cedula="<%= evaluacion.cedula %>"
+                                                        data-nombre="<%= evaluacion.docente_nombre %>">
+                                                        <i class="fas fa-edit"></i> Editar
+                                                    </button>
+                                                    <button class="btns btn-view"
+                                                        data-evaluacion-id="<%= evaluacion.evaluacion_id %>">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </button>
+                                                    <% } else { %>
+                                                        <button class="btns open-modal-btn"
+                                                            data-cedula="<%= evaluacion.cedula %>"
+                                                            data-nombre="<%= evaluacion.docente_nombre %>">
+                                                            <i class="fas fa-clipboard-check"></i> Evaluar
+                                                        </button>
+                                                        <% } %>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="4" style="text-align: center; padding: 20px;">
+                                                        No hay evaluaciones disponibles
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="info-field">
-                        <label>Unidad Curricular</label>
-                        <input type="text" id="unidad_curricular" placeholder="Ingrese la unidad curricular" />
+
+                    <!-- Paginación -->
+                    <div class="pagination-buttons" id="paginationButtons"
+                        style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 20px;">
+                        <button id="btnAnterior"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <div id="numerosPagina" style="display: flex; gap: 5px;">
+                            <!-- Los números de página se generarán con JavaScript -->
+                        </div>
+                        <button id="btnSiguiente"
+                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="info-row">
-                    <div class="info-field">
-                        <label>Semestre y sección</label>
-                        <select id="semestre">
-                            <option value="">Seleccione un semestre</option>
-                        </select>
+        </main>
+
+        <!-- Modal -->
+        <div id="evaluationModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+
+                <h2 class="form-title" style="text-align: center; padding: 10px; margin-top: 15px;">4. APLICACIÓN DE LOS
+                    INSTRUMENTOS DE EVALUACIÓN EN ESTE CORTE</h2>
+
+                <div class="form-body">
+                    <!-- Información básica -->
+                    <div class="info-section">
+                        <div class="info-row">
+                            <div class="info-field">
+                                <label>Docente</label>
+                                <input type="text" id="docente_nombre" readonly />
+                                <input type="hidden" id="docente_cedula" />
+                            </div>
+                            <div class="info-field">
+                                <label>Unidad Curricular (Materia)</label>
+                                <select id="unidad_curricular" required>
+                                    <option value="">Seleccione una materia</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-field">
+                                <label>Semestre y sección</label>
+                                <select id="semestre">
+                                    <option value="">Seleccione un semestre</option>
+                                </select>
+                            </div>
+                            <div class="info-field">
+                                <label>Carrera</label>
+                                <select id="carrera">
+                                    <option value="">Seleccione una carrera</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="info-field">
-                        <label>Carrera</label>
-                        <select id="carrera">
-                            <option value="">Seleccione una carrera</option>
-                        </select>
+
+                    <!-- Tabla de evaluación -->
+                    <div class="table-container">
+                        <table class="evaluation-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60%;">Criterio de Evaluación</th>
+                                    <th style="width: 8%;">S</th>
+                                    <th style="width: 10%;">CS/AV</th>
+                                    <th style="width: 8%;">N</th>
+                                    <th style="width: 14%;">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evaluation-rows">
+                                <tr>
+                                    <td class="criterio-text">Diseña instrumentos de evaluación para la revisión del
+                                        producto o actividad sumativa en este corte</td>
+                                    <td><input type="checkbox" name="criterio1_s" /></td>
+                                    <td>
+                                        <select name="criterio1_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio1_n" /></td>
+                                    <td><input type="text" name="criterio1_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Aplica instrumentos de evaluación a cada una de las
+                                        actividades sumativas realizadas a los alumnos en este corte</td>
+                                    <td><input type="checkbox" name="criterio2_s" /></td>
+                                    <td>
+                                        <select name="criterio2_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio2_n" /></td>
+                                    <td><input type="text" name="criterio2_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Explica los criterios de evaluación e indicadores de
+                                        desempeño a los estudiantes en este corte</td>
+                                    <td><input type="checkbox" name="criterio3_s" /></td>
+                                    <td>
+                                        <select name="criterio3_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio3_n" /></td>
+                                    <td><input type="text" name="criterio3_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Aplica los criterios de evaluación e indicadores de
+                                        desempeño de los instrumentos diseñados a cada una de las actividades sumativas
+                                        en este corte</td>
+                                    <td><input type="checkbox" name="criterio4_s" /></td>
+                                    <td>
+                                        <select name="criterio4_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio4_n" /></td>
+                                    <td><input type="text" name="criterio4_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Los instrumentos usados en este corte evalúan los
+                                        indicadores de desempeño de la competencia del perfil de egreso</td>
+                                    <td><input type="checkbox" name="criterio5_s" /></td>
+                                    <td>
+                                        <select name="criterio5_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio5_n" /></td>
+                                    <td><input type="text" name="criterio5_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Los instrumentos empleados para cada actividad sumativa
+                                        evalúan de forma integral la competencia del perfil de egreso</td>
+                                    <td><input type="checkbox" name="criterio6_s" /></td>
+                                    <td>
+                                        <select name="criterio6_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio6_n" /></td>
+                                    <td><input type="text" name="criterio6_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                                <tr>
+                                    <td class="criterio-text">Evidencia los resultados de todas las evaluaciones con los
+                                        criterios e indicadores de desempeño de los instrumentos de evaluación diseñados
+                                    </td>
+                                    <td><input type="checkbox" name="criterio7_s" /></td>
+                                    <td>
+                                        <select name="criterio7_csav">
+                                            <option value="">-</option>
+                                            <option value="CS">CS</option>
+                                            <option value="AV">AV</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="checkbox" name="criterio7_n" /></td>
+                                    <td><input type="text" name="criterio7_obs" placeholder="Observaciones" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Nivel de desempeño -->
+                    <div class="performance-section">
+                        <div class="performance-header">
+                            <p><strong>S: Siempre - CS: Casi siempre - AV: A Veces - N: Nunca</strong></p>
+                            <h3>Nivel de desempeño en Instrumentos de Evaluación:</h3>
+                            <p><strong>Sobresaliente, Notable, LC, Aprobado e Insuficiente</strong></p>
+                        </div>
+
+                        <div class="suggestions-section">
+                            <h4>Sugerencias:</h4>
+                            <textarea rows="4" id="sugerencias"
+                                placeholder="Ingrese sus sugerencias aquí..."></textarea>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tabla de evaluación -->
-            <div class="table-container">
-                <table class="evaluation-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 60%;">Criterio de Evaluación</th>
-                            <th style="width: 8%;">S</th>
-                            <th style="width: 10%;">CS/AV</th>
-                            <th style="width: 8%;">N</th>
-                            <th style="width: 14%;">Observaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="evaluation-rows">
-                        <tr>
-                            <td class="criterio-text">Diseña instrumentos de evaluación para la revisión del producto o actividad sumativa en este corte</td>
-                            <td><input type="checkbox" name="criterio1_s" /></td>
-                            <td>
-                                <select name="criterio1_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio1_n" /></td>
-                            <td><input type="text" name="criterio1_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Aplica instrumentos de evaluación a cada una de las actividades sumativas realizadas a los alumnos en este corte</td>
-                            <td><input type="checkbox" name="criterio2_s" /></td>
-                            <td>
-                                <select name="criterio2_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio2_n" /></td>
-                            <td><input type="text" name="criterio2_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Explica los criterios de evaluación e indicadores de desempeño a los estudiantes en este corte</td>
-                            <td><input type="checkbox" name="criterio3_s" /></td>
-                            <td>
-                                <select name="criterio3_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio3_n" /></td>
-                            <td><input type="text" name="criterio3_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Aplica los criterios de evaluación e indicadores de desempeño de los instrumentos diseñados a cada una de las actividades sumativas en este corte</td>
-                            <td><input type="checkbox" name="criterio4_s" /></td>
-                            <td>
-                                <select name="criterio4_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio4_n" /></td>
-                            <td><input type="text" name="criterio4_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Los instrumentos usados en este corte evalúan los indicadores de desempeño de la competencia del perfil de egreso</td>
-                            <td><input type="checkbox" name="criterio5_s" /></td>
-                            <td>
-                                <select name="criterio5_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio5_n" /></td>
-                            <td><input type="text" name="criterio5_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Los instrumentos empleados para cada actividad sumativa evalúan de forma integral la competencia del perfil de egreso</td>
-                            <td><input type="checkbox" name="criterio6_s" /></td>
-                            <td>
-                                <select name="criterio6_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio6_n" /></td>
-                            <td><input type="text" name="criterio6_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                        <tr>
-                            <td class="criterio-text">Evidencia los resultados de todas las evaluaciones con los criterios e indicadores de desempeño de los instrumentos de evaluación diseñados</td>
-                            <td><input type="checkbox" name="criterio7_s" /></td>
-                            <td>
-                                <select name="criterio7_csav">
-                                    <option value="">-</option>
-                                    <option value="CS">CS</option>
-                                    <option value="AV">AV</option>
-                                </select>
-                            </td>
-                            <td><input type="checkbox" name="criterio7_n" /></td>
-                            <td><input type="text" name="criterio7_obs" placeholder="Observaciones" /></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Nivel de desempeño -->
-            <div class="performance-section">
-                <div class="performance-header">
-                    <p><strong>S: Siempre - CS: Casi siempre - AV: A Veces - N: Nunca</strong></p>
-                    <h3>Nivel de desempeño en Instrumentos de Evaluación:</h3>
-                    <p><strong>Sobresaliente, Notable, LC, Aprobado e Insuficiente</strong></p>
-                </div>
-                
-                <div class="suggestions-section">
-                    <h4>Sugerencias:</h4>
-                    <textarea rows="4" id="sugerencias" placeholder="Ingrese sus sugerencias aquí..."></textarea>
+                <div class="modal-footer">
+                    <input type="hidden" id="evaluacion_id" value="" />
+                    <button class="btn-cancel" id="cancelBtn">Cancelar</button>
+                    <button class="btn-save" id="saveBtn">Guardar</button>
                 </div>
             </div>
         </div>
 
-        <div class="modal-footer">
-            <button class="btn-cancel" id="cancelBtn">Cancelar</button>
-            <button class="btn-save" id="saveBtn">Guardar</button>
-        </div>
-        </div>
-    </div>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="../js/home.js"></script>
+        <script src="../js/evaluaciondocenteAdmin.js"></script>
+        <% if (typeof locals.mensaje !='undefined' || typeof mensaje !='undefined' ) { %>
+            <script>
+                Swal.fire({
+                    icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                    title: 'Información',
+                    text: '<%= locals.mensaje || mensaje %>',
+                    confirmButtonText: 'Aceptar'
+                });
+            </script>
+            <% } %>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/home.js"></script>
-    <script src="../js/evaluaciondocenteAdmin.js"></script>
-    <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
-        <script>
-            Swal.fire({
-                icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
-                title: 'Información',
-                text: '<%= locals.mensaje || mensaje %>',
-                confirmButtonText: 'Aceptar'
-            });
-        </script>
-    <% } %>
-    
-    <!-- Permisos por docente -->
-    <script>
-        const permisosPorDocente = <%- permisosPorDocente || '{}' %>;
-    </script>
+                <input type="text" id="permisosPorDocente" value="<%= permisosPorDocente %>" />
+                <!-- Permisos por docente -->
+                <script>
+                    let permisosPorDocente = {};
+                    try {
+                        permisosPorDocente = JSON.parse(document.getElementById('permisosPorDocente').value);
+                        console.log('🔍 Permisos cargados:', permisosPorDocente);
+                    } catch (e) {
+                        console.error('❌ Error cargando permisos:', e);
+                    }
+                </script>
 </body>
+
 </html>
