@@ -3,6 +3,12 @@ const router = express.Router();
 const conexion = require('../models/conetion');
 
 router.post('/updateUser', (req, res) => {
+    // Validar sesión
+    if (!req.session.login) {
+        const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
+        return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
+    }
+
     let mensaje;
     const { cedulaOriginal, cedula, nombre, email, password, rol } = req.body;
 

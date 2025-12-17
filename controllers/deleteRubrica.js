@@ -71,105 +71,121 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
         }
 
         function proceedWithDeletion() {
-            // Iniciar transacción
-            connection.beginTransaction((err) => {
+            // Obtener una conexión del pool
+            connection.getConnection((err, conn) => {
                 if (err) {
-                    console.error('Error al iniciar transacción:', err);
-                    return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+                    console.error('Error al obtener conexión del pool:', err);
+                    return res.status(500).json({ success: false, message: 'Error al conectar con la base de datos' });
                 }
 
-                // Paso 1: Eliminar detalles de evaluación
-                console.log('Paso 1: Eliminando detalles de evaluación...');
-                connection.query(
-                    'DELETE FROM detalle_evaluacion WHERE evaluacion_id IN (SELECT id FROM evaluacion_estudiante WHERE rubrica_id = ?)',
-                    [rubricaId],
-                    (error) => {
-                        if (error) {
-                            return connection.rollback(() => {
-                                console.error('Error al eliminar detalles de evaluación:', error);
-                                res.status(500).json({ success: false, message: 'Error al eliminar detalles de evaluación' });
-                            });
-                        }
+                // Iniciar transacción en la conexión obtenida
+                conn.beginTransaction((err) => {
+                    if (err) {
+                        conn.release(); // Liberar la conexión
+                        console.error('Error al iniciar transacción:', err);
+                        return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+                    }
 
-                        console.log('Detalles de evaluación eliminados correctamente');
+                    // Paso 1: Eliminar detalles de evaluación
+                    console.log('Paso 1: Eliminando detalles de evaluación...');
+                    conn.query(
+                        'DELETE FROM detalle_evaluacion WHERE evaluacion_id IN (SELECT id FROM evaluacion_estudiante WHERE rubrica_id = ?)',
+                        [rubricaId],
+                        (error) => {
+                            if (error) {
+                                return conn.rollback(() => {
+                                    conn.release(); // Liberar la conexión
+                                    console.error('Error al eliminar detalles de evaluación:', error);
+                                    res.status(500).json({ success: false, message: 'Error al eliminar detalles de evaluación' });
+                                });
+                            }
 
-                        // Paso 2: Eliminar niveles de desempeño
-                        console.log('Paso 2: Eliminando niveles de desempeño...');
-                        connection.query(
-                            'DELETE FROM nivel_desempeno WHERE criterio_id IN (SELECT id FROM criterio_evaluacion WHERE rubrica_id = ?)',
-                            [rubricaId],
-                            (error) => {
-                                if (error) {
-                                    return connection.rollback(() => {
-                                        console.error('Error al eliminar niveles:', error);
-                                        res.status(500).json({ success: false, message: 'Error al eliminar niveles de desempeño' });
-                                    });
-                                }
+                            console.log('Detalles de evaluación eliminados correctamente');
 
-                                console.log('Niveles eliminados correctamente');
-
-                                // Paso 3: Eliminar criterios
-                                console.log('Paso 3: Eliminando criterios...');
-                                connection.query('DELETE FROM criterio_evaluacion WHERE rubrica_id = ?', [rubricaId], (error) => {
+                            // Paso 2: Eliminar niveles de desempeño
+                            console.log('Paso 2: Eliminando niveles de desempeño...');
+                            conn.query(
+                                'DELETE FROM nivel_desempeno WHERE criterio_id IN (SELECT id FROM criterio_evaluacion WHERE rubrica_id = ?)',
+                                [rubricaId],
+                                (error) => {
                                     if (error) {
-                                        return connection.rollback(() => {
-                                            console.error('Error al eliminar criterios:', error);
-                                            res.status(500).json({ success: false, message: 'Error al eliminar criterios' });
+                                        return conn.rollback(() => {
+                                            conn.release(); // Liberar la conexión
+                                            console.error('Error al eliminar niveles:', error);
+                                            res.status(500).json({ success: false, message: 'Error al eliminar niveles de desempeño' });
                                         });
                                     }
 
-                                    console.log('Criterios eliminados correctamente');
+                                    console.log('Niveles eliminados correctamente');
 
-                                    // Paso 4: Eliminar evaluaciones de estudiantes
-                                    console.log('Paso 4: Eliminando evaluaciones...');
-                                    connection.query('DELETE FROM evaluacion_estudiante WHERE rubrica_id = ?', [rubricaId], (error) => {
+                                    // Paso 3: Eliminar criterios
+                                    console.log('Paso 3: Eliminando criterios...');
+                                    conn.query('DELETE FROM criterio_evaluacion WHERE rubrica_id = ?', [rubricaId], (error) => {
                                         if (error) {
-                                            return connection.rollback(() => {
-                                                console.error('Error al eliminar evaluaciones:', error);
-                                                res.status(500).json({ success: false, message: 'Error al eliminar evaluaciones' });
+                                            return conn.rollback(() => {
+                                                conn.release(); // Liberar la conexión
+                                                console.error('Error al eliminar criterios:', error);
+                                                res.status(500).json({ success: false, message: 'Error al eliminar criterios' });
                                             });
                                         }
 
-                                        console.log('Evaluaciones eliminadas correctamente');
+                                        console.log('Criterios eliminados correctamente');
 
-                                        // Paso 5: Eliminar la rúbrica
-                                        console.log('Paso 5: Eliminando rúbrica...');
-                                        connection.query('DELETE FROM rubrica_evaluacion WHERE id = ?', [rubricaId], (error) => {
+                                        // Paso 4: Eliminar evaluaciones de estudiantes
+                                        console.log('Paso 4: Eliminando evaluaciones...');
+                                        conn.query('DELETE FROM evaluacion_estudiante WHERE rubrica_id = ?', [rubricaId], (error) => {
                                             if (error) {
-                                                return connection.rollback(() => {
-                                                    console.error('Error al eliminar rúbrica:', error);
-                                                    res.status(500).json({ success: false, message: 'Error al eliminar rúbrica' });
+                                                return conn.rollback(() => {
+                                                    conn.release(); // Liberar la conexión
+                                                    console.error('Error al eliminar evaluaciones:', error);
+                                                    res.status(500).json({ success: false, message: 'Error al eliminar evaluaciones' });
                                                 });
                                             }
 
-                                            console.log('Rúbrica eliminada correctamente');
+                                            console.log('Evaluaciones eliminadas correctamente');
 
-                                            // Confirmar transacción
-                                            connection.commit((err) => {
-                                                if (err) {
-                                                    return connection.rollback(() => {
-                                                        console.error('Error al confirmar transacción:', err);
-                                                        res.status(500).json({
-                                                            success: false,
-                                                            message: 'Error al confirmar eliminación'
-                                                        });
+                                            // Paso 5: Eliminar la rúbrica
+                                            console.log('Paso 5: Eliminando rúbrica...');
+                                            conn.query('DELETE FROM rubrica_evaluacion WHERE id = ?', [rubricaId], (error) => {
+                                                if (error) {
+                                                    return conn.rollback(() => {
+                                                        conn.release(); // Liberar la conexión
+                                                        console.error('Error al eliminar rúbrica:', error);
+                                                        res.status(500).json({ success: false, message: 'Error al eliminar rúbrica' });
                                                     });
                                                 }
 
-                                                console.log('=== Rúbrica eliminada exitosamente ===');
-                                                res.json({
-                                                    success: true,
-                                                    message: 'Rúbrica eliminada exitosamente'
+                                                console.log('Rúbrica eliminada correctamente');
+
+                                                // Confirmar transacción
+                                                conn.commit((err) => {
+                                                    if (err) {
+                                                        return conn.rollback(() => {
+                                                            conn.release(); // Liberar la conexión
+                                                            console.error('Error al confirmar transacción:', err);
+                                                            res.status(500).json({
+                                                                success: false,
+                                                                message: 'Error al confirmar eliminación'
+                                                            });
+                                                        });
+                                                    }
+
+                                                    conn.release(); // Liberar la conexión exitosamente
+                                                    console.log('=== Rúbrica eliminada exitosamente ===');
+                                                    res.json({
+                                                        success: true,
+                                                        message: 'Rúbrica eliminada exitosamente'
+                                                    });
                                                 });
                                             });
                                         });
                                     });
-                                });
-                            });
+                                }
+                            );
                         }
                     );
-                }
-            );
+                });
+            });
         }
     });
 });

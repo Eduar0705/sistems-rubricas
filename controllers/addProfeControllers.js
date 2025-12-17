@@ -3,6 +3,12 @@ const router = express.Router()
 const conexion = require('../models/conetion')
 
 router.post('/envioProfe', (req, res) => {
+    // Validar sesión
+    if (!req.session.login) {
+        const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
+        return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
+    }
+
     const { cedula, nombre, apellido, email, telefono, especialidad, notas } = req.body;
 
     // Validación básica de datos requeridos

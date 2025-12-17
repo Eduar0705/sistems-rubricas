@@ -25,6 +25,11 @@ function query(sql, params = []) {
 // 🔹 GET — Obtener datos completos de una evaluación
 // =====================================================================
 router.get('/api/evaluacion/:id/detalles', async (req, res) => {
+    // Validar sesión
+    if (!req.session.login) {
+        return res.status(401).json({ success: false, message: 'Por favor, inicia sesión para acceder a esta página.' });
+    }
+
     const evaluacionId = req.params.id;
 
     try {
@@ -197,6 +202,11 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
 // 🔹 POST — Guardar evaluación
 // =====================================================================
 router.post('/api/evaluacion/:id/guardar', (req, res) => {
+    // Validar sesión
+    if (!req.session.login) {
+        return res.status(401).json({ success: false, message: 'Por favor, inicia sesión para acceder a esta página.' });
+    }
+
     const evaluacionId = req.params.id;
     const { observaciones, puntaje_total, detalles } = req.body;
 
@@ -204,60 +214,91 @@ router.post('/api/evaluacion/:id/guardar', (req, res) => {
         return sendError(res, 'No se recibieron los detalles de evaluación');
     }
 
-    conexion.beginTransaction(async err => {
-        if (err) return sendError(res, 'Error al iniciar transacción', err);
-
-        try {
-            // ========================
-            // 1. Actualizar evaluación
-            // ========================
-            await query(`
-                UPDATE evaluacion_estudiante 
-                SET observaciones = ?, puntaje_total = ?
-                WHERE id = ?
-            `, [observaciones, puntaje_total, evaluacionId]);
-
-
-            // ========================
-            // 2. Borrar detalles previos
-            // ========================
-            await query(`DELETE FROM detalle_evaluacion WHERE evaluacion_id = ?`, [evaluacionId]);
-
-
-            // ========================
-            // 3. Insertar nuevos
-            // ========================
-            const values = detalles.map(d => [
-                evaluacionId,
-                d.criterio_id,
-                d.nivel_id,
-                d.puntaje_obtenido
-            ]);
-
-            await query(`
-                INSERT INTO detalle_evaluacion 
-                (evaluacion_id, criterio_id, nivel_seleccionado, puntaje_obtenido)
-                VALUES ?
-            `, [values]);
-
-
-            conexion.commit(err => {
-                if (err) {
-                    return conexion.rollback(() =>
-                        sendError(res, 'Error al finalizar el guardado', err)
-                    );
-                }
-
-                return res.json({
-                    success: true,
-                    message: 'Evaluación guardada correctamente',
-                    puntaje_total
-                });
-            });
-
-        } catch (error) {
-            conexion.rollback(() => sendError(res, 'Error al guardar evaluación', error));
+    // Obtener una conexión del pool
+    conexion.getConnection((err, conn) => {
+        if (err) {
+            return sendError(res, 'Error al conectar con la base de datos', err);
         }
+
+        // Iniciar transacción en la conexión obtenida
+        conn.beginTransaction(async err => {
+            if (err) {
+                conn.release(); // Liberar la conexión
+                return sendError(res, 'Error al iniciar transacción', err);
+            }
+
+            try {
+                // ========================
+                // 1. Actualizar evaluación
+                // ========================
+                await new Promise((resolve, reject) => {
+                    conn.query(`
+                        UPDATE evaluacion_estudiante 
+                        SET observaciones = ?, puntaje_total = ?
+                        WHERE id = ?
+                    `, [observaciones, puntaje_total, evaluacionId], (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result);
+                    });
+                });
+
+
+                // ========================
+                // 2. Borrar detalles previos
+                // ========================
+                await new Promise((resolve, reject) => {
+                    conn.query(`DELETE FROM detalle_evaluacion WHERE evaluacion_id = ?`, [evaluacionId], (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result);
+                    });
+                });
+
+
+                // ========================
+                // 3. Insertar nuevos
+                // ========================
+                const values = detalles.map(d => [
+                    evaluacionId,
+                    d.criterio_id,
+                    d.nivel_id,
+                    d.puntaje_obtenido
+                ]);
+
+                await new Promise((resolve, reject) => {
+                    conn.query(`
+                        INSERT INTO detalle_evaluacion 
+                        (evaluacion_id, criterio_id, nivel_seleccionado, puntaje_obtenido)
+                        VALUES ?
+                    `, [values], (err, result) => {
+                        if (err) reject(err);
+                        else resolve(result);
+                    });
+                });
+
+
+                conn.commit(err => {
+                    if (err) {
+                        return conn.rollback(() => {
+                            conn.release(); // Liberar la conexión
+                            sendError(res, 'Error al finalizar el guardado', err);
+                        });
+                    }
+
+                    conn.release(); // Liberar la conexión exitosamente
+                    return res.json({
+                        success: true,
+                        message: 'Evaluación guardada correctamente',
+                        puntaje_total
+                    });
+                });
+
+            } catch (error) {
+                conn.rollback(() => {
+                    conn.release(); // Liberar la conexión
+                    sendError(res, 'Error al guardar evaluación', error);
+                });
+            }
+        });
     });
 });
 

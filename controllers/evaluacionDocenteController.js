@@ -156,10 +156,12 @@ router.get('/admin/evaluacion-docente/:id', (req, res) => {
             e.*,
             CONCAT(d.nombre, ' ', d.apellido) as docente_nombre,
             e.admin_cedula,
+            u.username as admin_nombre,
             c.nombre as carrera_nombre,
             s.codigo as seccion_codigo
         FROM evaluaciones_docente e
         INNER JOIN docente d ON e.docente_cedula = d.cedula
+        LEFT JOIN usuario u ON e.admin_cedula = u.cedula
         INNER JOIN carrera c ON e.carrera_codigo = c.codigo
         INNER JOIN seccion s ON e.seccion_id = s.id
         WHERE e.id = ? AND e.activo = 1
