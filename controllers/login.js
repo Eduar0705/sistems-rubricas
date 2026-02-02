@@ -45,34 +45,12 @@ routers.post('/verifLogin', (req, res) => {
                 return res.redirect('/home');
             } else if (user.id_rol === 2) {
                 return res.redirect('/teacher');
+            } else if (user.id_rol === 3) {
+                return res.redirect('/student');
             } else {
                 mensaje = 'Rol de usuario no reconocido.';
                 return res.render('auth/login', { mensaje, sesionActiva: false });
             }
-        } else {
-            // Si no se encuentra en usuario, buscar en estudiante
-            const queryEstudiante = `SELECT * FROM estudiante WHERE cedula = ? AND password = ?`;
-            conexion.query(queryEstudiante, [cedula, password], (err, resultsEstudiante) => {
-                if (err) {
-                    console.log('Error en la consulta de estudiante: ' + err);
-                    mensaje = 'Error en el servidor. Por favor, inténtalo de nuevo más tarde.';
-                    return res.render('auth/login', { mensaje, sesionActiva: false });
-                }
-
-                if (resultsEstudiante.length > 0) {
-                    const estudiante = resultsEstudiante[0];
-
-                    // Configurar sesión para estudiante
-                    configurarSesionEstudiante(req, estudiante, sesionesActivas);
-
-                    console.log('Sesión de estudiante:', req.session);
-                    return res.redirect('/student');
-                } else {
-                    // No se encontró en ninguna tabla
-                    mensaje = 'Cédula o contraseña incorrecta. Por favor, inténtalo de nuevo.';
-                    return res.render('auth/login', { mensaje, sesionActiva: false });
-                }
-            });
         }
     });
 });
@@ -81,18 +59,18 @@ routers.post('/verifLogin', (req, res) => {
 function configurarSesionUsuario(req, user, sesionesActivas) {
     const ahora = Date.now();
     req.session.login = true;
-    req.session.username = user.username;
+    req.session.username = user.nombre + ' ' + user.apeliido;
     req.session.cedula = user.cedula;
     req.session.email = user.email;
     req.session.id_rol = user.id_rol;
     req.session.activo = user.activo;
     req.session.ultimaActividad = ahora;
-    req.session.tipo = 'usuario';
+    req.session.tipo = req.session.id_rol === 1 ? 'Administrador' : req.session.id_rol === 2 ? 'Profesor' : req.session.id_rol === 3 ? 'Estudiante' :'Desconocido';
 
     console.log('\n============================================')
     console.log('Usuario autenticado:', req.session.username);
     console.log('Cédula autenticada:', req.session.cedula);
-    console.log('Rol:', req.session.id_rol === 1 ? 'Administrador' : req.session.id_rol === 2 ? 'Profesor' : 'Desconocido');
+    console.log('Rol:', req.session.tipo);
     console.log('============================================')
 
     // Registrar la sesión usando sessionID como clave

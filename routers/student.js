@@ -12,46 +12,61 @@ router.get("/student", function(req, res) {
 
     // Consulta para obtener las rúbricas activas del estudiante
     const queryRubricasActivas = `
-        SELECT COUNT(DISTINCT r.id) as total
-        FROM rubrica_evaluacion r
-        INNER JOIN evaluacion_estudiante ee ON r.id = ee.rubrica_id
-        WHERE ee.estudiante_cedula = ? 
+        SELECT 
+            COUNT(DISTINCT e.id) as total
+        FROM evaluacion e
+        LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+        INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
+        INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        WHERE ins.cedula_estudiante = ? 
+        AND er.id_evaluacion = NULL
+        AND e.fecha_evaluacion < CURDATE()
         AND r.activo = 1
-        AND r.fecha_evaluacion >= CURDATE()
     `;
 
     // Consulta para evaluaciones completadas (con puntaje)
     const queryEvaluacionesCompletadas = `
-        SELECT COUNT(*) as total
-        FROM evaluacion_estudiante
-        WHERE estudiante_cedula = ? 
-        AND puntaje_total IS NOT NULL
+        SELECT COUNT(DISTINCT er.id) as total
+        FROM evaluacion_realizada er
+        INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+        WHERE er.cedula_evaluado = ? 
     `;
 
     // Consulta para evaluaciones pendientes (sin puntaje)
     const queryEvaluacionesPendientes = `
-        SELECT COUNT(*) as total
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        WHERE ee.estudiante_cedula = ? 
-        AND ee.puntaje_total IS NULL
+        SELECT 
+            COUNT(DISTINCT e.id) as total
+        FROM evaluacion e
+        INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
+        INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        WHERE ins.cedula_estudiante = ? 
+        AND e.fecha_evaluacion >= CURDATE()
         AND r.activo = 1
     `;
 
-    // Consulta para evaluaciones recientes (últimas 3 con puntaje)
+    // Consulta para evaluadas recientemente (últimas 3 con puntaje)
     const queryEvaluacionesRecientes = `
         SELECT 
             r.nombre_rubrica,
             m.nombre as materia,
-            CAST(ee.puntaje_total AS DECIMAL(10, 2)) as puntaje_total,
-            ee.fecha_evaluacion,
-            r.tipo_evaluacion
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        WHERE ee.estudiante_cedula = ? 
-        AND ee.puntaje_total IS NOT NULL
-        ORDER BY ee.fecha_evaluacion DESC
+            SUM(de.puntaje_obtenido) as puntaje_total,
+            er.fecha_evaluado as fecha_evaluacion,
+            tr.nombre AS tipo_evaluacion
+        FROM evaluacion e
+        INNER JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+        INNER JOIN rubrica_uso ru ON ru.id_eval = er.id_evaluacion
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+        INNER JOIN tipo_rubrica tr ON tr.id = r.id_tipo
+        WHERE er.cedula_evaluado = ? 
+        GROUP BY e.id
+        ORDER BY er.fecha_evaluado DESC
         LIMIT 3
     `;
 
@@ -60,16 +75,23 @@ router.get("/student", function(req, res) {
         SELECT 
             r.nombre_rubrica,
             m.nombre as materia,
-            r.fecha_evaluacion,
-            r.tipo_evaluacion,
-            r.porcentaje_evaluacion
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        WHERE ee.estudiante_cedula = ? 
-        AND r.fecha_evaluacion >= CURDATE()
+            e.fecha_evaluacion,
+            tr.nombre as tipo_evaluacion,
+            SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion
+        FROM evaluacion e
+        INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
+        INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        INNER JOIN criterio_rubrica cr ON r.id = cr.rubrica_id
+        INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN tipo_rubrica tr ON tr.id = r.id_tipo
+        WHERE ins.cedula_estudiante = ? 
+        AND e.fecha_evaluacion > CURDATE()
         AND r.activo = 1
-        ORDER BY r.fecha_evaluacion ASC
+        GROUP BY e.id
+        ORDER BY e.fecha_evaluacion ASC
         LIMIT 5
     `;
 

@@ -31,33 +31,45 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
     }
 
     const evaluacionId = req.params.id;
+    const estudianteCedula = req.session.cedula;
 
     try {
         // =====================
         // 1. Obtener evaluación
         // =====================
         const evalSQL = `
-            SELECT 
-                ee.id,
-                ee.rubrica_id,
-                ee.estudiante_cedula,
-                ee.observaciones,
-                ee.puntaje_total,
-                ee.fecha_evaluacion,
-                re.nombre_rubrica,
-                re.tipo_evaluacion,
-                re.porcentaje_evaluacion,
-                re.instrucciones,
-                re.competencias,
-                m.nombre AS materia_nombre,
-                m.codigo AS materia_codigo
-            FROM evaluacion_estudiante ee
-            INNER JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
-            INNER JOIN materia m ON re.materia_codigo = m.codigo
-            WHERE ee.id = ?
+            SELECT
+                er.id,
+                r.id as rubrica_id,
+                er.cedula_evaluado as estudiante_cedula,
+                er.observaciones,
+                SUM(DISTINCT de.puntaje_obtenido) as puntaje_total,
+                er.fecha_evaluado as fecha_evaluacion,
+                r.nombre_rubrica,
+                tr.nombre as tipo_evaluacion,
+                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                r.instrucciones,
+                e.competencias,
+                m.nombre as materia_nombre,
+                m.codigo as materia_codigo,
+                CONCAT(ud.nombre, ' ', ud.apeliido) as profesor
+            FROM evaluacion_realizada er
+            INNER JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
+            RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id  
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = e.id_materia_plan AND ins.letra = e.letra
+            INNER JOIN plan_periodo pp ON ins.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
+            GROUP BY e.id
+            ORDER BY er.fecha_evaluado DESC
         `;
 
-        const evalData = await query(evalSQL, [evaluacionId]);
+        const evalData = await query(evalSQL, [estudianteCedula, evaluacionId]);
         if (evalData.length === 0) return sendError(res, 'Evaluación no encontrada');
 
         const evaluacion = evalData[0];
@@ -68,14 +80,15 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
         // =====================
         const estSQL = `
             SELECT 
-                e.cedula,
-                e.nombre,
-                e.apellido,
-                e.email,
+                u.cedula,
+                u.nombre,
+                u.apeliido as apellido,
+                u.email,
                 c.nombre AS carrera
-            FROM estudiante e
-            INNER JOIN carrera c ON e.carrera_codigo = c.codigo
-            WHERE e.cedula = ?
+            FROM usuario u
+            INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
+            INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
+            WHERE u.cedula = ?
         `;
 
         const estudiantes = await query(estSQL, [evaluacion.estudiante_cedula]);
@@ -89,7 +102,7 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
         // =====================
         const criteriosSQL = `
             SELECT id, descripcion, puntaje_maximo, orden
-            FROM criterio_evaluacion
+            FROM criterio_rubrica
             WHERE rubrica_id = ?
             ORDER BY orden
         `;
@@ -105,8 +118,8 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
 
         const nivelesSQL = `
             SELECT
-                id, criterio_id, nombre_nivel,
-                descripcion, puntaje, orden
+                criterio_id, nombre_nivel,
+                descripcion, puntaje_maximo AS puntaje, orden
             FROM nivel_desempeno
             WHERE criterio_id IN (?)
             ORDER BY criterio_id, orden
@@ -120,23 +133,24 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
         // =====================
         const detallesSQL = `
             SELECT
-                criterio_id,
-                nivel_seleccionado,
-                puntaje_obtenido
-            FROM detalle_evaluacion
-            WHERE evaluacion_id = ?
+                de.id_criterio_detalle,
+                de.orden_detalle AS nivel_seleccionado,
+                de.puntaje_obtenido
+            FROM detalle_evaluacion de 
+            INNER JOIN evaluacion_realizada er ON de.evaluacion_r_id = er.id
+            INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+            WHERE e.id = ? AND er.cedula_evaluado = ?
         `;
 
-        const detalles = await query(detallesSQL, [evaluacionId]);
-
+        const detalles = await query(detallesSQL, [evaluacionId, estudianteCedula]); 
+        
         const detallesMap = {};
         detalles.forEach(d => {
-            detallesMap[d.criterio_id] = {
+            detallesMap[d.id_criterio_detalle] = {
                 nivel_seleccionado: d.nivel_seleccionado,
                 puntaje_obtenido: d.puntaje_obtenido
             };
         });
-
 
         // =====================
         // 6. Unir criterios + niveles + selección
@@ -145,12 +159,13 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
             const nivelesCriterio = niveles
                 .filter(n => n.criterio_id === c.id)
                 .map(n => ({
-                    id: n.id,
+                    id: n.orden,
                     nombre: n.nombre_nivel,
                     descripcion: n.descripcion,
-                    puntaje: n.puntaje,
+                    puntaje: detallesMap[c.id]?.nivel_seleccionado === n.orden ? detallesMap[c.id]?.puntaje_obtenido : n.puntaje,
+                    puntaje_maximo: n.puntaje,
                     orden: n.orden,
-                    seleccionado: detallesMap[c.id]?.nivel_seleccionado === n.id
+                    seleccionado: detallesMap[c.id]?.nivel_seleccionado === n.orden
                 }));
 
             return {

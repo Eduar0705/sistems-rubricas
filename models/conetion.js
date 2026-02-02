@@ -2,9 +2,9 @@ const mysql = require('mysql2');
 
 // Crear pool de conexiones (más robusto que una sola conexión)
 const pool = mysql.createPool({
-    host: 'mysql-sistems.alwaysdata.net',
-    user: 'sistems',
-    password: '31466704',
+    host: 'localhost',
+    user: 'root',
+    password: '',
     database: 'sistems_rubricas',
     waitForConnections: true,
     connectionLimit: 10, // Máximo 10 conexiones simultáneas

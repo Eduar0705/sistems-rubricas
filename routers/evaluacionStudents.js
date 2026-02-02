@@ -12,21 +12,30 @@ router.get('/student/evaluaciones', (req, res) => {
 
     const query = `
         SELECT
-            ee.id as evaluacion_id,
+            e.id as evaluacion_id,
             r.nombre_rubrica,
             m.nombre as materia,
-            ee.puntaje_total,
-            ee.fecha_evaluacion,
-            r.tipo_evaluacion,
-            r.porcentaje_evaluacion,
-            ee.observaciones,
-            CONCAT(d.nombre, ' ', d.apellido) as profesor
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        INNER JOIN docente d ON r.docente_cedula = d.cedula
-        WHERE ee.estudiante_cedula = ?
-        ORDER BY ee.fecha_evaluacion DESC
+            SUM(DISTINCT de.puntaje_obtenido) as puntaje_total,
+            er.fecha_evaluado as fecha_evaluacion,
+            tr.nombre as tipo_evaluacion,
+            SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+            er.observaciones,
+            CONCAT(ud.nombre, ' ', ud.apeliido) as profesor
+        FROM evaluacion_realizada er
+        INNER JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
+        RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id  
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN rubrica r ON r.id = ru.id_rubrica
+        INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+        INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+        INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN plan_periodo pp ON ins.id_materia_plan = pp.id
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+        WHERE er.cedula_evaluado = ?
+        GROUP BY e.id
+        ORDER BY er.fecha_evaluado DESC
     `;
 
     conexion.query(query, [cedula], (err, evaluaciones) => {
@@ -60,26 +69,39 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
     // Consulta para obtener información de la evaluación
     const queryEvaluacion = `
         SELECT
-            ee.id,
-            ee.rubrica_id,
-            ee.estudiante_cedula,
-            ee.observaciones,
-            ee.puntaje_total,
-            ee.fecha_evaluacion,
-            re.nombre_rubrica,
-            re.tipo_evaluacion,
-            re.porcentaje_evaluacion,
-            re.instrucciones,
-            re.competencias,
-            m.nombre as materia_nombre,
-            m.codigo as materia_codigo
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id
-        INNER JOIN materia m ON re.materia_codigo = m.codigo
-        WHERE ee.id = ? AND ee.estudiante_cedula = ?
-    `;
+                er.id,
+                r.id as rubrica_id,
+                er.cedula_evaluado,
+                er.observaciones,
+                SUM(DISTINCT de.puntaje_obtenido) as puntaje_total,
+                er.fecha_evaluado as fecha_evaluacion,
+                r.nombre_rubrica,
+                tr.nombre as tipo_evaluacion,
+                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                r.instrucciones,
+                e.competencias,
+                m.nombre as materia_nombre,
+                m.codigo as materia_codigo,
+                CONCAT(ud.nombre, ' ', ud.apeliido) as profesor
+            FROM evaluacion_realizada er
+            INNER JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
+            RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id  
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+            INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+            INNER JOIN plan_periodo pp ON ins.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
+            GROUP BY e.id
+            ORDER BY er.fecha_evaluado DESC
+        `;
+    
 
-    conexion.query(queryEvaluacion, [evaluacionId], (err, resultEvaluacion) => {
+    conexion.query(queryEvaluacion, [estudianteCedula, evaluacionId], (err, resultEvaluacion) => {
         if (err) {
             console.error('Error al obtener evaluación:', err);
             return res.json({
@@ -99,15 +121,16 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
 
         // Consulta para obtener información del estudiante
         const queryEstudiante = `
-            SELECT
-                e.cedula,
-                e.nombre,
-                e.apellido,
-                e.email,
-                c.nombre as carrera
-            FROM estudiante e
-            INNER JOIN carrera c ON e.carrera_codigo = c.codigo
-            WHERE e.cedula = ?
+            SELECT 
+                u.cedula,
+                u.nombre,
+                u.apeliido as apellido,
+                u.email,
+                c.nombre AS carrera
+            FROM usuario u
+            INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
+            INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
+            WHERE u.cedula = ?
         `;
 
         conexion.query(queryEstudiante, [evaluacion.estudiante_cedula], (err, resultEstudiante) => {
@@ -130,14 +153,10 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
 
             // Consulta para obtener criterios con sus niveles de desempeño
             const queryCriterios = `
-                SELECT
-                    ce.id,
-                    ce.descripcion,
-                    ce.puntaje_maximo,
-                    ce.orden
-                FROM criterio_evaluacion ce
-                WHERE ce.rubrica_id = ?
-                ORDER BY ce.orden ASC
+                SELECT id, descripcion, puntaje_maximo, orden
+                FROM criterio_rubrica
+                WHERE rubrica_id = ?
+                ORDER BY orden
             `;
 
             conexion.query(queryCriterios, [evaluacion.rubrica_id], (err, resultCriterios) => {
@@ -161,15 +180,11 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
 
                 const queryNiveles = `
                     SELECT
-                        nd.id,
-                        nd.criterio_id,
-                        nd.nombre_nivel,
-                        nd.descripcion,
-                        nd.puntaje,
-                        nd.orden
-                    FROM nivel_desempeno nd
-                    WHERE nd.criterio_id IN (?)
-                    ORDER BY nd.criterio_id ASC, nd.orden ASC
+                        criterio_id, nombre_nivel,
+                        descripcion, puntaje_maximo AS puntaje, orden
+                    FROM nivel_desempeno
+                    WHERE criterio_id IN (?)
+                    ORDER BY criterio_id, orden
                 `;
 
                 conexion.query(queryNiveles, [criteriosIds], (err, resultNiveles) => {
@@ -184,11 +199,13 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
                     // Obtener detalles de evaluación para saber qué niveles fueron seleccionados
                     const queryDetalles = `
                         SELECT
-                            de.criterio_id,
-                            de.nivel_seleccionado,
+                            de.id_criterio_detalle,
+                            de.orden_detalle AS nivel_seleccionado,
                             de.puntaje_obtenido
-                        FROM detalle_evaluacion de
-                        WHERE de.evaluacion_id = ?
+                        FROM detalle_evaluacion de 
+                        INNER JOIN evaluacion_realizada er ON de.evaluacion_r_id = er.id
+                        INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+                        WHERE e.id = ? AND er.cedula_evaluado = ?
                     `;
 
                     conexion.query(queryDetalles, [evaluacionId], (err, resultDetalles) => {
@@ -203,7 +220,7 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
                         // Crear mapa de detalles por criterio
                         const detallesMap = {};
                         resultDetalles.forEach(detalle => {
-                            detallesMap[detalle.criterio_id] = {
+                            detallesMap[detalle.id_criterio_detalle] = {
                                 nivel_seleccionado: detalle.nivel_seleccionado,
                                 puntaje_obtenido: detalle.puntaje_obtenido
                             };
@@ -214,12 +231,13 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
                             const niveles = resultNiveles.filter(
                                 nivel => nivel.criterio_id === criterio.id
                             ).map(nivel => ({
-                                id: nivel.id,
+                                id: nivel.orden,
                                 nombre: nivel.nombre_nivel,
                                 descripcion: nivel.descripcion,
-                                puntaje: nivel.puntaje,
+                                puntaje: detallesMap[criterio.id].nivel_seleccionado === nivel.orden ? detallesMap[criterio.id].puntaje_obtenido : nivel.puntaje,
+                                puntaje_maximo: nivel.puntaje,
                                 orden: nivel.orden,
-                                seleccionado: detallesMap[criterio.id] ? detallesMap[criterio.id].nivel_seleccionado === nivel.id : false
+                                seleccionado: detallesMap[criterio.id] ? detallesMap[criterio.id].nivel_seleccionado === nivel.orden : false
                             }));
 
                             return {

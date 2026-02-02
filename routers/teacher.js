@@ -13,59 +13,66 @@ router.get("/teacher", function(req, res) {
     // Consulta para contar rúbricas del docente
     const queryRubricas = `
         SELECT COUNT(*) as total_rubricas
-        FROM rubrica_evaluacion
-        WHERE docente_cedula = ? AND activo = TRUE
+        FROM rubrica
+        WHERE cedula_docente = ? AND activo = 1
     `;
 
     // Consulta para contar estudiantes asociados al docente (a través de secciones donde imparte)
     const queryEstudiantes = `
-        SELECT COUNT(DISTINCT e.cedula) as total_estudiantes
-        FROM estudiante e
-        INNER JOIN inscripcion_seccion i ON e.cedula = i.estudiante_cedula
-        INNER JOIN seccion s ON i.seccion_id = s.id
-        WHERE s.id IN (
-            SELECT DISTINCT seccion_id
-            FROM rubrica_evaluacion
-            WHERE docente_cedula = ? AND activo = TRUE
-        ) AND e.activo = 1
+        SELECT COUNT(DISTINCT u.cedula) as total_estudiantes
+        FROM usuario u
+        INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
+        INNER JOIN inscripcion_seccion ins ON ue.cedula_usuario = ins.cedula_estudiante
+        INNER JOIN seccion s ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+        WHERE pd.docente_cedula = ? AND u.activo = 1
     `;
 
     // Consulta para contar evaluaciones completadas del docente
     const queryEvaluaciones = `
         SELECT COUNT(*) as total_evaluaciones
-        FROM evaluacion_estudiante ev
-        INNER JOIN rubrica_evaluacion r ON ev.rubrica_id = r.id
-        WHERE r.docente_cedula = ? AND r.activo = TRUE
+        FROM evaluacion_realizada er
+        INNER JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
+        INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+        INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        WHERE er.cedula_evaluador = ? AND r.activo = 1
     `;
 
     // Consulta para obtener rúbricas recientes del docente
     const queryRubricasRecientes = `
-        SELECT id, nombre_rubrica, fecha_evaluacion
-        FROM rubrica_evaluacion
-        WHERE docente_cedula = ? AND activo = TRUE
-        ORDER BY fecha_evaluacion DESC
+        SELECT id, nombre_rubrica, fecha_actualizacion
+        FROM rubrica
+        WHERE cedula_docente = ? AND activo = 1
+        ORDER BY fecha_actualizacion DESC
         LIMIT 3
     `;
 
     // Consulta para obtener actividad reciente (últimos estudiantes evaluados del docente)
     const queryActividadReciente = `
         SELECT 
-            ee.id,
-            ee.fecha_evaluacion,
-            ee.puntaje_total,
-            e.nombre AS estudiante_nombre,
-            e.apellido AS estudiante_apellido,
+            er.id,
+            er.fecha_evaluado,
+            SUM(de.puntaje_obtenido) AS puntaje_total,
+            u.nombre AS estudiante_nombre,
+            u.apeliido AS estudiante_apellido,
             r.nombre_rubrica,
             m.nombre AS materia_nombre
-        FROM evaluacion_estudiante ee
-        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        WHERE r.docente_cedula = ? 
-          AND r.activo = TRUE
-          AND e.activo = 1
-          AND ee.puntaje_total IS NOT NULL
-        ORDER BY ee.fecha_evaluacion DESC
+        FROM evaluacion_realizada er
+        INNER JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id
+        INNER JOIN usuario u ON er.cedula_evaluado = u.cedula
+        INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+        INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
+        INNER JOIN inscripcion_seccion ins ON s.id_materia_plan = ins.id_materia_plan AND s.letra = ins.letra
+        INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id 
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+        WHERE r.cedula_docente = ? 
+          AND r.activo = 1
+          AND u.activo = 1
+        ORDER BY er.fecha_evaluado DESC
         LIMIT 4
     `;
 

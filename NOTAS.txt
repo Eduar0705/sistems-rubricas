@@ -1,0 +1,8 @@
+La logica de correccion y asignacion de notas estaba previamente asociado a registros existentes con o sin nota en 
+"evaluacion_estudiante". Ahora, sera una seleccion donde los registros pueden o no existir, relevada con LEFT JOIN para
+aun asi mostrar a todos los estudiantes. Si algun dato es NULL, no ha sido corredi
+
+
+Controladores:
+Luego de la primera consulta, evaluacionStudents.js no vuelve a usarse, sino que Evaluar.js toma la batuta. Ambos archivos
+tienen casi los mismos contenidos

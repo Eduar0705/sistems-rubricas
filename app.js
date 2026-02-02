@@ -74,8 +74,8 @@ app.use((req, res, next) => {
         const ultimaActividad = req.session.ultimaActividad || ahora;
         const tiempoInactivo = ahora - ultimaActividad;
 
-        // Si han pasado más de 5 minutos (300000 ms)
-        if (tiempoInactivo > 300000) {
+        // Si han pasado más de 20 minutos (1200000 ms)
+        if (tiempoInactivo > 1200000) {
             const sessionID = req.sessionID;
             req.session.destroy((err) => {
                 if (err) {

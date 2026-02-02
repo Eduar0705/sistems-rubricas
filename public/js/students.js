@@ -193,7 +193,10 @@ function verDetallesEvaluacion(evaluacionId) {
                         <div class="nivel-header">
                           ${nivel.seleccionado ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>'}
                           <strong>${nivel.nombre}</strong>
-                          <span class="nivel-puntaje">${nivel.puntaje} pts</span>
+                          ${nivel.puntaje>=nivel.puntaje_maximo
+                          ? `<span class="nivel-puntaje">${nivel.puntaje} pts</span>`
+                          : `<span class="nivel-puntaje">${nivel.puntaje}/${nivel.puntaje_maximo} pts</span>`
+                          }
                         </div>
                         <p class="nivel-descripcion">${nivel.descripcion}</p>
                       </div>
