@@ -6,3 +6,59 @@ aun asi mostrar a todos los estudiantes. Si algun dato es NULL, no ha sido corre
 Controladores:
 Luego de la primera consulta, evaluacionStudents.js no vuelve a usarse, sino que Evaluar.js toma la batuta. Ambos archivos
 tienen casi los mismos contenidos
+
+Refactorizados:
+	Controladores:
+		- calificacionesStudentController.js
+		- Evaluar.js
+		- reportesController
+		- rubricasTeacher: (EN PROGRESO) la consulta de ver las rubricas muestra en estado si esta activa o no.
+		Queremos que si esta activa muestre el campo "estado" de aprobacion o desaprobacion
+		
+	Routers:
+		- student.js
+		- teacher.js
+		- evaluacionStudents.js
+
+
+Consulta de 2da queryRubrica en rubricasTeacher.js:
+SELECT
+                r.id,
+                r.nombre_rubrica,
+                r.cedula_docente AS docente_cedula,
+                m.codigo AS materia_id,
+                s.letra AS seccion_id,
+                pp.codigo_periodo AS lapso_academico,
+                e.fecha_evaluacion,
+                SUM(cr.puntaje_maximo) porcentaje_evaluacion,
+                eeval.nombre AS tipo_evaluacion,
+                e.competencias,
+                r.instrucciones,
+                CASE
+                    WHEN cantidad_personas=1 THEN 'Individual'
+                    WHEN cantidad_personas=2 THEN 'En Pareja'
+                    ELSE 'Grupal'
+                    END AS modalidad,
+                e.cantidad_personas,
+                r.activo,
+                r.fecha_creacion AS created_at,
+                r.fecha_actualizacion AS updated_at,
+                m.nombre AS materia_nombre,
+                CONCAT(pp.codigo_periodo, '-', pp.codigo_carrera, '-', pp.codigo_materia, '-', s.letra) AS seccion_codigo,
+                c.nombre AS carrera_nombre,
+                CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
+			FROM evaluacion e
+            INNER JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+            INNER JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = r.cedula_docente
+            INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
+            WHERE r.id = 1
+            GROUP BY r.id;

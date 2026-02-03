@@ -15,23 +15,20 @@ router.get("/student", function(req, res) {
         SELECT 
             COUNT(DISTINCT e.id) as total
         FROM evaluacion e
-        LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
         INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
         INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
-        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+        INNER JOIN plan_periodo pp ON ins.id_materia_plan = pp.id
+        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id AND ru.estado = "Aprobado"
         INNER JOIN rubrica r ON ru.id_rubrica = r.id
-        WHERE ins.cedula_estudiante = ? 
-        AND er.id_evaluacion = NULL
-        AND e.fecha_evaluacion < CURDATE()
-        AND r.activo = 1
+        WHERE ins.cedula_estudiante = ?
+        AND r.activo = 1;
     `;
 
     // Consulta para evaluaciones completadas (con puntaje)
     const queryEvaluacionesCompletadas = `
         SELECT COUNT(DISTINCT er.id) as total
         FROM evaluacion_realizada er
-        INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
-        WHERE er.cedula_evaluado = ? 
+        WHERE er.cedula_evaluado = ?;
     `;
 
     // Consulta para evaluaciones pendientes (sin puntaje)
@@ -39,13 +36,15 @@ router.get("/student", function(req, res) {
         SELECT 
             COUNT(DISTINCT e.id) as total
         FROM evaluacion e
+        LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
         INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
         INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
         INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
         INNER JOIN rubrica r ON ru.id_rubrica = r.id
         WHERE ins.cedula_estudiante = ? 
-        AND e.fecha_evaluacion >= CURDATE()
+        AND e.fecha_evaluacion < CURDATE()
         AND r.activo = 1
+        AND er.id_evaluacion IS NULL
     `;
 
     // Consulta para evaluadas recientemente (últimas 3 con puntaje)

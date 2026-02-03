@@ -19,7 +19,7 @@ router.get("/teacher", function(req, res) {
 
     // Consulta para contar estudiantes asociados al docente (a través de secciones donde imparte)
     const queryEstudiantes = `
-        SELECT COUNT(DISTINCT u.cedula) as total_estudiantes
+        SELECT COUNT(u.cedula) as total_estudiantes
         FROM usuario u
         INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
         INNER JOIN inscripcion_seccion ins ON ue.cedula_usuario = ins.cedula_estudiante
@@ -35,9 +35,7 @@ router.get("/teacher", function(req, res) {
         FROM evaluacion_realizada er
         INNER JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
         INNER JOIN evaluacion e ON er.id_evaluacion = e.id
-        INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
-        INNER JOIN rubrica r ON ru.id_rubrica = r.id
-        WHERE er.cedula_evaluador = ? AND r.activo = 1
+        WHERE er.cedula_evaluador = ?
     `;
 
     // Consulta para obtener rúbricas recientes del docente
@@ -51,29 +49,33 @@ router.get("/teacher", function(req, res) {
 
     // Consulta para obtener actividad reciente (últimos estudiantes evaluados del docente)
     const queryActividadReciente = `
-        SELECT 
-            er.id,
-            er.fecha_evaluado,
-            SUM(de.puntaje_obtenido) AS puntaje_total,
-            u.nombre AS estudiante_nombre,
-            u.apeliido AS estudiante_apellido,
-            r.nombre_rubrica,
-            m.nombre AS materia_nombre
-        FROM evaluacion_realizada er
-        INNER JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id
-        INNER JOIN usuario u ON er.cedula_evaluado = u.cedula
-        INNER JOIN evaluacion e ON er.id_evaluacion = e.id
-        INNER JOIN seccion s ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
-        INNER JOIN inscripcion_seccion ins ON s.id_materia_plan = ins.id_materia_plan AND s.letra = ins.letra
-        INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id 
-        INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
-        INNER JOIN rubrica r ON ru.id_rubrica = r.id
-        WHERE r.cedula_docente = ? 
-          AND r.activo = 1
-          AND u.activo = 1
-        ORDER BY er.fecha_evaluado DESC
-        LIMIT 4
+        SELECT
+					er.id,
+					er.fecha_evaluado,
+                    u.nombre,
+                    u.apeliido,
+                    r.nombre_rubrica,
+                    m.nombre AS materia_nombre,
+                    ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS puntaje_total
+                FROM rubrica r
+                INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                INNER JOIN evaluacion e ON ru.id_eval = e.id
+                INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
+                INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+            	INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
+                INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
+                LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
+            	LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                WHERE pd.docente_cedula = ?
+                AND r.activo = 1
+                AND u.activo = 1
+                AND er.id IS NOT NULL
+                GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                ORDER BY fecha_evaluado DESC
+                LIMIT 4;
     `;
 
     // Ejecutar consultas en paralelo

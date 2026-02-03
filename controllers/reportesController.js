@@ -14,7 +14,7 @@ const getAdminReports = (req, res) => {
         // Estadísticas generales
         totalEstudiantes: "SELECT COUNT(*) AS total FROM usuario_estudiante ue INNER JOIN usuario u ON ue.cedula_usuario = u.cedula WHERE u.activo = 1",
         totalDocentes: "SELECT COUNT(*) AS total FROM usuario_docente ue INNER JOIN usuario u ON ue.cedula_usuario = u.cedula WHERE u.activo = 1",
-        totalRubricas: "SELECT COUNT(*) as total FROM rubrica_evaluacion WHERE activo = 1",
+        totalRubricas: "SELECT COUNT(*) as total FROM rubrica WHERE activo = 1",
         totalEvaluaciones: "SELECT COUNT(*) AS total FROM evaluacion_realizada",
         promedioGeneral: `
             SELECT subquery.sumatoria_notas/subquery.cantidad_estudiantes AS promedio
@@ -43,7 +43,7 @@ const getAdminReports = (req, res) => {
             FROM usuario u 
             INNER JOIN usuario_docente ud ON u.cedula = ud.cedula_usuario
             LEFT JOIN rubrica r ON ud.cedula_usuario = r.cedula_docente AND r.activo = 1
-            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
             INNER JOIN evaluacion e ON e.id = ru.id_eval
             INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
@@ -153,7 +153,7 @@ const getAdminReports = (req, res) => {
             LIMIT 15;
         `,
 
-        // Actividad mensual (último mes) PROBAR
+        // Actividad mensual (últimos 2 meses) PROBAR
         actividadMensual: `
             SELECT 
                 DATE_FORMAT(er.fecha_evaluado, '%Y-%m') as mes,
@@ -162,9 +162,9 @@ const getAdminReports = (req, res) => {
                 COUNT(DISTINCT r.id) as rubricas_usadas
             FROM evaluacion_realizada er
             RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id
-            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval AND ru.estado = "Aprobado"
             INNER JOIN rubrica r ON ru.id_rubrica = r.id
-            WHERE er.fecha_evaluado >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+            WHERE er.fecha_evaluado >= DATE_SUB(NOW(), INTERVAL 2 MONTH)
             GROUP BY DATE_FORMAT(er.fecha_evaluado, '%Y-%m')
             ORDER BY mes ASC
         `,
@@ -235,7 +235,7 @@ const getAdminReports = (req, res) => {
             INNER JOIN seccion s ON pp.id = s.id_materia_plan
             INNER JOIN inscripcion_seccion ins ON s.id_materia_plan = ins.id_materia_plan
             INNER JOIN evaluacion e ON ins.id_materia_plan = e.id_materia_plan
-            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval AND ru.estado = "Aprobado"
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
             GROUP BY m.codigo, m.nombre
             HAVING COUNT(DISTINCT r.id) > 0
@@ -471,7 +471,7 @@ const getTeacherReports = (req, res) => {
                     m.nombre AS materia,
                     ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS calificacion
                 FROM rubrica r
-                INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
                 INNER JOIN evaluacion e ON ru.id_eval = e.id
                 INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
                 INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
@@ -703,7 +703,7 @@ const getTeacherReports = (req, res) => {
                                 ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS promedio,
                                 COUNT(e.id) AS total_evaluaciones
                             FROM rubrica r
-                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
                             INNER JOIN evaluacion e ON ru.id_eval = e.id
                             INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id

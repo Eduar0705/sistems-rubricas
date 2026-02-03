@@ -18,7 +18,11 @@ router.post('/envioProfe', (req, res) => {
     }
 
     const activo = 1;
-    const verifdatos = `SELECT * FROM docente WHERE cedula = ? OR email = ? OR telf = ?`;
+    const verifdatos = `SELECT 
+                            u.* 
+                        FROM usuario_docente ud
+                        INNER JOIN usuario u ON ud.usuario_cedula = u.cedula
+                        WHERE u.cedula = ? OR u.email = ? OR ud.telf = ?`;
 
     conexion.query(verifdatos, [cedula, email, telefono], (err, results) => {
         if (err) {
