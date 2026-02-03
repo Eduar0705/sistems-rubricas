@@ -51,9 +51,9 @@ router.get("/teacher", function(req, res) {
     const queryActividadReciente = `
         SELECT
 					er.id,
-					er.fecha_evaluado,
-                    u.nombre,
-                    u.apeliido,
+					er.fecha_evaluado AS fecha_evaluacion,
+                    u.nombre AS estudiante_nombre,
+                    u.apeliido AS estudiante_apellido,
                     r.nombre_rubrica,
                     m.nombre AS materia_nombre,
                     ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS puntaje_total
