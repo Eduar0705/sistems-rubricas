@@ -60,13 +60,14 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
             INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
             INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
-            INNER JOIN inscripcion_seccion ins ON ins.id_materia_plan = e.id_materia_plan AND ins.letra = e.letra
-            INNER JOIN plan_periodo pp ON ins.id_materia_plan = pp.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN usuario ud ON ud.cedula = er.cedula_evaluador
             WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
             GROUP BY e.id
-            ORDER BY er.fecha_evaluado DESC
+            ORDER BY er.fecha_evaluado DESC;
         `;
 
         const evalData = await query(evalSQL, [estudianteCedula, evaluacionId]);

@@ -19,19 +19,21 @@ router.get("/teacher", function(req, res) {
 
     // Consulta para contar estudiantes asociados al docente (a través de secciones donde imparte)
     const queryEstudiantes = `
-        SELECT COUNT(u.cedula) as total_estudiantes
+        SELECT 
+            COUNT(u.cedula) as total_estudiantes
         FROM usuario u
         INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
         INNER JOIN inscripcion_seccion ins ON ue.cedula_usuario = ins.cedula_estudiante
-        INNER JOIN seccion s ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
+        INNER JOIN seccion s ON ins.id_seccion = s.id
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
         WHERE pd.docente_cedula = ? AND u.activo = 1
     `;
 
     // Consulta para contar evaluaciones completadas del docente
     const queryEvaluaciones = `
-        SELECT COUNT(*) as total_evaluaciones
+        SELECT 
+            COUNT(*) as total_evaluaciones
         FROM evaluacion_realizada er
         INNER JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
         INNER JOIN evaluacion e ON er.id_evaluacion = e.id
@@ -40,7 +42,10 @@ router.get("/teacher", function(req, res) {
 
     // Consulta para obtener rúbricas recientes del docente
     const queryRubricasRecientes = `
-        SELECT id, nombre_rubrica, fecha_actualizacion
+        SELECT 
+            id, 
+            nombre_rubrica, 
+            fecha_actualizacion
         FROM rubrica
         WHERE cedula_docente = ? AND activo = 1
         ORDER BY fecha_actualizacion DESC
@@ -60,11 +65,11 @@ router.get("/teacher", function(req, res) {
                 FROM rubrica r
                 INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
                 INNER JOIN evaluacion e ON ru.id_eval = e.id
-                INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                INNER JOIN seccion s ON e.id_seccion = s.id
                 INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                 INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
             	INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                 INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                 LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
@@ -73,7 +78,7 @@ router.get("/teacher", function(req, res) {
                 AND r.activo = 1
                 AND u.activo = 1
                 AND er.id IS NOT NULL
-                GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_seccion
                 ORDER BY fecha_evaluado DESC
                 LIMIT 4;
     `;

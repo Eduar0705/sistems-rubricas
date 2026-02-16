@@ -24,8 +24,8 @@ const getAdminReports = (req, res) => {
                 COUNT(de.puntaje_obtenido) as cantidad_notas,
                 COUNT(ins.cedula_estudiante) AS cantidad_estudiantes
                 FROM evaluacion e
-                INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-                INNER JOIN inscripcion_seccion ins ON s.id_materia_plan = ins.id_materia_plan AND s.letra = ins.letra
+                INNER JOIN seccion s ON e.id_seccion = s.id
+                INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
             	INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                 LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
             	LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
@@ -45,7 +45,8 @@ const getAdminReports = (req, res) => {
             LEFT JOIN rubrica r ON ud.cedula_usuario = r.cedula_docente AND r.activo = 1
             INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
             INNER JOIN evaluacion e ON e.id = ru.id_eval
-            INNER JOIN plan_periodo pp ON e.id_materia_plan = pp.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             WHERE u.activo = 1
             GROUP BY u.cedula
@@ -62,7 +63,8 @@ const getAdminReports = (req, res) => {
             COUNT(e.id) AS total_evaluaciones,
             AVG(COALESCE(puntaje_eval, 0)) AS promedio_calificaciones
             FROM evaluacion e
-            INNER JOIN permiso_docente pd ON e.id_materia_plan = pd.id_materia_plan AND e.letra = pd.letra_sec
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
             INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
             LEFT JOIN 
@@ -116,41 +118,40 @@ const getAdminReports = (req, res) => {
 
         // Tasa de completitud de evaluaciones por profesor
         tasaCompletitudPorProfesor: `
-            SELECT 
+        SELECT 
             u.cedula,
             CONCAT(u.nombre, ' ', u.apeliido) AS nombre_completo,
-        COUNT(e.id),
-        estud_sec.cantidad_en_seccion,
-	    COUNT(e.id)*estud_sec.cantidad_en_seccion AS total_asignadas,
-	    (COUNT(eval_est.id)/(COUNT(e.id)*estud_sec.cantidad_en_seccion))*100 AS porcentaje_completitud,
-        COUNT(eval_est.id) AS completadas
-            FROM evaluacion e
-	    INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+            COUNT(e.id),
+            estud_sec.cantidad_en_seccion,
+            COUNT(e.id)*estud_sec.cantidad_en_seccion AS total_asignadas,
+            (COUNT(eval_est.id)/(COUNT(e.id)*estud_sec.cantidad_en_seccion))*100 AS porcentaje_completitud,
+            COUNT(eval_est.id) AS completadas
+        FROM evaluacion e
+	    INNER JOIN seccion s ON e.id_seccion = s.id
 	    INNER JOIN
 	(
-		SELECT 
-			COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
-			ins.id_materia_plan,
-			ins.letra
-		FROM inscripcion_seccion ins
-		GROUP BY ins.id_materia_plan, ins.letra
-	) AS estud_sec on s.id_materia_plan = estud_sec.id_materia_plan AND s.letra = estud_sec.letra
-            INNER JOIN permiso_docente pd ON estud_sec.id_materia_plan = pd.id_materia_plan AND estud_sec.letra = pd.letra_sec
-            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
-            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
-            LEFT JOIN 
-            (
-                SELECT 
-                    er.id,
-                    er.id_evaluacion,
-                    SUM(de.puntaje_obtenido) AS puntaje_eval
-                FROM evaluacion_realizada er 
-                INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
-                GROUP BY er.id
-            ) AS eval_est ON eval_est.id_evaluacion = e.id
-            GROUP BY u.cedula
-            ORDER BY total_asignadas DESC
-            LIMIT 15;
+            SELECT 
+                COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                ins.id_seccion
+            FROM inscripcion_seccion ins
+            GROUP BY ins.id_seccion
+        ) AS estud_sec on s.id = estud_sec.id_seccion
+                INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+                INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+                INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                LEFT JOIN 
+                (
+                    SELECT 
+                        er.id,
+                        er.id_evaluacion,
+                        SUM(de.puntaje_obtenido) AS puntaje_eval
+                    FROM evaluacion_realizada er 
+                    INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                    GROUP BY er.id
+                ) AS eval_est ON eval_est.id_evaluacion = e.id
+                GROUP BY u.cedula
+                ORDER BY total_asignadas DESC
+                LIMIT 15;
         `,
 
         // Actividad mensual (últimos 2 meses) PROBAR
@@ -173,11 +174,11 @@ const getAdminReports = (req, res) => {
         rendimientoCarrera: `
         SELECT 
             c.nombre,
-            AVG(puntaje_eval) AS promedio
+            AVG(COALESCE(puntaje_eval, 0)) AS promedio
         FROM carrera c
         INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
         INNER JOIN seccion s ON s.id_materia_plan = pp.id
-        INNER JOIN evaluacion e ON s.id_materia_plan = e.id_materia_plan AND s.letra = e.letra
+        INNER JOIN evaluacion e ON s.id = e.id_seccion
         LEFT JOIN
         (
         	SELECT 
@@ -187,9 +188,9 @@ const getAdminReports = (req, res) => {
             FROM evaluacion_realizada er
             INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
             GROUP BY er.id
-            ) AS eval_est ON eval_est.id_evaluacion = e.id
-           GROUP BY c.codigo
-           ORDER BY promedio DESC
+        ) AS eval_est ON eval_est.id_evaluacion = e.id
+        GROUP BY c.codigo
+        ORDER BY promedio DESC;
         `,
 
         // Distribución de notas
@@ -330,20 +331,20 @@ const getTeacherReports = (req, res) => {
             SELECT 
                 COUNT(e.id) AS total
             FROM evaluacion e
-            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-            INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
-            WHERE ud.cedula_usuario = ?
+            WHERE ud.cedula_usuario = ?;
         `,
 
         totalEstudiantes: `
             SELECT 
                 COUNT(DISTINCT ins.cedula_estudiante) AS total
             FROM inscripcion_seccion ins
-            INNER JOIN seccion s ON ins.id_materia_plan = s.id_materia_plan AND ins.letra = s.letra
-            INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
+			INNER JOIN seccion s ON ins.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
-            WHERE ud.cedula_usuario = ?
+            WHERE ud.cedula_usuario = ?;
         `,
 
         promedioGeneral: `
@@ -358,9 +359,9 @@ const getTeacherReports = (req, res) => {
                 SUM(COALESCE(de.puntaje_obtenido,0)) as sumatoria_notas,
                 COUNT(e.id) AS cantidad_evaluaciones
             FROM evaluacion e
-            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-            INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
-            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
             INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
             LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
@@ -374,9 +375,9 @@ const getTeacherReports = (req, res) => {
                     SELECT
                         SUM(COALESCE(de.puntaje_obtenido,0)) AS nota_estudiante
                     FROM evaluacion e
-                    INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-                    INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
-                    INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                    INNER JOIN seccion s ON e.id_seccion = s.id
+                    INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                    INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                     INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                     LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
                     LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
@@ -386,16 +387,16 @@ const getTeacherReports = (req, res) => {
         `,
 
         pendientes: `
-            SELECT
-                COUNT(ins.cedula_estudiante) AS total
-            FROM evaluacion e
-            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-            INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
-            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
-            INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
-            LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
-            LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
-            WHERE pd.docente_cedula = ? AND er.id IS NULL;
+                SELECT
+                    COUNT(ins.cedula_estudiante) AS total
+                FROM evaluacion e
+                INNER JOIN seccion s ON e.id_seccion = s.id
+                INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
+                INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
+                LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
+                LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                WHERE pd.docente_cedula = ? AND er.id IS NULL;
         `,
 
         // Secciones del docente - optimizada
@@ -408,9 +409,9 @@ const getTeacherReports = (req, res) => {
                 m.codigo AS materia_codigo,
                 c.nombre AS carrera
             FROM evaluacion e
-            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-            INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
-            INNER JOIN plan_periodo pp ON pd.id_materia_plan = pp.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
             WHERE pd.docente_cedula = ?;
@@ -418,16 +419,16 @@ const getTeacherReports = (req, res) => {
 
         // Lista detallada de estudiantes - optimizada con índices
         estudiantesDetalle: `
-            SELECT
-        cedula,
-        nombre_completo,
-        email,
-        seccion,
-        materia,
-        carrera,
-        total_evaluaciones,
-        promedio,
-        ultima_evaluacion,
+        SELECT
+            cedula,
+            nombre_completo,
+            email,
+            seccion,
+            materia,
+            carrera,
+            total_evaluaciones,
+            promedio,
+            ultima_evaluacion,
         CASE 
         	WHEN promedio >= 18 THEN 'Sobresaliente'
             WHEN promedio >= 15 THEN 'Notable'
@@ -446,18 +447,18 @@ const getTeacherReports = (req, res) => {
                     ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS promedio,
                     MAX(er.fecha_evaluado) AS ultima_evaluacion
                 FROM evaluacion e
-                INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                INNER JOIN seccion s ON e.id_seccion = s.id
                 INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                 INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
             	INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                 INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
                 INNER JOIN usuario u ON ue.cedula_usuario = u.cedula AND u.activo = 1
                 LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
             	LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                 WHERE pd.docente_cedula = ?
-                GROUP BY ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                GROUP BY ins.cedula_estudiante, ins.id_seccion
                 ORDER BY promedio DESC
      ) AS subquery;
         `,
@@ -471,19 +472,19 @@ const getTeacherReports = (req, res) => {
                     m.nombre AS materia,
                     ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS calificacion
                 FROM rubrica r
-                INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
+                INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
                 INNER JOIN evaluacion e ON ru.id_eval = e.id
-                INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                INNER JOIN seccion s ON e.id_seccion = s.id
                 INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                 INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
             	INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                 INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                 LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
             	LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                 WHERE pd.docente_cedula = ? AND r.activo = 1 AND u.activo = 1
-                GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_seccion
                 ORDER BY fecha_evaluacion DESC
                 LIMIT 20;
         `,
@@ -503,15 +504,15 @@ const getTeacherReports = (req, res) => {
                             ins.cedula_estudiante AS cedula,
                             ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS promedio
                         FROM evaluacion e
-                        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                        INNER JOIN seccion s ON e.id_seccion = s.id
                         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-                        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                        INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                        INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                         INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                         LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND ue.cedula_usuario = er.cedula_evaluado
                         LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                         WHERE pd.docente_cedula = ?
-                        GROUP BY ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                        GROUP BY ins.cedula_estudiante, ins.id_seccion
                         ORDER BY promedio DESC
             ) AS subquery
             GROUP BY rango;
@@ -538,18 +539,18 @@ const getTeacherReports = (req, res) => {
                                 ROUND(AVG(COALESCE(de.puntaje_obtenido,0)),2)/5 AS promedio,
                                 MAX(er.fecha_evaluado) AS ultima_evaluacion
                             FROM evaluacion e
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                             INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                            INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                             INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                             INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
                             INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
                             LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                             WHERE pd.docente_cedula = ?
-                            GROUP BY ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                            GROUP BY ins.cedula_estudiante, ins.id_seccion
                             ORDER BY promedio DESC
                 ) AS subquery
                 WHERE promedio < 10;
@@ -585,11 +586,11 @@ const getTeacherReports = (req, res) => {
                             COUNT(e.id) AS evaluaciones,
                             AVG(COALESCE(eval_est.puntaje_eval,0)) AS puntaje_estudiante
                         FROM evaluacion e
-                        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                        INNER JOIN seccion s ON e.id_seccion = s.id
                         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                         INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                        INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                        INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                         INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                         INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
                         INNER JOIN usuario u ON ue.cedula_usuario = u.cedula AND u.activo = 1
@@ -605,7 +606,7 @@ const getTeacherReports = (req, res) => {
                             GROUP BY er.id
                         ) AS eval_est ON eval_est.id_evaluacion = e.id AND u.cedula = eval_est.cedula_evaluado
                         WHERE pd.docente_cedula = ?
-                        GROUP BY ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                        GROUP BY ins.cedula_estudiante, ins.id_seccion
                 ) AS estudiante
                 GROUP BY estudiante.materia, estudiante.nombre
                 ORDER BY promedio
@@ -629,11 +630,11 @@ const getTeacherReports = (req, res) => {
                             m.codigo AS codigo_materia,
                             AVG(COALESCE(eval_est.puntaje_eval,0)) AS puntaje_estudiante
                         FROM evaluacion e
-                        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                        INNER JOIN seccion s ON e.id_seccion = s.id
                         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                         INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                        INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                        INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                         INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                         INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
                         INNER JOIN usuario u ON ue.cedula_usuario = u.cedula AND u.activo = 1
@@ -649,7 +650,7 @@ const getTeacherReports = (req, res) => {
                             GROUP BY er.id
                         ) AS eval_est ON eval_est.id_evaluacion = e.id AND u.cedula = eval_est.cedula_evaluado
                         WHERE pd.docente_cedula = ?
-                        GROUP BY ins.cedula_estudiante, ins.id_materia_plan, ins.letra
+                        GROUP BY ins.cedula_estudiante, ins.id_seccion
                 ) AS estudiante
                 GROUP BY estudiante.id_materia_plan, estudiante.seccion
                 ORDER BY promedio;
@@ -669,10 +670,11 @@ const getTeacherReports = (req, res) => {
                                 COUNT(e.id) AS total_evaluaciones, 
                                 ROUND(AVG(COALESCE(de.puntaje_obtenido,0)),2)/5 AS promedio
                             FROM evaluacion e
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                            INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                             INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                             INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
@@ -703,19 +705,19 @@ const getTeacherReports = (req, res) => {
                                 ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS promedio,
                                 COUNT(e.id) AS total_evaluaciones
                             FROM rubrica r
-                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
                             INNER JOIN evaluacion e ON ru.id_eval = e.id
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                             INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                            INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                             INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                             INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
                             LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                             WHERE pd.docente_cedula = ? AND r.activo = 1 AND u.activo = 1
-                            GROUP BY e.id, r.id
+                            GROUP BY r.id
                             ORDER BY fecha_evaluacion DESC
                             LIMIT 20
                 ) AS rubrica_usada;
@@ -732,10 +734,10 @@ const getTeacherReports = (req, res) => {
                                 COUNT(e.id) AS evaluaciones, 
                                 ROUND(AVG(COALESCE(de.puntaje_obtenido,0)),2)/5 AS promedio
                             FROM evaluacion e
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
-                            INNER JOIN inscripcion_seccion ins ON pd.id_materia_plan = ins.id_materia_plan AND pd.letra_sec = ins.letra
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                            INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
                             INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
                             INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
                             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado

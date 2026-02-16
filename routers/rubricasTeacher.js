@@ -9,18 +9,23 @@ router.get('/teacher/rubricas', function(req, res){
     }
 
     const cedula = req.session.cedula;
-
+    //SI EL SISTEMA REACCIONA MAL AL ESTADO, CAMBIAR A SOLO MOSTRAR EL R.ACTIVO COMO ESTADO
     const query = `
         SELECT
                 				r.id,
                                 r.nombre_rubrica,
                 				e.fecha_evaluacion,
                 				r.fecha_creacion,
-	               				eeval.nombre AS tipo_evaluacion,
+	               				GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                                e.ponderacion AS porcentaje_evaluacion,
                                 m.nombre AS materia_nombre,
                 				m.codigo AS materia_codigo,
                 				s.letra AS seccion_codigo,
-								ru.estado,
+								CASE
+                                    WHEN r.activo = 1 THEN ru.estado
+                                    ELSE 'Inactivo'
+                                END AS estado,
+                                r.activo,
                 				CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
                             FROM rubrica r
                             INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
@@ -65,7 +70,6 @@ router.get("/teacher/rubricas/detalle/:id", function(req, res) {
     }
 
     const rubricaId = req.params.id;
-
     const queryRubrica = `
         SELECT
             r.id,
@@ -78,7 +82,7 @@ router.get("/teacher/rubricas/detalle/:id", function(req, res) {
             (SELECT SUM(puntaje_maximo) 
             FROM criterio_rubrica cr_sub 
             WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
-            GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipos_evaluacion,
+            GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
             e.competencias,
             r.instrucciones,
             CASE
@@ -274,7 +278,7 @@ router.get('/teacher/rubricas/editar/:id', (req, res) => {
                 (SELECT SUM(puntaje_maximo) 
                 FROM criterio_rubrica cr_sub 
                 WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
-                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipos_evaluacion,
+                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
                 e.competencias,
                 r.instrucciones,
                 CASE
