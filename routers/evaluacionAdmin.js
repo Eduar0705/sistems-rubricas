@@ -10,37 +10,51 @@ router.get("/admin/evaluaciones", function(req, res) {
     }
 
     const query = `
-        SELECT
+        SELECT 
             r.id as rubrica_id,
             r.nombre_rubrica,
-            r.porcentaje_evaluacion as valor,
-            d.cedula as docente_cedula,
-            d.nombre as docente_nombre,
-            d.apellido as docente_apellido,
+            e.ponderacion as valor,
+            u.cedula as docente_cedula,
+            u.nombre as docente_nombre,
+            u.apeliido as docente_apellido,
             m.nombre as materia_nombre,
             c.nombre as carrera_nombre,
-            s.codigo as grupo_nombre,
-            COUNT(ee.id) as total_evaluaciones,
-            SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) as completadas,
-            SUM(CASE WHEN ee.puntaje_total IS NULL THEN 1 ELSE 0 END) as pendientes,
-            MAX(ee.fecha_evaluacion) as fecha_ultima_evaluacion,
-            CASE
-                WHEN SUM(CASE WHEN ee.puntaje_total IS NOT NULL THEN 1 ELSE 0 END) = COUNT(ee.id) THEN 'Completada'
-                WHEN SUM(CASE WHEN ee.puntaje_total IS NULL THEN 1 ELSE 0 END) = COUNT(ee.id) THEN 'Pendiente'
-                ELSE 'En Progreso'
-            END as estado
-        FROM evaluacion_estudiante ee
-        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        INNER JOIN seccion s ON r.seccion_id = s.id
-        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-        LEFT JOIN docente d ON r.docente_cedula = d.cedula
-        WHERE r.activo = 1 AND s.activo = 1 AND c.activo = 1
-        GROUP BY r.id, r.nombre_rubrica, r.porcentaje_evaluacion, 
-                 d.cedula, d.nombre, d.apellido,
-                 m.nombre, c.nombre, s.codigo
-        ORDER BY d.apellido, d.nombre, c.nombre, s.codigo
-    `;
+            COUNT(e.id) AS total_evaluaciones,
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+            COUNT(eval_est.id) AS completadas,
+            SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS pendientes,
+            MAX(e.fecha_evaluacion) as fecha_ultima_evaluacion
+        FROM evaluacion e
+        INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
+	    INNER JOIN seccion s ON e.id_seccion = s.id
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+	    INNER JOIN
+            (
+                    SELECT 
+                        COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                        ins.id_seccion
+                    FROM inscripcion_seccion ins
+                    GROUP BY ins.id_seccion
+                ) AS estud_sec on s.id = estud_sec.id_seccion
+         INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+         INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+         INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                LEFT JOIN 
+                (
+                    SELECT 
+                        er.id,
+                        er.id_evaluacion,
+                        SUM(de.puntaje_obtenido) AS puntaje_eval
+                    FROM evaluacion_realizada er 
+                    INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                    GROUP BY er.id
+                ) AS eval_est ON eval_est.id_evaluacion = e.id
+         GROUP BY e.id
+         ORDER BY u.apeliido, u.nombre, carrera_nombre, c.nombre DESC;
+        `;
 
     conexion.query(query, (error, evaluaciones) => {
         if (error) {
@@ -114,13 +128,15 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
 
     const query = `
         SELECT 
-            codigo,
-            nombre,
-            semestre,
-            creditos
-        FROM materia
-        WHERE carrera_codigo = ? 
-        AND activo = 1
+            m.codigo,
+            m.nombre,
+            pp.num_semestre AS semestre,
+            pp.unidades_credito AS creditos
+        FROM materia m
+        INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+        WHERE pp.codigo_carrera = ?
+        AND c.activo = 1
         ORDER BY semestre, nombre
     `;
 
@@ -144,18 +160,19 @@ router.get('/api/materia/:materiaCodigo/secciones', (req, res) => {
 
     const query = `
         SELECT 
-            s.id,
-            s.codigo,
-            s.horario,
-            s.aula,
+            s.id, 
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
+            IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
+            hs.aula,
             s.capacidad_maxima,
-            COUNT(ins.id) as estudiantes_inscritos
+            COUNT(ins.cedula_estudiante) AS estudiantes_inscritos
         FROM seccion s
-        LEFT JOIN inscripcion_seccion ins ON s.id = ins.seccion_id AND ins.estado = 'Inscrito'
-        WHERE s.materia_codigo = ? 
-        AND s.activo = 1
-        GROUP BY s.id, s.codigo, s.horario, s.aula, s.capacidad_maxima
-        ORDER BY s.codigo
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+        INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        WHERE pp.codigo_materia = ? AND s.activo = 1
+        GROUP BY s.id
+        ORDER BY codigo;
     `;
 
     conexion.query(query, [materiaCodigo], (error, secciones) => {
@@ -178,16 +195,17 @@ router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
 
     const query = `
         SELECT 
-            e.cedula,
-            e.nombre,
-            e.apellido,
-            e.email
-        FROM estudiante e
-        INNER JOIN inscripcion_seccion ins ON e.cedula = ins.estudiante_cedula
-        WHERE ins.seccion_id = ? 
-        AND e.activo = 1 
-        AND ins.estado = 'Inscrito'
-        ORDER BY e.apellido, e.nombre
+            u.cedula,
+            u.nombre,
+            u.apeliido AS apellido,
+            u.email
+        FROM seccion s
+        INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        INNER JOIN usuario_estudiante ud ON ins.cedula_estudiante = ud.cedula_usuario
+        INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+        WHERE ins.id_seccion = ?
+        AND u.activo = 1 
+        ORDER BY apellido, u.nombre;
     `;
 
     conexion.query(query, [seccionId], (error, estudiantes) => {
@@ -207,36 +225,46 @@ router.get('/api/rubricas/activas', (req, res) => {
     }
 
     const query = `
-        SELECT
-            r.id,
-            r.nombre_rubrica,
-            r.tipo_evaluacion,
-            r.porcentaje_evaluacion,
-            r.modalidad,
-            r.cantidad_personas,
-            r.seccion_id,
-            m.nombre as materia_nombre,
-            m.codigo as materia_codigo,
-            m.semestre,
-            c.codigo as carrera_codigo,
-            c.nombre as carrera_nombre,
-            s.codigo as seccion_codigo,
-            s.horario as seccion_horario,
-            s.aula as seccion_aula,
-            s.lapso_academico as seccion_lapso,
-            d.cedula as docente_cedula,
-            d.nombre as docente_nombre,
-            d.apellido as docente_apellido
-        FROM rubrica_evaluacion r
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-        INNER JOIN seccion s ON r.seccion_id = s.id
-        LEFT JOIN docente d ON r.docente_cedula = d.cedula
-        WHERE r.activo = 1
-        AND NOT EXISTS (
-            SELECT 1 FROM evaluacion_estudiante ee WHERE ee.rubrica_id = r.id
-        )
-        ORDER BY r.nombre_rubrica
+                            SELECT
+                				r.id,
+                                r.nombre_rubrica,
+                				e.ponderacion AS porcentaje_evaluacion,
+                                CASE
+                                    WHEN e.cantidad_personas=1 THEN 'Individual'
+                                    WHEN e.cantidad_personas=2 THEN 'En Pareja'
+                                    ELSE 'Grupal'
+                                END AS modalidad,
+	               				GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                                e.cantidad_personas,
+                                s.id AS seccion_id,
+                                m.nombre AS materia_nombre,
+                				m.codigo AS materia_codigo,
+                                pp.num_semestre AS semestre,
+                                c.codigo as carrera_codigo,
+            					c.nombre as carrera_nombre,
+                				CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                                IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                                hs.aula AS seccion_aula,
+                                pp.codigo_periodo AS seccion_lapso,
+                                u.cedula AS docente_cedula,
+                                u.nombre as docente_nombre,
+            					u.apeliido as docente_apellido
+                            FROM rubrica r
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                            INNER JOIN evaluacion e ON ru.id_eval = e.id
+                			LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+                            LEFT JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
+                            INNER JOIN seccion s ON e.id_seccion = s.id
+                            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                			INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
+                			INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+                            WHERE r.activo = 1 AND u.activo = 1
+                            GROUP BY r.id
+                            ORDER BY nombre_rubrica DESC;
     `;
 
     conexion.query(query, (error, rubricas) => {

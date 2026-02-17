@@ -1,5 +1,4 @@
 const conexion = require('../models/conetion');
-//PENDIENTE DE CAMBIAR LA CONSULTA
 const getCalificaciones = (req, res) => {
     if (!req.session.login) {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';

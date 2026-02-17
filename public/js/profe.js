@@ -105,6 +105,7 @@ function inicializarModalEditar() {
     function abrirModalEdicion(button) {
         try {
             // Obtener los datos del botón usando dataset
+            const cedula_og = button.dataset.cedula_og || '';
             const cedula = button.dataset.cedula || '';
             const nombre = button.dataset.nombre || '';
             const apellido = button.dataset.apellido || '';
@@ -115,6 +116,7 @@ function inicializarModalEditar() {
             const activo = button.dataset.activo || '';
             
             // Llenar el formulario con los datos
+            document.getElementById('cedulaOGEdit').value = cedula_og;
             document.getElementById('cedulaEdit').value = cedula;
             document.getElementById('nombreEdit').value = nombre;
             document.getElementById('apellidoEdit').value = apellido;
@@ -1055,9 +1057,6 @@ async function guardarPermiso() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 docente_cedula: docenteSeleccionado.cedula,
-                carrera_codigo: permisoSeleccionado.carrera,
-                semestre: permisoSeleccionado.semestre,
-                materia_codigo: permisoSeleccionado.materia,
                 seccion_id: permisoSeleccionado.seccion
             })
         });

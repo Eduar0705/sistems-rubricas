@@ -75,6 +75,7 @@
                                     <td data-label="Acciones">
                                         <div class="table-actions">
                                             <button class="btns btn-edit" 
+                                                    data-cedula_og="<%= profe.cedula%>"
                                                     data-cedula="<%= profe.cedula %>"
                                                     data-nombre="<%= profe.nombre %>"
                                                     data-apellido="<%= profe.apellido %>"
@@ -213,7 +214,7 @@
                 <h2>Editar Profesor</h2>
                 
                 <form id="formProfesorEdit" method="post" action="/updateProfe">
-                    <input type="hidden" id="idProfesor" name="id">
+                    <input type="hidden" id="cedulaOGEdit" name="cedula_og">
                     
                     <div class="form-group">
                         <label for="cedulaEdit">Cédula:</label>

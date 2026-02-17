@@ -30,7 +30,9 @@ router.get('/deleteProfe/:cedula', (req, res) => {
             }
 
             // Paso 1: Eliminar de la tabla usuario (si existe)
-            const sqlUsuario = `DELETE FROM usuario WHERE cedula = ?`;
+            const sqlUsuario = `UPDATE usuario 
+                                SET activo = 0 
+                                WHERE cedula = ?`;
             conn.query(sqlUsuario, [cedula], (err, resultUsuario) => {
                 if (err) {
                     return conn.rollback(() => {
@@ -40,41 +42,6 @@ router.get('/deleteProfe/:cedula', (req, res) => {
                         return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
                     });
                 }
-
-                // Paso 2: Verificar si el docente tiene secciones asignadas
-                const sqlVerificarSecciones = `SELECT COUNT(*) as total FROM seccion WHERE docente_cedula = ?`;
-                conn.query(sqlVerificarSecciones, [cedula], (err, resultSecciones) => {
-                    if (err) {
-                        return conn.rollback(() => {
-                            conn.release(); // Liberar la conexión
-                            console.log('Error al verificar secciones: ', err);
-                            mensaje = 'Error al eliminar profesor. Intente más tarde.';
-                            return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
-                        });
-                    }
-
-                    const tieneSecciones = resultSecciones[0].total > 0;
-
-                    if (tieneSecciones) {
-                        // Si tiene secciones, no podemos eliminarlo
-                        return conn.rollback(() => {
-                            conn.release(); // Liberar la conexión
-                            mensaje = 'No se puede eliminar el profesor porque tiene secciones asignadas. Debe reasignar o eliminar las secciones primero.';
-                            return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
-                        });
-                    }
-
-                    // Paso 3: Si no tiene secciones, eliminar de la tabla docente
-                    const sqlDocente = `DELETE FROM docente WHERE cedula = ?`;
-                    conn.query(sqlDocente, [cedula], (err, resultDocente) => {
-                        if (err) {
-                            return conn.rollback(() => {
-                                conn.release(); // Liberar la conexión
-                                console.log('Error al eliminar docente: ', err);
-                                mensaje = 'Error al eliminar profesor. Intente más tarde.';
-                                return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
-                            });
-                        }
 
                         // Paso 4: Commit de la transacción si todo salió bien
                         conn.commit((err) => {
@@ -95,7 +62,5 @@ router.get('/deleteProfe/:cedula', (req, res) => {
                 });
             });
         });
-    });
-});
 
 module.exports = router;

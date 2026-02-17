@@ -9,7 +9,11 @@ router.get("/home", function (req, res) {
     }
 
     // Contar los profesores
-    let countProf = 'SELECT COUNT(*) AS totalProfesores FROM docente';
+    let countProf = `SELECT 
+                        COUNT(*) AS totalProfesores 
+                    FROM usuario_docente ud
+                    INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                    WHERE u.activo = 1`;
     conexion.query(countProf, (err, profesResult) => {
         if (err) {
             console.log('Error al contar profesores: ', err);
@@ -17,7 +21,7 @@ router.get("/home", function (req, res) {
         }
 
         // Contar las Rúbricas
-        let countRubricas = 'SELECT COUNT(*) AS totalRubricas FROM rubrica_evaluacion';
+        let countRubricas = 'SELECT COUNT(*) AS totalRubricas FROM rubrica WHERE activo = 1';
         conexion.query(countRubricas, (err, rubricasResult) => {
             if (err) {
                 console.log('Error al contar rúbricas: ', err);
@@ -26,9 +30,36 @@ router.get("/home", function (req, res) {
 
             // **NUEVA CONSULTA: Contar evaluaciones pendientes**
             let countEvaluacionesPendientes = `
-                SELECT COUNT(*) AS totalEvaluacionesPendientes 
-                FROM evaluacion_estudiante 
-                WHERE puntaje_total IS NULL
+            SELECT 
+            SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS totalEvaluacionesPendientes
+            FROM evaluacion e
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica r ON ru.id_rubrica = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN
+                (
+                        SELECT 
+                            COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                            ins.id_seccion
+                        FROM inscripcion_seccion ins
+                        GROUP BY ins.id_seccion
+                    ) AS estud_sec on s.id = estud_sec.id_seccion
+            INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                    LEFT JOIN 
+                    (
+                        SELECT 
+                            er.id,
+                            er.id_evaluacion,
+                            SUM(de.puntaje_obtenido) AS puntaje_eval
+                        FROM evaluacion_realizada er 
+                        INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                        GROUP BY er.id
+                    ) AS eval_est ON eval_est.id_evaluacion = e.id;
             `;
 
             conexion.query(countEvaluacionesPendientes, (err, evaluacionesResult) => {
@@ -39,18 +70,25 @@ router.get("/home", function (req, res) {
 
                 // Obtener rúbricas recientes (máximo 5)
                 let recentRubricasQuery = `
-                    SELECT
-                        r.id,
-                        r.nombre_rubrica,
+                    SELECT 
+                        r.id, 
+                        r.nombre_rubrica, 
                         r.fecha_creacion,
-                        r.tipo_evaluacion,
-                        r.instrucciones as descripcion,
-                        m.nombre as materia_nombre
-                    FROM rubrica_evaluacion r
-                    LEFT JOIN materia m ON r.materia_codigo = m.codigo
-                    WHERE r.activo = TRUE
-                    ORDER BY r.fecha_creacion DESC
-                    LIMIT 4
+                        r.instrucciones AS descripcion,
+                        m.nombre AS materia_nombre,
+                        GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion
+                    FROM rubrica r
+                    INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                    INNER JOIN evaluacion e ON e.id = ru.id_eval
+                    INNER JOIN seccion s ON e.id_seccion = s.id
+                    INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                    INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                    LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+                    LEFT JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
+                    WHERE r.activo = 1
+                    GROUP BY r.id
+                    ORDER BY r.fecha_actualizacion DESC
+                    LIMIT 4;
                 `;
 
                 conexion.query(recentRubricasQuery, (err, recentRubricasResult) => {
@@ -73,26 +111,36 @@ router.get("/home", function (req, res) {
 
                     // Obtener actividad reciente (últimas evaluaciones completadas por profesores)
                     let recentActivityQuery = `
-                        SELECT 
-                            ee.id,
-                            ee.fecha_evaluacion,
-                            ee.puntaje_total,
-                            e.nombre AS estudiante_nombre,
-                            e.apellido AS estudiante_apellido,
+                        SELECT
+                            er.id,
+                            er.fecha_evaluado AS fecha_evaluacion,
+                            u.nombre AS estudiante_nombre,
+                            u.apeliido AS estudiante_apellido,
                             r.nombre_rubrica,
                             m.nombre AS materia_nombre,
-                            d.nombre AS docente_nombre,
-                            d.apellido AS docente_apellido
-                        FROM evaluacion_estudiante ee
-                        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
-                        INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-                        INNER JOIN materia m ON r.materia_codigo = m.codigo
-                        INNER JOIN docente d ON r.docente_cedula = d.cedula
-                        WHERE ee.puntaje_total IS NOT NULL
-                          AND r.activo = TRUE
-                          AND e.activo = 1
-                        ORDER BY ee.fecha_evaluacion DESC
-                        LIMIT 4
+                            uh.nombre AS docente_nombre,
+                            uh.apeliido AS docente_apellido,
+                            ROUND(AVG(COALESCE(de.puntaje_obtenido,0))/5,2) AS puntaje_total
+                        FROM rubrica r
+                        INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                        INNER JOIN evaluacion e ON ru.id_eval = e.id
+                        INNER JOIN seccion s ON e.id_seccion = s.id
+                        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                        INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+                        INNER JOIN usuario uh ON uh.cedula = pd.docente_cedula
+                        INNER JOIN inscripcion_seccion ins ON pd.id_seccion = ins.id_seccion
+                        INNER JOIN usuario_estudiante ue ON ue.cedula_usuario = ins.cedula_estudiante
+                        INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
+                        LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion AND u.cedula = er.cedula_evaluado
+                        LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                        AND r.activo = 1
+                        AND u.activo = 1
+                        AND er.id IS NOT NULL
+                        GROUP BY er.id, er.fecha_evaluado, ins.cedula_estudiante, ins.id_seccion
+                        ORDER BY fecha_evaluado DESC
+                        LIMIT 4;
                     `;
 
                     conexion.query(recentActivityQuery, (err, activityResult) => {

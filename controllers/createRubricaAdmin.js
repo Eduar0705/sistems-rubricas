@@ -51,10 +51,13 @@ router.get("/api/semestres/:carrera", (req, res) => {
     const { carrera } = req.params;
 
     const query = `
-        SELECT DISTINCT semestre
-        FROM materia
-        WHERE carrera_codigo = ? AND activo = TRUE
-        ORDER BY semestre
+        SELECT 
+            DISTINCT num_semestre AS semestre
+        FROM plan_periodo pp
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+        WHERE c.codigo = ? 
+        AND c.activo = 1 
+        ORDER BY semestre;
     `;
 
     conexion.query(query, [carrera], (error, results) => {
@@ -71,9 +74,15 @@ router.get("/api/materias/:carrera/:semestre", (req, res) => {
     const { carrera, semestre } = req.params;
 
     const query = `
-        SELECT codigo, nombre, semestre, creditos
-        FROM materia
-        WHERE carrera_codigo = ? AND semestre = ? AND activo = TRUE
+        SELECT 
+            m.codigo,
+            m.nombre,
+            pp.unidades_credito AS creditos
+        FROM materia m
+        INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
+        INNER JOIN carrera c ON  pp.codigo_carrera = c.codigo
+        WHERE pp.codigo_carrera = ? AND pp.num_semestre = ? 
+        AND c.activo = 1
         ORDER BY nombre
     `;
 
@@ -92,18 +101,17 @@ router.get("/api/secciones/:materia", (req, res) => {
 
     const query = `
         SELECT 
-            s.id,
-            s.codigo,
-            s.lapso_academico,
-            s.horario,
-            s.aula,
-            s.capacidad_maxima,
-            d.nombre as docente_nombre,
-            d.apellido as docente_apellido
+            s.id, 
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
+            pp.codigo_periodo AS lapso_academico, 
+            IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
+            hs.aula,
+            s.capacidad_maxima
         FROM seccion s
-        LEFT JOIN docente d ON s.docente_cedula = d.cedula
-        WHERE s.materia_codigo = ? AND s.activo = TRUE
-        ORDER BY s.lapso_academico DESC, s.codigo
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+        WHERE pp.codigo_materia = ? AND s.activo = 1
+        ORDER BY codigo;
     `;
 
     conexion.query(query, [materia], (error, results) => {

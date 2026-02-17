@@ -599,8 +599,6 @@ function populateModalEdit(data) {
             criterio.niveles
         );
     });
-
-    calcularDistribucionAutomaticaEdit();
 }
 
 // ============================================================
@@ -854,7 +852,7 @@ function eliminarCriterioEdit(id) {
     }).then((result) => {
         if (result.isConfirmed) {
             criterioCard.remove();
-            calcularDistribucionAutomaticaEdit();
+            calcularDistribucionAutomaticaEdit(); //Tal vez a eliminar...
             Swal.fire('Eliminado', 'El criterio ha sido eliminado', 'success');
         }
     });

@@ -24,12 +24,12 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
 
     if (req.session.id_rol === 1) {
         // Administrador puede eliminar cualquier rúbrica
-        queryCheck = 'SELECT id FROM rubrica_evaluacion WHERE id = ?';
+        queryCheck = 'SELECT id FROM rubrica WHERE id = ?';
         queryParams = [rubricaId];
         console.log('Usuario es administrador - puede eliminar cualquier rúbrica');
     } else {
         // Docente solo puede eliminar sus propias rúbricas
-        queryCheck = 'SELECT id FROM rubrica_evaluacion WHERE id = ? AND docente_cedula = ?';
+        queryCheck = 'SELECT id FROM rubrica WHERE id = ? AND cedula_docente = ?';
         queryParams = [rubricaId, req.session.cedula];
         console.log('Usuario es docente - solo puede eliminar sus rúbricas');
     }
@@ -47,7 +47,13 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
 
         // Verificar si la rúbrica ya tiene evaluaciones realizadas (solo para docentes)
         if (req.session.id_rol !== 1) {
-            const queryCheckEvaluaciones = 'SELECT COUNT(*) as count FROM evaluacion_estudiante WHERE rubrica_id = ?';
+            const queryCheckEvaluaciones = `SELECT 
+                                                COUNT(*) AS count 
+                                            FROM rubrica r
+                                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                                            INNER JOIN evaluacion e ON ru.id_eval = e.id
+                                            INNER JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+                                            WHERE r.id = ?;`;
             connection.query(queryCheckEvaluaciones, [rubricaId], (error, evalResults) => {
                 if (error) {
                     console.error('Error al verificar evaluaciones:', error);
@@ -89,7 +95,17 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
                     // Paso 1: Eliminar detalles de evaluación
                     console.log('Paso 1: Eliminando detalles de evaluación...');
                     conn.query(
-                        'DELETE FROM detalle_evaluacion WHERE evaluacion_id IN (SELECT id FROM evaluacion_estudiante WHERE rubrica_id = ?)',
+                        `DELETE FROM detalle_evaluacion
+                        WHERE evaluacion_r_id IN 
+                            (
+                                SELECT 
+                                    er.id 
+                                FROM evaluacion_realizada er
+                                INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+                                INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+                                INNER JOIN rubrica r ON ru.id_rubrica = r.id
+                                WHERE r.id = ?
+                            )`,
                         [rubricaId],
                         (error) => {
                             if (error) {
@@ -105,7 +121,14 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
                             // Paso 2: Eliminar niveles de desempeño
                             console.log('Paso 2: Eliminando niveles de desempeño...');
                             conn.query(
-                                'DELETE FROM nivel_desempeno WHERE criterio_id IN (SELECT id FROM criterio_evaluacion WHERE rubrica_id = ?)',
+                                `DELETE FROM nivel_desempeno 
+                                WHERE criterio_id IN 
+                                    (
+                                        SELECT
+                                            id 
+                                        FROM criterio_rubrica 
+                                        WHERE rubrica_id = ?
+                                    )`,
                                 [rubricaId],
                                 (error) => {
                                     if (error) {
@@ -120,7 +143,7 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
 
                                     // Paso 3: Eliminar criterios
                                     console.log('Paso 3: Eliminando criterios...');
-                                    conn.query('DELETE FROM criterio_evaluacion WHERE rubrica_id = ?', [rubricaId], (error) => {
+                                    conn.query('DELETE FROM criterio_rubrica WHERE rubrica_id = ?', [rubricaId], (error) => {
                                         if (error) {
                                             return conn.rollback(() => {
                                                 conn.release(); // Liberar la conexión
@@ -133,7 +156,12 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
 
                                         // Paso 4: Eliminar evaluaciones de estudiantes
                                         console.log('Paso 4: Eliminando evaluaciones...');
-                                        conn.query('DELETE FROM evaluacion_estudiante WHERE rubrica_id = ?', [rubricaId], (error) => {
+                                        conn.query(`DELETE er
+                                                    FROM evaluacion_realizada er
+                                                    INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+                                                    INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+                                                    INNER JOIN rubrica r ON ru.id_rubrica = r.id
+                                                    WHERE r.id = ?`, [rubricaId], (error) => {
                                             if (error) {
                                                 return conn.rollback(() => {
                                                     conn.release(); // Liberar la conexión
@@ -146,7 +174,7 @@ router.delete('/admin/deleteRubrica/:id', (req, res) => {
 
                                             // Paso 5: Eliminar la rúbrica
                                             console.log('Paso 5: Eliminando rúbrica...');
-                                            conn.query('DELETE FROM rubrica_evaluacion WHERE id = ?', [rubricaId], (error) => {
+                                            conn.query('DELETE FROM rubrica WHERE id = ?', [rubricaId], (error) => {
                                                 if (error) {
                                                     return conn.rollback(() => {
                                                         conn.release(); // Liberar la conexión

@@ -43,7 +43,7 @@ const getAdminReports = (req, res) => {
             FROM usuario u 
             INNER JOIN usuario_docente ud ON u.cedula = ud.cedula_usuario
             LEFT JOIN rubrica r ON ud.cedula_usuario = r.cedula_docente AND r.activo = 1
-            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica AND ru.estado = "Aprobado"
+            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
             INNER JOIN evaluacion e ON e.id = ru.id_eval
             INNER JOIN seccion s ON e.id_seccion = s.id
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
@@ -121,24 +121,28 @@ const getAdminReports = (req, res) => {
         SELECT 
             u.cedula,
             CONCAT(u.nombre, ' ', u.apeliido) AS nombre_completo,
-            COUNT(e.id),
             estud_sec.cantidad_en_seccion,
-            COUNT(e.id)*estud_sec.cantidad_en_seccion AS total_asignadas,
-            (COUNT(eval_est.id)/(COUNT(e.id)*estud_sec.cantidad_en_seccion))*100 AS porcentaje_completitud,
+            COUNT(e.id) AS total_asignadas,
+            (COUNT(eval_est.id)/(COUNT(e.id)))*100 AS porcentaje_completitud,
             COUNT(eval_est.id) AS completadas
         FROM evaluacion e
+        INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+        INNER JOIN rubrica r ON ru.id_rubrica = r.id
 	    INNER JOIN seccion s ON e.id_seccion = s.id
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        INNER JOIN materia m ON pp.codigo_materia = m.codigo
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
 	    INNER JOIN
-	(
-            SELECT 
-                COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
-                ins.id_seccion
-            FROM inscripcion_seccion ins
-            GROUP BY ins.id_seccion
-        ) AS estud_sec on s.id = estud_sec.id_seccion
-                INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
-                INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
-                INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            (
+                    SELECT 
+                        COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                        ins.id_seccion
+                    FROM inscripcion_seccion ins
+                    GROUP BY ins.id_seccion
+                ) AS estud_sec on s.id = estud_sec.id_seccion
+         INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+         INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+         INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
                 LEFT JOIN 
                 (
                     SELECT 
@@ -149,9 +153,9 @@ const getAdminReports = (req, res) => {
                     INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                     GROUP BY er.id
                 ) AS eval_est ON eval_est.id_evaluacion = e.id
-                GROUP BY u.cedula
-                ORDER BY total_asignadas DESC
-                LIMIT 15;
+         GROUP BY u.cedula
+         ORDER BY u.apeliido, u.nombre, c.nombre DESC
+         LIMIT 15;
         `,
 
         // Actividad mensual (últimos 2 meses) PROBAR
@@ -234,9 +238,9 @@ const getAdminReports = (req, res) => {
             FROM materia m
             INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
             INNER JOIN seccion s ON pp.id = s.id_materia_plan
-            INNER JOIN inscripcion_seccion ins ON s.id_materia_plan = ins.id_materia_plan
-            INNER JOIN evaluacion e ON ins.id_materia_plan = e.id_materia_plan
-            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval AND ru.estado = "Aprobado"
+            INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+            INNER JOIN evaluacion e ON ins.id_seccion = e.id_seccion
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
             GROUP BY m.codigo, m.nombre
             HAVING COUNT(DISTINCT r.id) > 0

@@ -43,12 +43,15 @@ router.get("/teacher", function(req, res) {
     // Consulta para obtener rúbricas recientes del docente
     const queryRubricasRecientes = `
         SELECT 
-            id, 
-            nombre_rubrica, 
-            fecha_actualizacion
-        FROM rubrica
-        WHERE cedula_docente = ? AND activo = 1
-        ORDER BY fecha_actualizacion DESC
+            r.id, 
+            r.nombre_rubrica, 
+            e.fecha_evaluacion
+        FROM rubrica r
+        INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+        INNER JOIN evaluacion e ON e.id = ru.id_eval
+        WHERE cedula_docente = ? 
+        AND activo = 1
+        ORDER BY r.fecha_actualizacion DESC
         LIMIT 3
     `;
 

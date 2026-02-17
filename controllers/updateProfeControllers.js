@@ -10,29 +10,80 @@ router.post('/updateProfe', (req, res) => {
     }
 
     try {
-        let mensaje;
-        const { cedula, nombre, apellido, email, telefono, especialidad, notas, activo } = req.body;
+        const { cedula, cedula_og, nombre, apellido, email, telefono, especialidad, notas, activo } = req.body;
 
-        const update = `UPDATE docente SET nombre = ?, apellido = ?, especializacion = ?, email = ?, telf = ?, descripcion = ?, activo = ? WHERE cedula = ?`;
-        const valores = [nombre, apellido, especialidad, email, telefono, notas, activo, cedula];
-
-        conexion.query(update, valores, (error, results) => {
-            if (error) {
-                console.error('Error en la consulta:', error);
-                mensaje = 'Error al actualizar el profesor';
+                // Obtener conexión del pool para la transacción
+        conexion.getConnection((err, conn) => {
+            if (err) {
+                console.error('Error al obtener conexión del pool:', err);
+                const mensaje = 'Error al conectar con la base de datos';
                 return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
             }
 
-            // Verificar si se actualizó algún registro
-            if (results.affectedRows === 0) {
-                mensaje = 'No se encontró el profesor con la cédula proporcionada';
-            } else {
-                mensaje = 'Profesor actualizado correctamente';
-            }
+            // Iniciar transacción
+            conn.beginTransaction((err) => {
+                if (err) {
+                    conn.release();
+                    console.error('Error al iniciar transacción:', err);
+                    const mensaje = 'Error interno del servidor';
+                    return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                }
 
-            return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                // Primera inserción - USUARIO
+                const updateUsuario = `UPDATE usuario
+                    SET cedula=?, nombre=?, apeliido=?, email=?, activo=?
+                    WHERE cedula=?`;
+                
+                const valoresUsuario = [cedula, nombre, apellido, email, activo, cedula_og];
+
+                conn.query(updateUsuario, valoresUsuario, (err, result) => {
+                    if (err) {
+                        const mensaje = 'Error al actualizar usuario';
+                        console.error(mensaje, err);
+                        return conn.rollback(() => {
+                            conn.release();
+                            res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                        });
+                    }
+
+                    // Segunda inserción - USUARIO_DOCENTE
+                    const updateDocente = `UPDATE usuario_docente
+                        SET especializacion=?, descripcion=?, telf=?
+                        WHERE cedula_usuario=?`;
+                    
+                    const valoresDocente = [especialidad, notas, telefono, cedula];
+
+                    conn.query(updateDocente, valoresDocente, (err) => {
+                        if (err) {
+                            const mensaje = 'Error al actualizar datos del docente';
+                            console.error(mensaje, err);
+                            return conn.rollback(() => {
+                                conn.release();
+                                res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                            });
+                        }
+
+                        // Confirmar transacción
+                        conn.commit((err) => {
+                            if (err) {
+                                const mensaje = 'Error al confirmar operación';
+                                console.error(mensaje, err);
+                                return conn.rollback(() => {
+                                    conn.release();
+                                    res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                                });
+                            }
+
+                            // Liberar conexión y redirigir con éxito
+                            conn.release();
+                            console.log('=== Profesor actualizado exitosamente ===');
+                            const mensaje = 'Profesor actualizado exitosamente :D';
+                            res.redirect('/admin/profesores?mensaje=' + encodeURIComponent(mensaje));
+                        });
+                    });
+                });
+            }); 
         });
-
     } catch (error) {
         console.error('Error inesperado:', error);
         return res.redirect('/admin/profesores?mensaje=' + encodeURIComponent('Error interno del servidor'));

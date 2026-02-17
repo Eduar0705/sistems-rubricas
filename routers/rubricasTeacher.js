@@ -20,7 +20,7 @@ router.get('/teacher/rubricas', function(req, res){
                                 e.ponderacion AS porcentaje_evaluacion,
                                 m.nombre AS materia_nombre,
                 				m.codigo AS materia_codigo,
-                				s.letra AS seccion_codigo,
+                				CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
 								CASE
                                     WHEN r.activo = 1 THEN ru.estado
                                     ELSE 'Inactivo'
@@ -32,10 +32,10 @@ router.get('/teacher/rubricas', function(req, res){
                             INNER JOIN evaluacion e ON ru.id_eval = e.id
                 			INNER JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
                             INNER JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                             INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
                 			INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
                 			INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
                             WHERE pd.docente_cedula = ? AND r.activo = 1 AND u.activo = 1
@@ -79,9 +79,12 @@ router.get("/teacher/rubricas/detalle/:id", function(req, res) {
             s.letra AS seccion_id,
             pp.codigo_periodo AS lapso_academico,
             e.fecha_evaluacion,
-            (SELECT SUM(puntaje_maximo) 
-            FROM criterio_rubrica cr_sub 
-            WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
+            (
+                SELECT SUM(puntaje_maximo) 
+                FROM criterio_rubrica cr_sub 
+                WHERE cr_sub.rubrica_id = r.id
+            ) 
+            AS porcentaje_evaluacion,
             GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
             e.competencias,
             r.instrucciones,
@@ -95,13 +98,13 @@ router.get("/teacher/rubricas/detalle/:id", function(req, res) {
             r.fecha_creacion AS created_at,
             r.fecha_actualizacion AS updated_at,
             m.nombre AS materia_nombre,
-            CONCAT(pp.codigo_periodo, '-', pp.codigo_carrera, '-', pp.codigo_materia, '-', s.letra) AS seccion_codigo,
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
             c.nombre AS carrera_nombre,
             CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
         FROM evaluacion e
         INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
         INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+        INNER JOIN seccion s ON e.id_seccion = s.id
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
         INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
@@ -180,13 +183,13 @@ router.get("/teacher/opciones", function(req, res) {
 
     const querySecciones = `
         SELECT 
-            s.id_materia_plan AS id,
-            s.letra AS codigo, 
+            s.id AS id,
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
             pp.codigo_materia AS materia_codigo,
             pp.codigo_periodo AS lapso_academico
         FROM seccion s
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-        ORDER BY pp.codigo_periodo DESC, s.letra
+        ORDER BY pp.codigo_periodo DESC, s.letra;
     `;
 
     connection.query(queryMaterias, (error, materias) => {
@@ -215,11 +218,11 @@ router.get("/teacher/rubricas/profesores", function(req, res) {
     }
 
     const query = `
-        SELECT DISTINCT IFNULL(CONCAT(u.nombre, ' ', u.apeliido), 'Docente no encontrado') AS docente_nombre
+        SELECT 
+			IFNULL(CONCAT(u.nombre, ' ', u.apeliido), 'Docente no encontrado') AS docente_nombre
         FROM rubrica r
         LEFT JOIN usuario_docente ud ON r.cedula_docente = ud.cedula_usuario
-        INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
-        WHERE u.activo = 1
+        LEFT JOIN usuario u ON u.cedula = ud.cedula_usuario
         ORDER BY docente_nombre;
     `;
 
@@ -291,12 +294,12 @@ router.get('/teacher/rubricas/editar/:id', (req, res) => {
                 r.fecha_creacion AS created_at,
                 r.fecha_actualizacion AS updated_at,
                 m.nombre AS materia_nombre,
-                CONCAT(pp.codigo_periodo, '-', pp.codigo_carrera, '-', pp.codigo_materia, '-', s.letra) AS seccion_codigo,
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
                 CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
             FROM evaluacion e
             INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
-            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+            INNER JOIN seccion s ON e.id_seccion = s.id
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
@@ -399,7 +402,8 @@ router.get('/teacher/carreras', (req, res) => {
             DISTINCT c.codigo, c.nombre
         FROM carrera c
         INNER JOIN plan_periodo pp ON pp.codigo_carrera = c.codigo
-        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+        INNER JOIN seccion s ON pp.id = s.id_materia_plan
+        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
         WHERE c.activo = 1
         AND pd.docente_cedula = ?
         AND pd.activo = 1
@@ -427,10 +431,11 @@ router.get("/teacher/semestres/:carrera", (req, res) => {
     const cedula = req.session.cedula;
 
     const query = `
-        SELECT 
+       SELECT 
             DISTINCT pp.num_semestre AS semestre
         FROM plan_periodo pp
-        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+        INNER JOIN seccion s ON pp.id =s.id_materia_plan
+        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
         WHERE pp.codigo_carrera = ?
         AND pd.docente_cedula = ?
         AND pd.activo = 1
@@ -464,9 +469,10 @@ router.get("/teacher/materias/:carrera/:semestre", (req, res) => {
             pp.unidades_credito AS creditos
         FROM plan_periodo pp
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+        INNER JOIN seccion s ON pp.id = s.id_materia_plan
+        INNER JOIN permiso_docente pd ON pd.id_seccion = s.id
         WHERE pp.codigo_carrera = ?
-        AND pp.codigo_materia = ?
+        AND pp.num_semestre = ?
         AND pd.docente_cedula = ?
         AND pd.activo = 1
         ORDER BY semestre;
@@ -494,20 +500,20 @@ router.get("/teacher/secciones/:materia", (req, res) => {
     const query = `
         SELECT 
             s.id_materia_plan AS id,
-            s.letra AS codigo,
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
             pp.codigo_periodo AS lapso_academico,
             IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
             IFNULL(hs.aula, 'No encontrada') AS aula,
             s.capacidad_maxima
         FROM plan_periodo pp
         INNER JOIN seccion s ON pp.id = s.id_materia_plan
-        LEFT JOIN horario_seccion hs ON s.id_materia_plan = hs.id_materia_plan AND s.letra = hs.letra_sec
+        LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN permiso_docente pd ON s.id_materia_plan = pd.id_materia_plan AND s.letra = pd.letra_sec
+        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
         AND pp.codigo_materia = ?
         AND pd.docente_cedula = ?
         AND pd.activo = 1
-        GROUP BY s.id_materia_plan, s.letra
+        GROUP BY s.id
         ORDER BY lapso_academico DESC, id, codigo;
     `;
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const connection = require('../models/conetion');
-const periodo_academico = 
+//const periodo_academico = 
 
 // ============================================================
 // LISTAR RÚBRICAS
@@ -30,10 +30,10 @@ router.get("/admin/rubricas", function(req, res) {
                             INNER JOIN evaluacion e ON ru.id_eval = e.id
                 			INNER JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
                             INNER JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
-                            INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+                            INNER JOIN seccion s ON e.id_seccion = s.id
                             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
                             INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan AND s.letra = pd.letra_sec
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
                 			INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
                 			INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
                             WHERE r.activo = 1 AND u.activo = 1
@@ -102,7 +102,7 @@ router.get("/admin/rubricas/detalle/:id", function(req, res) {
         FROM evaluacion e
         INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
         INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+        INNER JOIN seccion s ON e.id_seccion = s.id
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
         INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
@@ -185,7 +185,7 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
     
     if(esAdmin) {
         queryRubrica = `
-            SELECT
+        SELECT
             r.id,
             r.nombre_rubrica,
             r.cedula_docente AS docente_cedula,
@@ -214,7 +214,7 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
         FROM evaluacion e
         INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
         INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
+        INNER JOIN seccion s ON e.id_seccion = s.id
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
         INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
@@ -257,9 +257,9 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
         FROM evaluacion e
         INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
         INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_materia_plan = s.id_materia_plan AND e.letra = s.letra
-        INNER JOIN permiso_docente pd ON pd.id_materia_plan = s.id_materia_plan AND pd.letra_sec = s.letra
-        INNER JOIN plan_periodo pp ON pd.id_materia_plan = pp.id
+        INNER JOIN seccion s ON e.id_seccion = s.id        
+        INNER JOIN permiso_docente pd ON pd.id_seccion = s.id
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         INNER JOIN materia m ON pp.codigo_materia = m.codigo
         INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
         INNER JOIN usuario_docente ud ON ud.cedula_usuario = r.cedula_docente
@@ -269,7 +269,7 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
         WHERE r.id = ?
         AND pd.docente_cedula = ?
         AND r.activo = 1
-        GROUP BY r.id
+        GROUP BY r.id;
         `;
         paramsRubrica = [id, req.session.cedula];
     }
@@ -419,7 +419,8 @@ router.get('/admin/carreras', (req, res) => {
                 ))) AS duracion_semestres
             FROM carrera c 
             INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+            INNER JOIN seccion s ON pp.id = s.id_materia_plan
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             INNER JOIN periodo_academico pa ON pp.codigo_periodo = pa.codigo
             WHERE pd.docente_cedula = ?
             GROUP BY c.codigo;
@@ -465,7 +466,8 @@ router.get('/admin/opciones', (req, res) => {
                 m.nombre
             FROM materia m
             INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+            INNER JOIN seccion s ON pp.id = s.id_materia_plan
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             WHERE pd.docente_cedula = ?
             GROUP BY m.codigo
             ORDER BY m.nombre;
@@ -504,8 +506,8 @@ router.get('/admin/opciones', (req, res) => {
                 pp.codigo_materia AS materia_codigo,
                 pp.codigo_periodo AS lapso_academico
             FROM seccion s
+            INNER JOIN permiso_docente pd ON pd.id_seccion = s.id
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
             WHERE pd.docente_cedula = ?
             GROUP BY codigo, lapso_academico
             ORDER BY codigo;
@@ -587,7 +589,8 @@ router.get("/api/admin/semestres/:carrera", (req, res) => {
             SELECT 
                 DISTINCT pp.num_semestre AS semestre
             FROM plan_periodo pp
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+            INNER JOIN seccion s ON pp.id = s.id_materia_plan
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             WHERE pp.codigo_carrera = ?
             AND pd.docente_cedula = ?
             ORDER BY semestre;
@@ -638,7 +641,8 @@ router.get("/api/admin/materias/:carrera/:semestre", (req, res) => {
                 pp.unidades_credito AS creditos
             FROM materia m
             INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
+            INNER JOIN seccion s ON pp.id = s.id_materia_plan
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             WHERE pp.codigo_carrera = ?
             AND pp.num_semestre = ?
             AND pd.docente_cedula = ?
@@ -681,8 +685,8 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
                 u.apeliido AS docente_apellido
             FROM seccion s
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
-            LEFT JOIN horario_seccion hs ON s.id_materia_plan = hs.id_materia_plan AND s.letra = hs.letra_sec
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
             INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
             WHERE pp.codigo_materia = ?
@@ -703,9 +707,9 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
                 u.nombre AS docente_nombre,
                 u.apeliido AS docente_apellido
             FROM seccion s
-            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-            INNER JOIN permiso_docente pd ON pp.id = pd.id_materia_plan
-            LEFT JOIN horario_seccion hs ON s.id_materia_plan = hs.id_materia_plan AND s.letra = hs.letra_sec
+          	INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
             INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
             WHERE pp.codigo_materia = ?
