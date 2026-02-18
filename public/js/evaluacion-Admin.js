@@ -1,10 +1,14 @@
 // Variables globales
 let estudiantesSeleccionados = [];
 
-// Variables para paginación
+// Variables para paginación y filtrado
 let currentPage = 1;
 let entriesPerPage = 5;
-let allRows = [];
+let allRows = []; // Todas las filas originales
+let filteredRows = []; // Filas después de aplicar filtros
+// Variables para fechas del sistema
+let fechasSistema = [];
+let configuracionSistema = {};
 
 // Aplicar clases de estado cuando se cargue la página
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,18 +19,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const claseEstado = 'estado-' + estadoTexto.replace(/ /g, '-');
         element.classList.add(claseEstado);
     });
+    
+    // Inicializar datos
+    allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
+    filteredRows = [...allRows]; // Inicialmente, todas las filas están filtradas
+    inicializarPaginacion();
 });
 
-// Función para filtrar evaluaciones (para tabla)
+// Función para filtrar evaluaciones
 function filtrarEvaluaciones() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const docenteFilter = document.getElementById('filterDocente')?.value || '';
     const estadoFilter = document.getElementById('filterEstado')?.value || '';
     
-    // Filtrar allRows en lugar de las filas del DOM
-    const filteredRows = allRows.filter(row => {
-        // Obtener texto de todas las celdas
+    // Filtrar sobre todas las filas originales
+    filteredRows = allRows.filter(row => {
+        // Obtener texto de todas las celdas para búsqueda general
         const rowText = row.textContent.toLowerCase();
+        
+        // Obtener docente del atributo data
         const docenteAttr = row.dataset.docente || '';
         
         // Filtrado de búsqueda
@@ -35,43 +46,41 @@ function filtrarEvaluaciones() {
         // Filtro por docente
         const matchDocente = !docenteFilter || docenteAttr === docenteFilter;
         
-        // Filtro por estado
+        // Filtro por estado - CORREGIDO: el estado está en la columna 7 (octava columna)
         let matchEstado = true;
         if (estadoFilter) {
-            const estadoCell = row.cells[7]?.textContent || ''; // Columna de estado
+            const estadoCell = row.cells[7]?.textContent.trim() || ''; // Columna de estado (índice 7)
+            
             if (estadoFilter === 'Completada') {
                 matchEstado = estadoCell.includes('Completada') || estadoCell === 'Completada';
             } else if (estadoFilter === 'Pendiente') {
                 matchEstado = estadoCell === 'Pendiente';
             } else if (estadoFilter === 'En Progreso') {
-                matchEstado = estadoCell.includes('/') && !estadoCell.includes('Completada') && estadoCell !== 'Pendiente';
+                // Asumiendo que "En Progreso" podría mostrar algo como "3/5" o similar
+                //matchEstado = estadoCell.includes('/') && !estadoCell.includes('Completada') && estadoCell !== 'Pendiente';
+                matchEstado = estadoCell === 'En Progreso';
             }
         }
 
         return matchSearch && matchDocente && matchEstado;
     });
-    
-    // Actualizar allRows con las filas filtradas
-    allRows = filteredRows;
+      // Reiniciar a la primera página
     currentPage = 1;
+    
+    // Actualizar la tabla con las filas filtradas
     updateTable();
 }
 
 // Event listeners para los filtros
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('searchInput')?.addEventListener('input', () => {
-        // Resetear allRows antes de filtrar
-        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
-        filtrarEvaluaciones();
-    });
-    document.getElementById('filterDocente')?.addEventListener('change', () => {
-        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
-        filtrarEvaluaciones();
-    });
-    document.getElementById('filterEstado')?.addEventListener('change', () => {
-        allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
-        filtrarEvaluaciones();
-    });
+    // Input de búsqueda
+    document.getElementById('searchInput')?.addEventListener('input', filtrarEvaluaciones);
+    
+    // Filtro por docente
+    document.getElementById('filterDocente')?.addEventListener('change', filtrarEvaluaciones);
+    
+    // Filtro por estado
+    document.getElementById('filterEstado')?.addEventListener('change', filtrarEvaluaciones);
     
     // Inicializar paginación
     inicializarPaginacion();
@@ -90,7 +99,7 @@ function evaluar(evaluacionId) {
 function openModalEvaluacion() {
     document.getElementById('modalAddEvaluacion').classList.add('active');
     document.body.style.overflow = 'hidden';
-    cargarRubricas();
+    //cargarRubricas();
     cargarCarreras();
 }
 
@@ -152,105 +161,6 @@ async function cargarCarreras() {
         Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
     }
 }
-
-// Evento cuando se selecciona una rúbrica
-document.getElementById('rubrica_id')?.addEventListener('change', async function() {
-    const selectedOption = this.options[this.selectedIndex];
-    
-    if (selectedOption.value) {
-        const rubrica = JSON.parse(selectedOption.dataset.rubrica);
-        mostrarInfoRubrica(rubrica);
-        await aplicarDatosRubricaEnFormulario(rubrica);
-    } else {
-        document.getElementById('rubricaInfo').style.display = 'none';
-    }
-    verificarFormularioCompleto();
-});
-
-// Mostrar información de la rúbrica seleccionada
-function mostrarInfoRubrica(rubrica) {
-    document.getElementById('rubricaCarrera').textContent = rubrica.carrera_nombre || '-';
-
-    const carreraCodigoEl = document.getElementById('rubricaCarreraCodigo');
-    if (carreraCodigoEl) {
-        carreraCodigoEl.textContent = rubrica.carrera_codigo || '-';
-    }
-
-    document.getElementById('rubricaSemestre').textContent = rubrica.semestre ? `Semestre ${rubrica.semestre}` : '-';
-    document.getElementById('rubricaMateria').textContent = rubrica.materia_nombre || '-';
-
-    const materiaCodigoEl = document.getElementById('rubricaMateriaCodigo');
-    if (materiaCodigoEl) {
-        materiaCodigoEl.textContent = rubrica.materia_codigo || '-';
-    }
-
-    document.getElementById('rubricaSeccion').textContent = rubrica.seccion_codigo || '-';
-
-    const lapsoEl = document.getElementById('rubricaLapso');
-    if (lapsoEl) {
-        lapsoEl.textContent = rubrica.seccion_lapso || '-';
-    }
-
-    const docenteEl = document.getElementById('rubricaDocente');
-    if (docenteEl) {
-        if (rubrica.docente_nombre) {
-            const apellido = rubrica.docente_apellido ? ` ${rubrica.docente_apellido}` : '';
-            docenteEl.textContent = `${rubrica.docente_nombre}${apellido}`;
-        } else {
-            docenteEl.textContent = '-';
-        }
-    }
-
-    document.getElementById('rubricaTipo').textContent = rubrica.tipo_evaluacion;
-    document.getElementById('rubricaPorcentaje').textContent = rubrica.porcentaje_evaluacion + '%';
-    document.getElementById('rubricaModalidad').textContent = rubrica.modalidad + 
-        (rubrica.cantidad_personas > 1 ? ` (${rubrica.cantidad_personas} personas)` : '');
-    document.getElementById('rubricaInfo').style.display = 'block';
-}
-
-// Sincronizar selects de carrera/materia/sección a partir de la rúbrica seleccionada
-async function aplicarDatosRubricaEnFormulario(rubrica) {
-    const carreraSelect = document.getElementById('carrera_codigo');
-    const materiaSelect = document.getElementById('materia_codigo');
-    const seccionSelect = document.getElementById('seccion_id');
-
-    if (!carreraSelect || !materiaSelect || !seccionSelect) {
-        return;
-    }
-
-    try {
-        // Nos aseguramos de tener las carreras cargadas
-        await cargarCarreras();
-
-        if (rubrica.carrera_codigo) {
-            carreraSelect.value = rubrica.carrera_codigo;
-        }
-
-        if (rubrica.carrera_codigo) {
-            materiaSelect.disabled = false;
-            await cargarMaterias(rubrica.carrera_codigo);
-            if (rubrica.materia_codigo) {
-                materiaSelect.value = rubrica.materia_codigo;
-            }
-        }
-
-        if (rubrica.materia_codigo) {
-            seccionSelect.disabled = false;
-            await cargarSecciones(rubrica.materia_codigo);
-            if (rubrica.seccion_id) {
-                seccionSelect.value = rubrica.seccion_id;
-            }
-        }
-
-        // Si ya tenemos sección seleccionada, cargamos los estudiantes asociados
-        if (seccionSelect.value) {
-            await cargarEstudiantes(seccionSelect.value);
-        }
-    } catch (error) {
-        console.error('Error al aplicar datos de la rúbrica en el formulario:', error);
-    }
-}
-
 // Evento cuando se selecciona una carrera
 document.getElementById('carrera_codigo')?.addEventListener('change', async function() {
     const carreraCodigo = this.value;
@@ -330,7 +240,7 @@ async function cargarSecciones(materiaCodigo) {
             data.secciones.forEach(seccion => {
                 const option = document.createElement('option');
                 option.value = seccion.id;
-                option.textContent = `Sección ${seccion.codigo} - ${seccion.horario} (${seccion.aula})`;
+                option.textContent = `Sección ${seccion.codigo} - ${seccion.horario}`;
                 select.appendChild(option);
             });
         } else {
@@ -348,6 +258,7 @@ document.getElementById('seccion_id')?.addEventListener('change', async function
     
     if (seccionId) {
         await cargarEstudiantes(seccionId);
+        await cargarConfiguracionFechas(seccionId);
     } else {
         document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
     }
@@ -361,7 +272,6 @@ async function cargarEstudiantes(seccionId) {
     try {
         const response = await fetch(`/api/seccion/${seccionId}/estudiantes`);
         const data = await response.json();
-        
         if (data.success && data.estudiantes.length > 0) {
             estudiantesSeleccionados = data.estudiantes.map(e => e.cedula);
             mostrarEstudiantes(data.estudiantes);
@@ -409,10 +319,9 @@ function mostrarEstudiantes(estudiantes) {
 
 // Verificar si el formulario está completo
 function verificarFormularioCompleto() {
-    const rubricaId = document.getElementById('rubrica_id').value;
     const btnGuardar = document.getElementById('btnGuardarEvaluacion');
     
-    if (rubricaId && estudiantesSeleccionados.length > 0) {
+    if (estudiantesSeleccionados.length > 0) {
         btnGuardar.disabled = false;
     } else {
         btnGuardar.disabled = true;
@@ -421,14 +330,7 @@ function verificarFormularioCompleto() {
 
 // Guardar evaluación
 async function guardarEvaluacion() {
-    const rubricaId = document.getElementById('rubrica_id').value;
     const observaciones = document.getElementById('observaciones').value;
-
-    // Validaciones
-    if (!rubricaId) {
-        Swal.fire('Error', 'Debe seleccionar una rúbrica', 'error');
-        return;
-    }
 
     if (estudiantesSeleccionados.length === 0) {
         Swal.fire('Error', 'No hay estudiantes seleccionados', 'error');
@@ -596,14 +498,15 @@ document.getElementById('modalVerDetalles')?.addEventListener('click', function(
 // ============================================
 
 function inicializarPaginacion() {
-    // Guardar todas las filas
-    allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
-    
     // Event listener para el selector de entradas
     const entriesSelect = document.getElementById('entriesPerPage');
     if (entriesSelect) {
         entriesSelect.addEventListener('change', function() {
-            entriesPerPage = this.value === 'all' ? allRows.length : parseInt(this.value);
+            if (this.value === 'all') {
+                entriesPerPage = filteredRows.length;
+            } else {
+                entriesPerPage = parseInt(this.value);
+            }
             currentPage = 1;
             updateTable();
         });
@@ -612,35 +515,37 @@ function inicializarPaginacion() {
     // Inicializar la tabla
     updateTable();
 }
-
 // Actualizar tabla según paginación
 function updateTable() {
-    const totalEntries = allRows.length;
+    const totalEntries = filteredRows.length;
     
-    if (totalEntries === 0) return;
-    
-    // Ocultar todas las filas
+    // Ocultar todas las filas primero
     allRows.forEach(row => row.style.display = 'none');
+    
+    if (totalEntries === 0) {
+        // Mostrar mensaje de "No hay resultados"
+        document.getElementById('showingStart').textContent = '0';
+        document.getElementById('showingEnd').textContent = '0';
+        document.getElementById('totalEntries').textContent = '0';
+        document.getElementById('paginationButtons').innerHTML = '';
+        return;
+    }
     
     // Calcular rango
     const start = (currentPage - 1) * entriesPerPage;
-    const end = entriesPerPage === totalEntries ? totalEntries : Math.min(start + entriesPerPage, totalEntries);
+    const end = Math.min(start + entriesPerPage, totalEntries);
     
     // Mostrar filas del rango actual
     for (let i = start; i < end; i++) {
-        if (allRows[i]) {
-            allRows[i].style.display = '';
+        if (filteredRows[i]) {
+            filteredRows[i].style.display = '';
         }
     }
     
     // Actualizar información
-    const showingStart = document.getElementById('showingStart');
-    const showingEnd = document.getElementById('showingEnd');
-    const totalEntriesEl = document.getElementById('totalEntries');
-    
-    if (showingStart) showingStart.textContent = totalEntries > 0 ? start + 1 : 0;
-    if (showingEnd) showingEnd.textContent = end;
-    if (totalEntriesEl) totalEntriesEl.textContent = totalEntries;
+    document.getElementById('showingStart').textContent = start + 1;
+    document.getElementById('showingEnd').textContent = end;
+    document.getElementById('totalEntries').textContent = totalEntries;
     
     // Generar botones de paginación
     generatePaginationButtons();
@@ -648,7 +553,7 @@ function updateTable() {
 
 // Generar botones de paginación
 function generatePaginationButtons() {
-    const totalPages = Math.ceil(allRows.length / entriesPerPage);
+    const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
     const paginationContainer = document.getElementById('paginationButtons');
     
     if (!paginationContainer) return;
@@ -692,8 +597,8 @@ function generatePaginationButtons() {
         
         if (startPage > 2) {
             const dots = document.createElement('span');
+            dots.className = 'pagination-dots';
             dots.textContent = '...';
-            dots.style.padding = '0 8px';
             paginationContainer.appendChild(dots);
         }
     }
@@ -701,7 +606,7 @@ function generatePaginationButtons() {
     // Páginas del rango
     for (let i = startPage; i <= endPage; i++) {
         const pageBtn = document.createElement('button');
-        pageBtn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
         pageBtn.textContent = i;
         pageBtn.onclick = () => {
             currentPage = i;
@@ -714,8 +619,8 @@ function generatePaginationButtons() {
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
             const dots = document.createElement('span');
+            dots.className = 'pagination-dots';
             dots.textContent = '...';
-            dots.style.padding = '0 8px';
             paginationContainer.appendChild(dots);
         }
         
@@ -742,3 +647,243 @@ function generatePaginationButtons() {
     };
     paginationContainer.appendChild(nextBtn);
 }
+
+// Cargar configuración de fechas desde el backend
+async function cargarConfiguracionFechas(seccionId) {
+    try {
+        console.log('haciendo peticion de horarios')
+        // Aquí haces la petición a tu API para obtener la configuración
+        const response = await fetch(`/api/seccion/${seccionId}/horario`);
+        const data = await response.json()
+
+        if (data.success && data.horarios.length > 0) {
+            dias_num = data.horarios.map(horario => horario.dia_num + 1); //Porque en la BD 0 = Lunes
+            dias = data.horarios.map(horario => horario.dia + 1);
+            configuracionSistema = {
+                ids: data.horarios.id,
+                periodo: data.horarios[0].periodo,
+                diasPermitidos: dias_num, // Ej: [1, 4] para Lunes y Jueves
+                fechaInicio: data.horarios[0].fecha_inicio,
+                fechaFin: data.horarios[0].fecha_fin,
+                nombreDias: dias // Ej: ['Lunes', 'Jueves']
+            };
+            
+            // Actualizar UI con la configuración
+            actualizarInfoSistema();
+            
+            // Generar fechas disponibles según configuración
+            generarFechasDisponibles();
+        }
+    } catch (error) {
+        console.error('Error al cargar configuración de fechas:', error);
+        mostrarErrorFechas();
+    }
+}
+
+// Actualizar la información del sistema en la UI
+function actualizarInfoSistema() {
+    const periodoEl = document.getElementById('periodoAcademico');
+    const diasEl = document.getElementById('diasEvaluacion');
+    const rangoEl = document.getElementById('rangoFechas');
+    
+    if (periodoEl) {
+        periodoEl.textContent = configuracionSistema.periodo || 'No disponible';
+    }
+    
+    if (diasEl) {
+        const nombreDias = configuracionSistema.nombreDias || 
+                          configuracionSistema.diasPermitidos.map(dia => obtenerNombreDia(dia));
+        diasEl.textContent = nombreDias.join(' y ');
+    }
+    
+    if (rangoEl) {
+        const fechaInicio = formatearFechaLocal(configuracionSistema.fechaInicio);
+        const fechaFin = formatearFechaLocal(configuracionSistema.fechaFin);
+        rangoEl.textContent = `${fechaInicio} - ${fechaFin}`;
+    }
+}
+
+// Generar fechas disponibles según la configuración del sistema
+function generarFechasDisponibles() {
+    fechasSistema = [];
+    
+    const fechaInicio = new Date(configuracionSistema.fechaInicio);
+    const fechaFin = new Date(configuracionSistema.fechaFin);
+    const diasPermitidos = configuracionSistema.diasPermitidos;
+    
+    // Ajustar fechas
+    fechaInicio.setHours(0, 0, 0, 0);
+    fechaFin.setHours(0, 0, 0, 0);
+    
+    // Recorrer el rango de fechas
+    const fechaActual = new Date(fechaInicio);
+    while (fechaActual <= fechaFin) {
+        const diaSemana = fechaActual.getDay();
+        
+        // Verificar si el día está permitido
+        if (diasPermitidos.includes(diaSemana)) {
+            fechasSistema.push({
+                fecha: new Date(fechaActual),
+                fechaStr: formatearFechaParaInput(fechaActual),
+                fechaLocal: formatearFechaLocal(fechaActual),
+                diaSemana: obtenerNombreDia(diaSemana),
+                diaNumero: diaSemana
+            });
+        }
+        
+        // Avanzar un día
+        fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+    
+    // Actualizar el select con las fechas generadas
+    actualizarSelectFechas();
+}
+
+// Actualizar el select con las fechas disponibles
+function actualizarSelectFechas() {
+    const select = document.getElementById('fecha_evaluacion');
+    if (!select) return;
+    
+    // Limpiar opciones existentes (mantener la primera)
+    select.innerHTML = '<option value="">-- Seleccione una fecha --</option>';
+    
+    if (fechasSistema.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.disabled = true;
+        option.textContent = 'No hay fechas disponibles en este período';
+        select.appendChild(option);
+        return;
+    }
+    
+    // Agrupar fechas por mes para mejor organización
+    const fechasPorMes = agruparFechasPorMes(fechasSistema);
+    
+    for (const [mes, fechas] of Object.entries(fechasPorMes)) {
+        // Crear grupo de opciones
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = mes;
+        
+        fechas.forEach(fecha => {
+            const option = document.createElement('option');
+            option.value = fecha.fechaStr;
+            option.textContent = `${fecha.fechaLocal} (${fecha.diaSemana})`;
+            optgroup.appendChild(option);
+        });
+        
+        select.appendChild(optgroup);
+    }
+}
+
+// Agrupar fechas por mes
+function agruparFechasPorMes(fechas) {
+    const meses = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    
+    const agrupadas = {};
+    
+    fechas.forEach(fecha => {
+        const mes = meses[fecha.fecha.getMonth()];
+        const año = fecha.fecha.getFullYear();
+        const clave = `${mes} ${año}`;
+        
+        if (!agrupadas[clave]) {
+            agrupadas[clave] = [];
+        }
+        
+        agrupadas[clave].push(fecha);
+    });
+    
+    return agrupadas;
+}
+
+// Función para obtener la fecha seleccionada
+function getFechaSeleccionada() {
+    const select = document.getElementById('fecha_evaluacion');
+    if (!select.value) return null;
+    
+    const fechaSeleccionada = fechasSistema.find(f => f.fechaStr === select.value);
+    return fechaSeleccionada || null;
+}
+
+// Función para filtrar por fecha seleccionada
+function filtrarPorFechaSistema() {
+    const fechaSeleccionada = getFechaSeleccionada();
+    
+    if (!fechaSeleccionada) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Seleccione una fecha',
+            text: 'Debe seleccionar una fecha para filtrar',
+            confirmButtonColor: '#667eea'
+        });
+        return;
+    }
+    
+    // Aquí aplicas el filtro con la fecha seleccionada
+    aplicarFiltroFecha(fechaSeleccionada.fechaStr);
+}
+
+// Función para aplicar el filtro (la conectas con tu sistema de filtrado existente)
+function aplicarFiltroFecha(fechaStr) {
+    // Aquí usas la fecha para filtrar tus evaluaciones
+    // Por ejemplo, si tienes un sistema de filtrado:
+    if (typeof filtrarEvaluaciones === 'function') {
+        // Guardar la fecha en algún lado para usarla en el filtro
+        window.fechaFiltro = fechaStr;
+        filtrarEvaluaciones();
+    }
+    
+    // O si necesitas recargar datos:
+    // cargarEvaluacionesPorFecha(fechaStr);
+}
+
+// Funciones auxiliares
+function formatearFechaParaInput(fecha) {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatearFechaLocal(fecha) {
+    if (!fecha) return '';
+    if (typeof fecha === 'string') fecha = new Date(fecha);
+    
+    const day = String(fecha.getDate()).padStart(2, '0');
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const year = fecha.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+function obtenerNombreDia(diaNumero) {
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return dias[diaNumero] || '';
+}
+
+function mostrarErrorFechas() {
+    const select = document.getElementById('fecha_evaluacion');
+    if (select) {
+        select.innerHTML = '<option value="">Error al cargar fechas</option>';
+    }
+}
+/*
+// Inicializar cuando el documento esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Cargar configuración de fechas del sistema
+    cargarConfiguracionFechas();
+    
+    // Agregar event listener para el select
+    const selectFecha = document.getElementById('fecha_evaluacion');
+    if (selectFecha) {
+        selectFecha.addEventListener('change', function() {
+            const fecha = getFechaSeleccionada();
+            if (fecha) {
+                // Opcional: actualizar algún indicador o habilitar botones
+                console.log('Fecha seleccionada:', fecha);
+            }
+        });
+    }
+});*/

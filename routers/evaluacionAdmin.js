@@ -10,50 +10,76 @@ router.get("/admin/evaluaciones", function(req, res) {
     }
 
     const query = `
-        SELECT 
-            r.id as rubrica_id,
-            r.nombre_rubrica,
-            e.ponderacion as valor,
-            u.cedula as docente_cedula,
-            u.nombre as docente_nombre,
-            u.apeliido as docente_apellido,
-            m.nombre as materia_nombre,
-            c.nombre as carrera_nombre,
-            COUNT(e.id) AS total_evaluaciones,
-            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-            COUNT(eval_est.id) AS completadas,
-            SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS pendientes,
-            MAX(e.fecha_evaluacion) as fecha_ultima_evaluacion
-        FROM evaluacion e
-        INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
-        INNER JOIN rubrica r ON ru.id_rubrica = r.id
-	    INNER JOIN seccion s ON e.id_seccion = s.id
-        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-        INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
-	    INNER JOIN
-            (
-                    SELECT 
-                        COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
-                        ins.id_seccion
-                    FROM inscripcion_seccion ins
-                    GROUP BY ins.id_seccion
-                ) AS estud_sec on s.id = estud_sec.id_seccion
-         INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
-         INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
-         INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
-                LEFT JOIN 
-                (
-                    SELECT 
-                        er.id,
-                        er.id_evaluacion,
-                        SUM(de.puntaje_obtenido) AS puntaje_eval
-                    FROM evaluacion_realizada er 
-                    INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
-                    GROUP BY er.id
-                ) AS eval_est ON eval_est.id_evaluacion = e.id
-         GROUP BY e.id
-         ORDER BY u.apeliido, u.nombre, carrera_nombre, c.nombre DESC;
+        SELECT
+            evaluacion_id,
+            contenido_evaluacion,
+            rubrica_id,
+            nombre_rubrica,
+            valor,
+            docente_cedula,
+            docente_nombre,
+            docente_apellido,
+            materia_nombre,
+            carrera_nombre,
+            total_evaluaciones,
+            seccion_codigo,
+            completadas,
+            pendientes,
+            fecha_evaluacion,
+            CASE
+                WHEN rubrica_id IS NULL THEN 'Pendiente'
+                WHEN rubrica_id IS NOT NULL AND total_evaluaciones=completadas THEN 'Completada'
+                ELSE 'En Progreso'
+            END as estado
+        FROM
+        (
+                SELECT 
+                    e.id AS evaluacion_id,
+                    e.contenido AS contenido_evaluacion,
+                    r.id AS rubrica_id,
+                    IFNULL(r.nombre_rubrica, 'Sin rubrica') AS nombre_rubrica,
+                    e.ponderacion as valor,
+                    u.cedula as docente_cedula,
+                    u.nombre as docente_nombre,
+                    u.apeliido as docente_apellido,
+                    m.nombre as materia_nombre,
+                    c.nombre as carrera_nombre,
+                    COUNT(e.id) AS total_evaluaciones,
+                    CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                    COUNT(eval_est.id) AS completadas,
+                    SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS pendientes,
+                    e.fecha_evaluacion
+                FROM evaluacion e
+                LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
+                LEFT JOIN rubrica r ON ru.id_rubrica = r.id
+                INNER JOIN seccion s ON e.id_seccion = s.id
+                INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+                INNER JOIN
+                    (
+                            SELECT 
+                                COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                                ins.id_seccion
+                            FROM inscripcion_seccion ins
+                            GROUP BY ins.id_seccion
+                        ) AS estud_sec on s.id = estud_sec.id_seccion
+                INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+                INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+                INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                        LEFT JOIN 
+                        (
+                            SELECT 
+                                er.id,
+                                er.id_evaluacion,
+                                SUM(de.puntaje_obtenido) AS puntaje_eval
+                            FROM evaluacion_realizada er 
+                            INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                            GROUP BY er.id
+                        ) AS eval_est ON eval_est.id_evaluacion = e.id
+                GROUP BY e.id
+                ORDER BY e.fecha_evaluacion DESC
+        ) AS todo;
         `;
 
     conexion.query(query, (error, evaluaciones) => {
@@ -69,8 +95,8 @@ router.get("/admin/evaluaciones", function(req, res) {
         }
 
         const evaluacionesFormateadas = evaluaciones.map(ev => {
-            const fecha = ev.fecha_ultima_evaluacion ? 
-                new Date(ev.fecha_ultima_evaluacion).toLocaleDateString('es-ES', {
+            const fecha = ev.fecha_evaluacion ? 
+                new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
@@ -102,7 +128,10 @@ router.get('/api/carreras', (req, res) => {
     }
 
     const query = `
-        SELECT codigo, nombre, descripcion
+        SELECT 
+            codigo, 
+            nombre, 
+            descripcion
         FROM carrera
         WHERE activo = 1
         ORDER BY nombre
@@ -162,8 +191,7 @@ router.get('/api/materia/:materiaCodigo/secciones', (req, res) => {
         SELECT 
             s.id, 
             CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
-            IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
-            hs.aula,
+            IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ' (', hs.aula, ')', ')') SEPARATOR ', '), 'No encontrado') AS horario,
             s.capacidad_maxima,
             COUNT(ins.cedula_estudiante) AS estudiantes_inscritos
         FROM seccion s
@@ -294,7 +322,7 @@ router.post('/api/evaluaciones/crear', (req, res) => {
     }
 
     // Verificar que la rúbrica existe y está activa
-    const queryVerificar = 'SELECT id FROM rubrica_evaluacion WHERE id = ? AND activo = 1';
+    const queryVerificar = 'SELECT id FROM rubrica WHERE id = ? AND activo = 1';
     
     conexion.query(queryVerificar, [rubrica_id], (error, results) => {
         if (error) {
@@ -421,7 +449,42 @@ router.get('/api/carrera/:carreraCodigo/secciones', (req, res) => {
             return res.json({ success: false, message: 'Error al obtener secciones' });
         }
 
-        res.json({ success: true, secciones });
+        res.json({ success: true, secciones});
+    });
+});
+// API: Obtener secciones por carrera
+router.get('/api/seccion/:seccionId/horario', (req, res) => {
+    if(!req.session.login){
+        return res.json({ success: false, message: 'No autorizado' });
+    }
+
+    const { seccionId } = req.params;
+
+    const query = `
+            SELECT 
+                hs.id,
+                hs.dia,
+                hs.dia_num,
+                hs.aula,
+                hs.hora_inicio,
+                hs.hora_cierre,
+                pp.codigo_periodo AS periodo,
+                pa.fecha_inicio,
+                pa.fecha_fin
+            FROM seccion s
+            INNER JOIN horario_seccion hs ON s.id = hs.id_seccion
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN periodo_academico pa ON pp.codigo_periodo = pa.codigo
+            WHERE s.id = ?;
+    `;
+
+    conexion.query(query, [seccionId], (error, horarios) => {
+        if (error) {
+            console.error('Error al obtener horarios:', error);
+            return res.json({ success: false, message: 'Error al obtener secciones' });
+        }
+        
+        res.json({ success: true, horarios});
     });
 });
 

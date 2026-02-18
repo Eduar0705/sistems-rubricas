@@ -69,11 +69,12 @@
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th>Contenido</th>
+                            <th>Carrera</th>
+                            <th>Materia</th>
                             <th>Docente</th>
                             <th>Rúbrica</th>
                             <th>Valor</th>
-                            <th>Carrera</th>
-                            <th>Materia</th>
                             <th>Fecha</th>
                             <th>Estado</th>
                             <th>Acciones</th>
@@ -82,11 +83,12 @@
                     <tbody id="evaluacionesTableBody">
                         <% evaluaciones.forEach(ev => { %>
                             <tr class="evaluacion-row" data-docente="<%= ev.docente_nombre %> <%= ev.docente_apellido %>">
+                                <td><%= ev.contenido_evaluacion %></td>
+                                <td><%= ev.carrera_nombre %></td>
+                                <td><%= ev.materia_nombre %></td>
                                 <td><%= ev.docente_nombre || 'Sin asignar' %> <%= ev.docente_apellido || '' %></td>
                                 <td><%= ev.nombre_rubrica %></td>
                                 <td><%= ev.valor %>%</td>
-                                <td><%= ev.carrera_nombre %></td>
-                                <td><%= ev.materia_nombre %></td>
                                 <td><%= ev.fecha_formateada %></td>
                                 <td> <span class="estado"><%= ev.estado_formateado %></span></td>
                                 <td>
@@ -120,12 +122,167 @@
             </div>
 
             <form id="formAddEvaluacion" class="modal-body-evaluacion">
+
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-users"></i>
+                        Selección de Estudiantes
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carrera_codigo">
+                                <i class="fas fa-graduation-cap"></i>
+                                Carrera *
+                            </label>
+                            <select id="carrera_codigo" name="carrera_codigo" class="form-control" required>
+                                <option value="">Seleccione una carrera</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="materia_codigo">
+                                <i class="fas fa-book"></i>
+                                Materia *
+                            </label>
+                            <select id="materia_codigo" name="materia_codigo" class="form-control" required disabled>
+                                <option value="">Seleccione una materia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="seccion_id">
+                                <i class="fas fa-door-open"></i>
+                                Sección *
+                            </label>
+                            <select id="seccion_id" name="seccion_id" class="form-control" required disabled>
+                                <option value="">Seleccione una sección</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="estudiantes-preview" id="estudiantesPreview">
+                        <div class="loading-estudiantes">
+                            <i class="fas fa-info-circle"></i>
+                            Seleccione carrera, materia y sección para cargar estudiantes
+                        </div>
+                    </div>
+                    <div class="date-filter-system">
+                        <div class="date-info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Período académico:</span>
+                            <strong id="periodoAcademico">2024-1</strong>
+                        </div>
+                        
+                        <div class="date-range-info">
+                            <div class="range-item">
+                                <i class="fas fa-calendar-day"></i>
+                                <span>Días de evaluación:</span>
+                                <strong id="diasEvaluacion">Lunes y Jueves</strong>
+                            </div>
+                            <div class="range-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Rango disponible:</span>
+                                <strong id="rangoFechas">15/01/2024 - 15/03/2024</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="date-selector-system">
+                            <label for="fecha_evaluacion">
+                                <i class="fas fa-calendar-check"></i>
+                                Seleccionar fecha de evaluación:
+                            </label>
+                            <select id="fecha_evaluacion" class="form-select system-date-select" required>
+                                <option value="">-- Seleccione una fecha --</option>
+                            </select>
+                            
+                            <div class="date-hint-system">
+                                <i class="fas fa-clock"></i>
+                                <span>Solo se muestran los días habilitados para evaluaciones</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-file-alt"></i>
-                        Información de la Rúbrica
+                        Información de la Evaluación
                     </h3>
-
+                    <div class="form-group">
+                        <label for="observaciones">
+                            <i class="fas fa-comment"></i>
+                            Contenido
+                        </label>
+                        <textarea id="contenido" name="contenido"
+                                class="form-control" rows="3"
+                                placeholder="Temática de la planificación a evaluar durante el exámen.">
+                        </textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="competencias">
+                            <i class="fas fa-comment"></i>
+                            Competencias
+                        </label>
+                        <textarea id="competencias" name="competencias"
+                                class="form-control" rows="3"
+                                placeholder="Habilidades o conocimientos que se evaluarán del estudiante.">
+                        </textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="competencias">
+                            <i class="fas fa-comment"></i>
+                            Instrumentos
+                        </label>
+                        <textarea id="instrumentos" name="instrumentos"
+                                class="form-control" rows="3"
+                                placeholder="Herramientas a utilizar para evaluar al estudiante.">
+                        </textarea>
+                    </div>
+                    <div>
+                        <label for="evidencia_aprendizaje">
+                            <i class="fas fa-comment"></i>
+                            Evidencia de Aprendizaje
+                        </label>
+                        <textarea id="evidencia_aprendizaje" name="evidencia_aprendizaje"
+                                class="form-control" rows="3"
+                                placeholder="Características que tiene la evaluación para evidenciar el saber del estudiante.">
+                        </textarea>
+                    </div>
+                    <div>
+                    <label for="competencias">
+                            <i class="fas fa-comment"></i>
+                            Indicadores de Competencia
+                        </label>
+                        <textarea id="instrumentos" name="instrumentos"
+                                class="form-control" rows="3"
+                                placeholder="Hazañas del estudiante en la evaluación que indiquen su competencia en el tema.">
+                        </textarea>
+                    </div>
+                    <div>
+                        <label for="competencias">
+                            <i class="fas fa-comment"></i>
+                            Actividades de Aprendizaje
+                        </label>
+                        <textarea id="instrumentos" name="instrumentos"
+                                class="form-control" rows="3"
+                                placeholder="Tipos de actividades a desempeñar en la evaluación.">
+                        </textarea>
+                    </div>
+                    <div>
+                        <label for="competencias">
+                            <i class="fas fa-comment"></i>
+                            Recursos o Herramientos
+                        </label>
+                        <textarea id="instrumentos" name="instrumentos"
+                                class="form-control" rows="3"
+                                placeholder="Herramientas a utilizar por el estudiante en la evaluación.">
+                        </textarea>
+                    </div>
+                    
+                </div>
+                <!-------------
                     <div class="form-row">
                         <div class="form-group">
                             <label for="rubrica_id">
@@ -185,54 +342,7 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-users"></i>
-                        Selección de Estudiantes
-                    </h3>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="carrera_codigo">
-                                <i class="fas fa-graduation-cap"></i>
-                                Carrera *
-                            </label>
-                            <select id="carrera_codigo" name="carrera_codigo" class="form-control" required>
-                                <option value="">Seleccione una carrera</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="materia_codigo">
-                                <i class="fas fa-book"></i>
-                                Materia *
-                            </label>
-                            <select id="materia_codigo" name="materia_codigo" class="form-control" required disabled>
-                                <option value="">Seleccione una materia</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="seccion_id">
-                                <i class="fas fa-door-open"></i>
-                                Sección *
-                            </label>
-                            <select id="seccion_id" name="seccion_id" class="form-control" required disabled>
-                                <option value="">Seleccione una sección</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="estudiantes-preview" id="estudiantesPreview">
-                        <div class="loading-estudiantes">
-                            <i class="fas fa-info-circle"></i>
-                            Seleccione carrera, materia y sección para cargar estudiantes
-                        </div>
-                    </div>
-                </div>
+                ------------->
 
                 <div class="form-section">
                     <h3 class="section-title">

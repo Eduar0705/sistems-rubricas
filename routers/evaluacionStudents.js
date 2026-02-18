@@ -180,8 +180,11 @@ router.get('/api/evaluacion/:id/detalles', (req, res) => {
 
                 const queryNiveles = `
                     SELECT
-                        criterio_id, nombre_nivel,
-                        descripcion, puntaje_maximo AS puntaje, orden
+                        criterio_id,
+                        nombre_nivel,
+                        descripcion,
+                        puntaje_maximo AS puntaje,
+                        orden
                     FROM nivel_desempeno
                     WHERE criterio_id IN (?)
                     ORDER BY criterio_id, orden
