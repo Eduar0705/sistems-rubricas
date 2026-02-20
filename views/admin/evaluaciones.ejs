@@ -11,7 +11,6 @@
 </head>
 <body>
     <%- include('../inc/menu.ejs') %>
-
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
@@ -122,13 +121,39 @@
             </div>
 
             <form id="formAddEvaluacion" class="modal-body-evaluacion">
-
+            <div class="form-group">
+                        <label for="observaciones">
+                            <i class="fas fa-newspaper-o"></i>
+                            Contenido (NOMBRE DE LA EVALUACIÓN)
+                        </label>
+                        <textarea id="contenido" name="contenido"
+                                class="form-control" rows="3"
+                                placeholder="Temática de la planificación a evaluar durante el exámen."
+                                required></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
+                            <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
+                            min="1" max="100" step="0.1" value="5" placeholder="Mínimo 5%">
+                            <small class="form-help">Mínimo: 1% </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="estrategias_eval">
+                                <i class="fas fa-graduation-cap"></i>
+                                Estrategias de evaluación *
+                            </label>
+                            <select id="estrategias_eval" name="estrategias_eval" class="form-control" required>
+                                <option value="">Seleccione las estrategias para evaluar</option>
+                            </select>
+                        </div>
+                    </div>
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-users"></i>
                         Selección de Estudiantes
                     </h3>
-
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carrera_codigo">
@@ -162,13 +187,13 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="estudiantes-preview" id="estudiantesPreview">
                         <div class="loading-estudiantes">
                             <i class="fas fa-info-circle"></i>
                             Seleccione carrera, materia y sección para cargar estudiantes
                         </div>
                     </div>
+                    <br>
                     <div class="date-filter-system">
                         <div class="date-info-box">
                             <i class="fas fa-info-circle"></i>
@@ -194,7 +219,7 @@
                                 <i class="fas fa-calendar-check"></i>
                                 Seleccionar fecha de evaluación:
                             </label>
-                            <select id="fecha_evaluacion" class="form-select system-date-select" required>
+                            <select id="fecha_evaluacion" class="form-select system-date-select" required disabled>
                                 <option value="">-- Seleccione una fecha --</option>
                             </select>
                             
@@ -208,77 +233,73 @@
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-file-alt"></i>
-                        Información de la Evaluación
+                        Información Adicional de la Evaluación
                     </h3>
                     <div class="form-group">
-                        <label for="observaciones">
-                            <i class="fas fa-comment"></i>
-                            Contenido
-                        </label>
-                        <textarea id="contenido" name="contenido"
-                                class="form-control" rows="3"
-                                placeholder="Temática de la planificación a evaluar durante el exámen.">
-                        </textarea>
+                        <label for="porcentaje">Cantidad de personas  *</label>
+                        <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
+                          min="1" max="30" step="1" value="1" placeholder="1 para individuales, 2 para evaluaciones en pareja, etc.">
+                        <small class="form-help"> Cantidad de integrantes por evaluación, sea individual o grupal.</small>
                     </div>
                     <div class="form-group">
                         <label for="competencias">
-                            <i class="fas fa-comment"></i>
+                            <i class="fas fa-sticky-note"></i>
                             Competencias
                         </label>
                         <textarea id="competencias" name="competencias"
                                 class="form-control" rows="3"
-                                placeholder="Habilidades o conocimientos que se evaluarán del estudiante.">
-                        </textarea>
+                                placeholder="Habilidades o conocimientos que se evaluarán del estudiante."
+                                required></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="competencias">
-                            <i class="fas fa-comment"></i>
+                        <label for="instrumentos">
+                            <i class="fas fa-gears"></i>
                             Instrumentos
                         </label>
                         <textarea id="instrumentos" name="instrumentos"
                                 class="form-control" rows="3"
-                                placeholder="Herramientas a utilizar para evaluar al estudiante.">
-                        </textarea>
+                                placeholder="Herramientas a utilizar para evaluar al estudiante."
+                                required></textarea>
                     </div>
-                    <div>
+                    <div class="form-group">
                         <label for="evidencia_aprendizaje">
-                            <i class="fas fa-comment"></i>
+                            <i class="fas fa-search"></i>
                             Evidencia de Aprendizaje
                         </label>
                         <textarea id="evidencia_aprendizaje" name="evidencia_aprendizaje"
                                 class="form-control" rows="3"
-                                placeholder="Características que tiene la evaluación para evidenciar el saber del estudiante.">
-                        </textarea>
+                                placeholder="Características que tiene la evaluación para evidenciar el saber del estudiante."
+                                required></textarea>
                     </div>
-                    <div>
-                    <label for="competencias">
-                            <i class="fas fa-comment"></i>
+                    <div class="form-group">
+                    <label for="indicadores_competencia">
+                            <i class="fas fa-thermometer"></i>
                             Indicadores de Competencia
                         </label>
-                        <textarea id="instrumentos" name="instrumentos"
+                        <textarea id="indicadores_competencia" name="indicadores_competencia"
                                 class="form-control" rows="3"
-                                placeholder="Hazañas del estudiante en la evaluación que indiquen su competencia en el tema.">
-                        </textarea>
+                                placeholder="Hazañas del estudiante en la evaluación que indiquen su competencia en el tema."
+                                required></textarea>
                     </div>
-                    <div>
-                        <label for="competencias">
-                            <i class="fas fa-comment"></i>
+                    <div class="form-group">
+                        <label for="actividades_aprendizaje">
+                            <i class="fas fa-pencil"></i>
                             Actividades de Aprendizaje
                         </label>
-                        <textarea id="instrumentos" name="instrumentos"
+                        <textarea id="actividades_aprendizaje" name="actividades_aprendizaje"
                                 class="form-control" rows="3"
-                                placeholder="Tipos de actividades a desempeñar en la evaluación.">
-                        </textarea>
+                                placeholder="Tipos de actividades a desempeñar en la evaluación."
+                                required></textarea>
                     </div>
-                    <div>
-                        <label for="competencias">
-                            <i class="fas fa-comment"></i>
+                    <div class="form-group">
+                        <label for="recursos_herramientas">
+                            <i class="fas fa-wrench"></i>
                             Recursos o Herramientos
                         </label>
-                        <textarea id="instrumentos" name="instrumentos"
+                        <textarea id="recursos_herramientas" name="recursos_herramientas"
                                 class="form-control" rows="3"
-                                placeholder="Herramientas a utilizar por el estudiante en la evaluación.">
-                        </textarea>
+                                placeholder="Herramientas a utilizar por el estudiante en la evaluación."
+                                required></textarea>
                     </div>
                     
                 </div>
@@ -400,9 +421,11 @@
             </div>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../js/home.js"></script>
+    <script>
+    window.evaluaciones = '<%- JSON.stringify(evaluaciones) %>';    
+</script>
     <script src="../js/evaluacion-Admin.js"></script>
     <script>
         // Funciones del modal de ver detalles

@@ -8,6 +8,8 @@ Luego de la primera consulta, evaluacionStudents.js no vuelve a usarse, sino que
 tienen casi los mismos contenidos
 
 Detalle global:
+		- CAMPO DE EVALUACION: semana. Sinceramente creo que lo podemos borrar. No haria daño y otros datos llegan al
+		mismo propósito.
 		- PENDIENTE: Nuevo estandar de horario_seccion. Presente en la query de seccion de evaluacionAdmin.js, 
 		eliminamos el aula como campo y lo agregamos directamente a horario. Implementar en otras querys con horario y aula.
 Refactorizados:

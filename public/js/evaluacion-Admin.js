@@ -1,14 +1,13 @@
 // Variables globales
 let estudiantesSeleccionados = [];
-
 // Variables para paginación y filtrado
 let currentPage = 1;
 let entriesPerPage = 5;
 let allRows = []; // Todas las filas originales
 let filteredRows = []; // Filas después de aplicar filtros
-// Variables para fechas del sistema
+let configuracionFechas = null;
 let fechasSistema = [];
-let configuracionSistema = {};
+let horariosSeccion = []; // Guardar todos los horarios de la sección
 
 // Aplicar clases de estado cuando se cargue la página
 document.addEventListener('DOMContentLoaded', function() {
@@ -46,7 +45,7 @@ function filtrarEvaluaciones() {
         // Filtro por docente
         const matchDocente = !docenteFilter || docenteAttr === docenteFilter;
         
-        // Filtro por estado - CORREGIDO: el estado está en la columna 7 (octava columna)
+        // Filtro por estado
         let matchEstado = true;
         if (estadoFilter) {
             const estadoCell = row.cells[7]?.textContent.trim() || ''; // Columna de estado (índice 7)
@@ -100,6 +99,7 @@ function openModalEvaluacion() {
     document.getElementById('modalAddEvaluacion').classList.add('active');
     document.body.style.overflow = 'hidden';
     //cargarRubricas();
+    cargarEstrategias();
     cargarCarreras();
 }
 
@@ -114,8 +114,28 @@ function closeModalEvaluacion() {
     document.getElementById('btnGuardarEvaluacion').disabled = true;
     estudiantesSeleccionados = [];
 }
-
-// Cargar rúbricas disponibles
+async function cargarEstrategias() {
+    try {
+        const response = await fetch('/api/estrategias_eval');
+        const data = await response.json();
+        
+        if (data.success) {
+            const select = document.getElementById('estrategias_eval');
+            select.innerHTML = '<option value="">Seleccione una carrera</option>';
+            
+            data.estrategias_eval.forEach(estrategia => {
+                const option = document.createElement('option');
+                option.value = estrategia.id;
+                option.textContent = estrategia.nombre;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar carreras:', error);
+        Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
+    }
+}
+/* Cargar rúbricas disponibles
 async function cargarRubricas() {
     try {
         const response = await fetch('/api/rubricas/activas');
@@ -138,6 +158,7 @@ async function cargarRubricas() {
         Swal.fire('Error', 'No se pudieron cargar las rúbricas', 'error');
     }
 }
+*/
 
 // Cargar carreras
 async function cargarCarreras() {
@@ -251,6 +272,21 @@ async function cargarSecciones(materiaCodigo) {
         Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
     }
 }
+// Evento cuando se escribe en un campo tipo textarea
+document.getElementById('seccion_id')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('fecha_evaluacion')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('contenido')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('competencias')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('instrumentos')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('evidencia_aprendizaje')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('indicadores_competencia')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('actividades_aprendizaje')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('recursos_herramientas')?.addEventListener('input', verificarFormularioTrasCampo);
+
+function verificarFormularioTrasCampo()
+{
+    verificarFormularioCompleto();
+}
 
 // Evento cuando se selecciona una sección
 document.getElementById('seccion_id')?.addEventListener('change', async function() {
@@ -320,10 +356,22 @@ function mostrarEstudiantes(estudiantes) {
 // Verificar si el formulario está completo
 function verificarFormularioCompleto() {
     const btnGuardar = document.getElementById('btnGuardarEvaluacion');
+    const fecha_evaluacion = document.getElementById('fecha_evaluacion');
+    const contenido = document.getElementById('contenido');
+    const competencias = document.getElementById('competencias');
+    const instrumentos = document.getElementById('instrumentos');
+    const evidencia_aprendizaje = document.getElementById('evidencia_aprendizaje');
+    const indicadores_competencia = document.getElementById('indicadores_competencia');
+    const actividades_aprendizaje = document.getElementById('actividades_aprendizaje');
+    const recursos_herramientas = document.getElementById('recursos_herramientas');
     
-    if (estudiantesSeleccionados.length > 0) {
+    if (estudiantesSeleccionados.length > 0 && fecha_evaluacion.value && contenido.value && competencias.value
+        && instrumentos.value && evidencia_aprendizaje.value && indicadores_competencia.value && 
+        actividades_aprendizaje.value && recursos_herramientas.value) 
+    {
         btnGuardar.disabled = false;
-    } else {
+    } else 
+    {
         btnGuardar.disabled = true;
     }
 }
@@ -331,16 +379,26 @@ function verificarFormularioCompleto() {
 // Guardar evaluación
 async function guardarEvaluacion() {
     const observaciones = document.getElementById('observaciones').value;
+    const fecha_evaluacion = document.getElementById('fecha_evaluacion').value;
+    const contenido = document.getElementById('contenido').value;
+    const competencias = document.getElementById('competencias').value;
+    const instrumentos = document.getElementById('instrumentos').value;
+    const evidencia_aprendizaje = document.getElementById('evidencia_aprendizaje').value;
+    const indicadores_competencia = document.getElementById('indicadores_competencia').value;
+    const actividades_aprendizaje = document.getElementById('actividades_aprendizaje').value;
+    const recursos_herramientas = document.getElementById('recursos_herramientas').value;
 
-    if (estudiantesSeleccionados.length === 0) {
-        Swal.fire('Error', 'No hay estudiantes seleccionados', 'error');
+    if (estudiantesSeleccionados.length == 0 || !fecha_evaluacion || !contenido || !competencias
+        || !instrumentos || !evidencia_aprendizaje || !indicadores_competencia || 
+        !actividades_aprendizaje || !recursos_herramientas) {
+        Swal.fire('Error', 'No todos los campos fueron llenados. Por favor, asegurese de haber respondido todos.', 'error');
         return;
     }
 
     // Confirmar creación
     const result = await Swal.fire({
         title: '¿Crear evaluaciones?',
-        html: `Se crearán <strong>${estudiantesSeleccionados.length}</strong> evaluación(es) para los estudiantes de la sección seleccionada`,
+        html: `Se crearán evaluaciones para los <strong>${estudiantesSeleccionados.length}</strong> estudiantes de la sección seleccionada`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, crear',
@@ -367,9 +425,15 @@ async function guardarEvaluacion() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                rubrica_id: rubricaId,
-                estudiantes: estudiantesSeleccionados,
-                observaciones: observaciones
+                observaciones: observaciones,
+                fecha_evaluacion: fecha_evaluacion,
+                contenido: contenido,
+                competencias: competencias,
+                instrumentos: instrumentos,
+                evidencia_aprendizaje: evidencia_aprendizaje,
+                indicadores_competencia: indicadores_competencia,
+                actividades_aprendizaje: actividades_aprendizaje,
+                recursos_herramientas: recursos_herramientas,
             })
         });
 
@@ -649,36 +713,67 @@ function generatePaginationButtons() {
 }
 
 // Cargar configuración de fechas desde el backend
+// Cargar configuración de fechas desde el backend
 async function cargarConfiguracionFechas(seccionId) {
     try {
-        console.log('haciendo peticion de horarios')
-        // Aquí haces la petición a tu API para obtener la configuración
+        console.log('Cargando horarios para sección:', seccionId);
         const response = await fetch(`/api/seccion/${seccionId}/horario`);
-        const data = await response.json()
+        const data = await response.json();
 
         if (data.success && data.horarios.length > 0) {
-            dias_num = data.horarios.map(horario => horario.dia_num + 1); //Porque en la BD 0 = Lunes
-            dias = data.horarios.map(horario => horario.dia + 1);
-            configuracionSistema = {
-                ids: data.horarios.id,
+            // Guardar todos los horarios completos
+            horariosSeccion = data.horarios.map(horario => ({
+                id: horario.id,
+                dia: horario.dia,
+                dia_num: horario.dia_num,
+                aula: horario.aula,
+                modalidad: horario.modalidad,
+                hora_inicio: horario.hora_inicio,
+                hora_cierre: horario.hora_cierre,
+                id_seccion: horario.id_seccion
+            }));
+            
+            // CORRECCIÓN: Filtrar evaluaciones por el ID de sección actual
+            // Nota: Usamos seccionId (el parámetro) en lugar de horariosSeccion.id_seccion
+            console.log(seccionId)
+            evals = JSON.parse(window.evaluaciones)
+            console.log(evals.map(evalu => evalu.id_seccion))
+            const evaluacionesSecc = evals.filter(
+                evalu => evalu.id_seccion == seccionId
+            );
+            
+            console.log('Evaluaciones de esta sección:', evaluacionesSecc.length);
+            
+            // Crear array de fechas y IDs de horario con evaluaciones existentes de ESTA sección
+            const fechas_y_ids_horario = evaluacionesSecc.map(evalu => ({
+                fecha: formatearFechaParaInput(new Date(evalu.fecha_evaluacion)),
+                id_horario: evalu.id_horario
+            }));
+            
+            console.log('Fechas con evaluaciones existentes en esta sección:', fechas_y_ids_horario);
+
+            // Obtener días únicos permitidos
+            const diasUnicos = [...new Set(horariosSeccion.map(h => h.dia_num))];
+            
+            configuracionFechas = {
+                ids: horariosSeccion.map(h => h.id),
                 periodo: data.horarios[0].periodo,
-                diasPermitidos: dias_num, // Ej: [1, 4] para Lunes y Jueves
+                diasPermitidos: diasUnicos,
                 fechaInicio: data.horarios[0].fecha_inicio,
                 fechaFin: data.horarios[0].fecha_fin,
-                nombreDias: dias // Ej: ['Lunes', 'Jueves']
+                horarios: horariosSeccion
             };
             
-            // Actualizar UI con la configuración
             actualizarInfoSistema();
-            
-            // Generar fechas disponibles según configuración
-            generarFechasDisponibles();
+            // Pasar las fechas ocupadas de ESTA sección a la función
+            generarFechasDisponibles(fechas_y_ids_horario);
         }
     } catch (error) {
         console.error('Error al cargar configuración de fechas:', error);
         mostrarErrorFechas();
     }
 }
+
 
 // Actualizar la información del sistema en la UI
 function actualizarInfoSistema() {
@@ -687,64 +782,96 @@ function actualizarInfoSistema() {
     const rangoEl = document.getElementById('rangoFechas');
     
     if (periodoEl) {
-        periodoEl.textContent = configuracionSistema.periodo || 'No disponible';
+        periodoEl.textContent = configuracionFechas.periodo || 'No disponible';
     }
     
     if (diasEl) {
-        const nombreDias = configuracionSistema.nombreDias || 
-                          configuracionSistema.diasPermitidos.map(dia => obtenerNombreDia(dia));
-        diasEl.textContent = nombreDias.join(' y ');
+        // Obtener nombres de días únicos
+        const diasNombres = configuracionFechas.diasPermitidos
+            .map(diaNum => obtenerNombreDia(diaNum))
+            .filter((dia, index, self) => self.indexOf(dia) === index);
+        diasEl.textContent = diasNombres.join(', ');
     }
     
     if (rangoEl) {
-        const fechaInicio = formatearFechaLocal(configuracionSistema.fechaInicio);
-        const fechaFin = formatearFechaLocal(configuracionSistema.fechaFin);
+        const fechaInicio = formatearFechaLocal(configuracionFechas.fechaInicio);
+        const fechaFin = formatearFechaLocal(configuracionFechas.fechaFin);
         rangoEl.textContent = `${fechaInicio} - ${fechaFin}`;
     }
 }
 
-// Generar fechas disponibles según la configuración del sistema
-function generarFechasDisponibles() {
+// Modificar generarFechasDisponibles para recibir las fechas ocupadas
+function generarFechasDisponibles(fechasOcupadasSeccion = []) {
     fechasSistema = [];
     
-    const fechaInicio = new Date(configuracionSistema.fechaInicio);
-    const fechaFin = new Date(configuracionSistema.fechaFin);
-    const diasPermitidos = configuracionSistema.diasPermitidos;
+    // Crear un Set para búsqueda rápida de fechas ocupadas de ESTA sección
+    const fechasOcupadas = new Set(
+        fechasOcupadasSeccion.map(item => `${item.fecha}_${item.id_horario}`)
+    );
     
-    // Ajustar fechas
+    console.log('Fechas ocupadas de esta sección (Set):', fechasOcupadas);
+    console.log('IDs de horarios de esta sección:', configuracionFechas.horarios.map(h => h.id));
+    
+    const fechaInicio = new Date(configuracionFechas.fechaInicio);
+    const fechaFin = new Date(configuracionFechas.fechaFin);
+    const diasPermitidos = configuracionFechas.diasPermitidos;
+    
     fechaInicio.setHours(0, 0, 0, 0);
     fechaFin.setHours(0, 0, 0, 0);
     
-    // Recorrer el rango de fechas
     const fechaActual = new Date(fechaInicio);
     while (fechaActual <= fechaFin) {
         const diaSemana = fechaActual.getDay();
         
+        // Convertir día de JS a tu formato (lunes=0)
+        let diaEnTuFormato = diaSemana === 0 ? 6 : diaSemana - 1;
+        
         // Verificar si el día está permitido
-        if (diasPermitidos.includes(diaSemana)) {
-            fechasSistema.push({
-                fecha: new Date(fechaActual),
-                fechaStr: formatearFechaParaInput(fechaActual),
-                fechaLocal: formatearFechaLocal(fechaActual),
-                diaSemana: obtenerNombreDia(diaSemana),
-                diaNumero: diaSemana
+        if (diasPermitidos.includes(diaEnTuFormato)) {
+            // Buscar TODOS los horarios para este día
+            const horariosDelDia = configuracionFechas.horarios.filter(
+                h => h.dia_num === diaEnTuFormato
+            );
+            
+            // Por cada horario en este día, crear una opción de fecha
+            horariosDelDia.forEach(horario => {
+                const fechaStr = formatearFechaParaInput(fechaActual);
+                const claveFechaHorario = `${fechaStr}_${horario.id}`;
+                
+                console.log(`Evaluando: ${claveFechaHorario} - Ocupado? ${fechasOcupadas.has(claveFechaHorario)}`);
+                
+                // Solo agregar si NO hay evaluación en ESTA sección para esta fecha y horario
+                if (!fechasOcupadas.has(claveFechaHorario)) {
+                    fechasSistema.push({
+                        fecha: new Date(fechaActual),
+                        fechaStr: fechaStr,
+                        fechaLocal: formatearFechaLocal(fechaActual),
+                        diaSemana: horario.dia,
+                        diaNumero: horario.dia_num,
+                        horarioId: horario.id,
+                        aula: horario.aula,
+                        modalidad: horario.modalidad,
+                        horaInicio: horario.hora_inicio,
+                        horaCierre: horario.hora_cierre
+                    });
+                }
             });
         }
         
-        // Avanzar un día
         fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
-    // Actualizar el select con las fechas generadas
+    console.log(`Fechas disponibles generadas: ${fechasSistema.length}`);
+    fechasSistema.sort((a, b) => a.fecha - b.fecha);
     actualizarSelectFechas();
 }
 
 // Actualizar el select con las fechas disponibles
 function actualizarSelectFechas() {
     const select = document.getElementById('fecha_evaluacion');
+    select.disabled = false;
     if (!select) return;
     
-    // Limpiar opciones existentes (mantener la primera)
     select.innerHTML = '<option value="">-- Seleccione una fecha --</option>';
     
     if (fechasSistema.length === 0) {
@@ -756,18 +883,30 @@ function actualizarSelectFechas() {
         return;
     }
     
-    // Agrupar fechas por mes para mejor organización
     const fechasPorMes = agruparFechasPorMes(fechasSistema);
     
     for (const [mes, fechas] of Object.entries(fechasPorMes)) {
-        // Crear grupo de opciones
         const optgroup = document.createElement('optgroup');
         optgroup.label = mes;
         
         fechas.forEach(fecha => {
             const option = document.createElement('option');
-            option.value = fecha.fechaStr;
-            option.textContent = `${fecha.fechaLocal} (${fecha.diaSemana})`;
+            
+            // Guardar TODA la información relevante
+            const optionData = {
+                fecha: fecha.fechaStr,
+                horarioId: fecha.horarioId,
+                diaNumero: fecha.diaNumero
+            };
+            
+            option.value = JSON.stringify(optionData);
+            
+            // Mostrar información completa en el texto
+            const horaInicioFormateada = fecha.horaInicio ? fecha.horaInicio.substring(0,5) : '';
+            const horaCierreFormateada = fecha.horaCierre ? fecha.horaCierre.substring(0,5) : '';
+            
+            option.textContent = `${fecha.fechaLocal} (${fecha.diaSemana}) - ${horaInicioFormateada} a ${horaCierreFormateada} - Aula: ${fecha.aula}`;
+            
             optgroup.appendChild(option);
         });
         
@@ -775,7 +914,75 @@ function actualizarSelectFechas() {
     }
 }
 
-// Agrupar fechas por mes
+// Función para obtener la fecha seleccionada con toda su información
+function getFechaSeleccionada() {
+    const select = document.getElementById('fecha_evaluacion');
+    if (!select || !select.value) return null;
+    
+    try {
+        return JSON.parse(select.value);
+    } catch (e) {
+        console.error('Error al parsear fecha seleccionada:', e);
+        return null;
+    }
+}
+
+// Función para filtrar por fecha seleccionada
+function filtrarPorFechaSistema() {
+    const fechaSeleccionada = getFechaSeleccionada();
+    
+    if (!fechaSeleccionada) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Seleccione una fecha',
+            text: 'Debe seleccionar una fecha para filtrar',
+            confirmButtonColor: '#667eea'
+        });
+        return;
+    }
+    
+    console.log('Fecha seleccionada:', fechaSeleccionada);
+    console.log('ID del horario:', fechaSeleccionada.horarioId);
+    console.log('Día:', fechaSeleccionada.diaSemana);
+    console.log('Horario:', fechaSeleccionada.horaInicio, '-', fechaSeleccionada.horaCierre);
+    console.log('Aula:', fechaSeleccionada.aula);
+    
+    // Aquí puedes aplicar el filtro con toda la información
+    aplicarFiltroFecha(fechaSeleccionada);
+}
+
+// Función para aplicar el filtro
+function aplicarFiltroFecha(infoFecha) {
+    // Guardar la información de la fecha seleccionada globalmente
+    window.fechaFiltroInfo = infoFecha;
+    
+    // Ejemplo de cómo podrías usar esta información
+    if (typeof cargarEvaluaciones === 'function') {
+        // Si tienes una función que carga evaluaciones por fecha y horario
+        cargarEvaluaciones({
+            fecha: infoFecha.fecha,
+            horarioId: infoFecha.horarioId,
+            aula: infoFecha.aula
+        });
+    }
+    
+    // Mostrar confirmación
+    Swal.fire({
+        icon: 'success',
+        title: 'Fecha seleccionada',
+        html: `
+            <strong>Fecha:</strong> ${infoFecha.fechaLocal}<br>
+            <strong>Día:</strong> ${infoFecha.diaSemana}<br>
+            <strong>Horario:</strong> ${infoFecha.horaInicio?.substring(0,5)} - ${infoFecha.horaCierre?.substring(0,5)}<br>
+            <strong>Aula:</strong> ${infoFecha.aula}<br>
+            <strong>Modalidad:</strong> ${infoFecha.modalidad}
+        `,
+        timer: 2000,
+        showConfirmButton: false
+    });
+}
+
+// Función para agrupar fechas por mes
 function agruparFechasPorMes(fechas) {
     const meses = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -799,47 +1006,6 @@ function agruparFechasPorMes(fechas) {
     return agrupadas;
 }
 
-// Función para obtener la fecha seleccionada
-function getFechaSeleccionada() {
-    const select = document.getElementById('fecha_evaluacion');
-    if (!select.value) return null;
-    
-    const fechaSeleccionada = fechasSistema.find(f => f.fechaStr === select.value);
-    return fechaSeleccionada || null;
-}
-
-// Función para filtrar por fecha seleccionada
-function filtrarPorFechaSistema() {
-    const fechaSeleccionada = getFechaSeleccionada();
-    
-    if (!fechaSeleccionada) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Seleccione una fecha',
-            text: 'Debe seleccionar una fecha para filtrar',
-            confirmButtonColor: '#667eea'
-        });
-        return;
-    }
-    
-    // Aquí aplicas el filtro con la fecha seleccionada
-    aplicarFiltroFecha(fechaSeleccionada.fechaStr);
-}
-
-// Función para aplicar el filtro (la conectas con tu sistema de filtrado existente)
-function aplicarFiltroFecha(fechaStr) {
-    // Aquí usas la fecha para filtrar tus evaluaciones
-    // Por ejemplo, si tienes un sistema de filtrado:
-    if (typeof filtrarEvaluaciones === 'function') {
-        // Guardar la fecha en algún lado para usarla en el filtro
-        window.fechaFiltro = fechaStr;
-        filtrarEvaluaciones();
-    }
-    
-    // O si necesitas recargar datos:
-    // cargarEvaluacionesPorFecha(fechaStr);
-}
-
 // Funciones auxiliares
 function formatearFechaParaInput(fecha) {
     const year = fecha.getFullYear();
@@ -859,7 +1025,8 @@ function formatearFechaLocal(fecha) {
 }
 
 function obtenerNombreDia(diaNumero) {
-    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    // Tu formato: 0 = Lunes, 1 = Martes, ..., 6 = Domingo
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     return dias[diaNumero] || '';
 }
 
@@ -868,6 +1035,12 @@ function mostrarErrorFechas() {
     if (select) {
         select.innerHTML = '<option value="">Error al cargar fechas</option>';
     }
+    
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar las fechas disponibles'
+    });
 }
 /*
 // Inicializar cuando el documento esté listo

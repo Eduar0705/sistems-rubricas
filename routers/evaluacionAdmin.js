@@ -12,6 +12,7 @@ router.get("/admin/evaluaciones", function(req, res) {
     const query = `
         SELECT
             evaluacion_id,
+            id_seccion,
             contenido_evaluacion,
             rubrica_id,
             nombre_rubrica,
@@ -26,6 +27,7 @@ router.get("/admin/evaluaciones", function(req, res) {
             completadas,
             pendientes,
             fecha_evaluacion,
+            id_horario,
             CASE
                 WHEN rubrica_id IS NULL THEN 'Pendiente'
                 WHEN rubrica_id IS NOT NULL AND total_evaluaciones=completadas THEN 'Completada'
@@ -48,7 +50,9 @@ router.get("/admin/evaluaciones", function(req, res) {
                     CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
                     COUNT(eval_est.id) AS completadas,
                     SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS pendientes,
-                    e.fecha_evaluacion
+                    e.fecha_evaluacion,
+                    e.id_horario,
+                    s.id AS id_seccion
                 FROM evaluacion e
                 LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
                 LEFT JOIN rubrica r ON ru.id_rubrica = r.id
@@ -118,6 +122,28 @@ router.get("/admin/evaluaciones", function(req, res) {
             currentPage: 'evaluaciones',
             evaluaciones: evaluacionesFormateadas
         });
+    });
+});
+// API: Obtener estrategias de evaluación
+router.get('/api/estrategias_eval', (req, res) => {
+    if(!req.session.login){
+        return res.json({ success: false, message: 'No autorizado' });
+    }
+
+    const query = `
+        SELECT 
+            *
+        FROM estrategia_eval
+        ORDER BY nombre
+    `;
+
+    conexion.query(query, (error, estrategias_eval) => {
+        if (error) {
+            console.error('Error al obtener carreras:', error);
+            return res.json({ success: false, message: 'Error al obtener carreras' });
+        }
+
+        res.json({ success: true, estrategias_eval });
     });
 });
 
@@ -311,57 +337,39 @@ router.post('/api/evaluaciones/crear', (req, res) => {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
-    const { rubrica_id, estudiantes, observaciones } = req.body;
+    const { observaciones, fecha_evaluacion, contenido, competencias, instrumentos, evidencia_aprendizaje,
+                indicadores_competencia, actividades_aprendizaje, recursos_herramientas, } = req.body;
 
     // Validaciones
-    if (!rubrica_id || !estudiantes || estudiantes.length === 0) {
+    if (!fecha_evaluacion || !contenido || !competencias  || !instrumentos || !evidencia_aprendizaje || 
+        !indicadores_competencia || !actividades_aprendizaje || !recursos_herramientas) {
         return res.json({ 
             success: false, 
             message: 'Datos incompletos' 
         });
     }
-
-    // Verificar que la rúbrica existe y está activa
-    const queryVerificar = 'SELECT id FROM rubrica WHERE id = ? AND activo = 1';
-    
-    conexion.query(queryVerificar, [rubrica_id], (error, results) => {
-        if (error) {
-            console.error('Error al verificar rúbrica:', error);
-            return res.json({ 
-                success: false, 
-                message: 'Error al verificar rúbrica' 
-            });
-        }
-
-        if (results.length === 0) {
-            return res.json({ 
-                success: false, 
-                message: 'La rúbrica no existe o no está activa' 
-            });
-        }
-
-        // Verificar que no existan evaluaciones duplicadas
+        fecha_evaluacion = JSON.parse(fecha_evaluacion)
+        // Verificar que no existan evaluaciones que choquen.
         const queryDuplicados = `
-            SELECT estudiante_cedula 
-            FROM evaluacion_estudiante 
-            WHERE rubrica_id = ? 
-            AND estudiante_cedula IN (?)
+            SELECT id 
+            FROM evaluacion 
+            WHERE fecha_evaluacion = ?
+            AND id_horario = ?
         `;
 
-        conexion.query(queryDuplicados, [rubrica_id, estudiantes], (error, duplicados) => {
+        conexion.query(queryDuplicados, [fecha_evaluacion.fecha, fecha_evaluacion.horarioId], (error, duplicados) => {
             if (error) {
-                console.error('Error al verificar duplicados:', error);
+                console.error('Error al verificar evaluaciones que choquen en horario:', error);
                 return res.json({ 
                     success: false, 
-                    message: 'Error al verificar duplicados' 
+                    message: 'Error al verificar evaluaciones que choquen en horario' 
                 });
             }
 
             if (duplicados.length > 0) {
-                const cedulasDuplicadas = duplicados.map(d => d.estudiante_cedula);
                 return res.json({ 
                     success: false, 
-                    message: `Ya existen evaluaciones para algunos estudiantes. Cédulas: ${cedulasDuplicadas.join(', ')}` 
+                    message: `Ya tienes evaluaciones en esta hora para esa sección` 
                 });
             }
 
@@ -373,8 +381,9 @@ router.post('/api/evaluaciones/crear', (req, res) => {
             ]);
 
             const queryInsertar = `
-                INSERT INTO evaluacion_estudiante 
-                (rubrica_id, estudiante_cedula, observaciones) 
+                INSERT INTO evaluacion 
+                (id_horario, ponderacion, cantidad_personas, contenido, competencias, instrumentos, evidencia_aprendizaje,
+                indicadores_competencia, actividades_aprendizaje, recursos_herramientas, fecha_evaluacion, id_seccion) 
                 VALUES ?
             `;
 
@@ -395,7 +404,6 @@ router.post('/api/evaluaciones/crear', (req, res) => {
             });
         });
     });
-});
 
 // API: Obtener carreras activas (duplicado, pero lo mantengo por compatibilidad)
 router.get('/api/carreras', (req, res) => {
@@ -420,7 +428,7 @@ router.get('/api/carreras', (req, res) => {
     });
 });
 
-// API: Obtener secciones por carrera
+// API: Obtener horarios por carrera
 router.get('/api/carrera/:carreraCodigo/secciones', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
@@ -452,7 +460,8 @@ router.get('/api/carrera/:carreraCodigo/secciones', (req, res) => {
         res.json({ success: true, secciones});
     });
 });
-// API: Obtener secciones por carrera
+
+// API: Obtener horarios por sección
 router.get('/api/seccion/:seccionId/horario', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
@@ -475,6 +484,7 @@ router.get('/api/seccion/:seccionId/horario', (req, res) => {
             INNER JOIN horario_seccion hs ON s.id = hs.id_seccion
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN periodo_academico pa ON pp.codigo_periodo = pa.codigo
+            LEFT JOIN evaluacion e ON hs.id = e.id_horario
             WHERE s.id = ?;
     `;
 
