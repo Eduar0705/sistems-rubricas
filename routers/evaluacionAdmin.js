@@ -274,7 +274,7 @@ router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
 
 // API: Obtener rúbricas activas con detalle de carrera, materia, sección y docente
 router.get('/api/rubricas/activas', (req, res) => {
-    if(!req.session.login){
+    if(!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -332,79 +332,142 @@ router.get('/api/rubricas/activas', (req, res) => {
 });
 
 // API: Crear evaluaciones
-router.post('/api/evaluaciones/crear', (req, res) => {
-    if(!req.session.login){
+router.post('/api/evaluaciones/crear_en_horario', express.json(), (req, res) => {
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
-    const { observaciones, fecha_evaluacion, contenido, competencias, instrumentos, evidencia_aprendizaje,
-                indicadores_competencia, actividades_aprendizaje, recursos_herramientas, } = req.body;
+    const { 
+        fecha_evaluacion, id_horario, id_seccion, cant_personas, 
+        contenido, competencias, instrumentos, porcentaje, estrategias_eval 
+    } = req.body;
 
-    // Validaciones
-    if (!fecha_evaluacion || !contenido || !competencias  || !instrumentos || !evidencia_aprendizaje || 
-        !indicadores_competencia || !actividades_aprendizaje || !recursos_herramientas) {
-        return res.json({ 
-            success: false, 
-            message: 'Datos incompletos' 
-        });
+    // 1. Validaciones iniciales
+    if (!fecha_evaluacion || !id_horario || !id_seccion || !estrategias_eval || estrategias_eval.length === 0) {
+        return res.json({ success: false, message: 'Datos incompletos' });
     }
-        fecha_evaluacion = JSON.parse(fecha_evaluacion)
-        // Verificar que no existan evaluaciones que choquen.
-        const queryDuplicados = `
-            SELECT id 
-            FROM evaluacion 
-            WHERE fecha_evaluacion = ?
-            AND id_horario = ?
-        `;
 
-        conexion.query(queryDuplicados, [fecha_evaluacion.fecha, fecha_evaluacion.horarioId], (error, duplicados) => {
-            if (error) {
-                console.error('Error al verificar evaluaciones que choquen en horario:', error);
-                return res.json({ 
-                    success: false, 
-                    message: 'Error al verificar evaluaciones que choquen en horario' 
-                });
-            }
+    // 2. Verificar duplicados (Usando el pool directamente)
+    const queryDuplicados = `SELECT id FROM evaluacion WHERE fecha_evaluacion = ? AND id_horario = ?`;
+    
+    conexion.query(queryDuplicados, [fecha_evaluacion, id_horario], (error, duplicados) => {
+        if (error) {
+            console.error('Error duplicados:', error);
+            return res.json({ success: false, message: 'Error al verificar disponibilidad' });
+        }
 
-            if (duplicados.length > 0) {
-                return res.json({ 
-                    success: false, 
-                    message: `Ya tienes evaluaciones en esta hora para esa sección` 
-                });
-            }
+        if (duplicados.length > 0) {
+            return res.json({ success: false, message: 'Ya existe una evaluación en este horario' });
+        }
 
-            // Insertar las evaluaciones
-            const values = estudiantes.map(cedula => [
-                rubrica_id,
-                cedula,
-                observaciones || null
-            ]);
+        // 3. Obtener conexión para Transacción
+        conexion.getConnection((err, conn) => {
+            if (err) return res.json({ success: false, message: 'Error de conexión' });
 
-            const queryInsertar = `
-                INSERT INTO evaluacion 
-                (id_horario, ponderacion, cantidad_personas, contenido, competencias, instrumentos, evidencia_aprendizaje,
-                indicadores_competencia, actividades_aprendizaje, recursos_herramientas, fecha_evaluacion, id_seccion) 
-                VALUES ?
-            `;
+            conn.beginTransaction((err) => {
+                if (err) { conn.release(); return res.json({ success: false, message: 'Error de transacción' }); }
 
-            conexion.query(queryInsertar, [values], (error, result) => {
-                if (error) {
-                    console.error('Error al crear evaluaciones:', error);
-                    return res.json({ 
-                        success: false, 
-                        message: 'Error al crear las evaluaciones' 
+                const insertEval = `INSERT INTO evaluacion (id_horario, ponderacion, cantidad_personas, contenido, competencias, instrumentos, fecha_evaluacion, id_seccion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                const valoresEval = [id_horario, porcentaje, cant_personas, contenido, competencias, instrumentos, fecha_evaluacion, id_seccion];
+
+                conn.query(insertEval, valoresEval, (err, result) => {
+                    if (err) {
+                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al crear evaluación' }); });
+                    }
+
+                    const eval_id = result.insertId;
+
+                    // 4. Inserción Múltiple (Mucho más eficiente que un loop)
+                    const valoresEstrategias = estrategias_eval.map(estId => [estId, eval_id]);
+                    const insertEstrategias = `INSERT INTO estrategia_empleada (id_estrategia, id_eval) VALUES ?`;
+
+                    conn.query(insertEstrategias, [valoresEstrategias], (err) => {
+                        if (err) {
+                            return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al insertar estrategias' }); });
+                        }
+
+                        // 5. Finalizar
+                        conn.commit((err) => {
+                            if (err) {
+                                return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al confirmar' }); });
+                            }
+                            conn.release();
+                            res.json({ success: true, message: 'Evaluación agregada exitosamente :D', id: eval_id });
+                        });
                     });
-                }
-
-                res.json({ 
-                    success: true, 
-                    message: 'Evaluaciones creadas exitosamente',
-                    cantidad: result.affectedRows
                 });
             });
         });
     });
+});
+router.post('/api/evaluaciones/crear_fuera_de_horario', express.json(), (req, res) => {
+    if (!req.session.login) {
+        return res.json({ success: false, message: 'No autorizado' });
+    }
 
+    const { 
+        fecha_evaluacion, id_horario, id_seccion, cant_personas, 
+        contenido, competencias, instrumentos, porcentaje, estrategias_eval 
+    } = req.body;
+
+    // 1. Validaciones iniciales
+    if (!fecha_evaluacion || !id_horario || !id_seccion || !estrategias_eval || estrategias_eval.length === 0) {
+        return res.json({ success: false, message: 'Datos incompletos' });
+    }
+
+    // 2. Verificar duplicados (Usando el pool directamente)
+    const queryDuplicados = `SELECT id FROM evaluacion WHERE fecha_evaluacion = ? AND id_horario = ?`;
+    
+    conexion.query(queryDuplicados, [fecha_evaluacion, id_horario], (error, duplicados) => {
+        if (error) {
+            console.error('Error duplicados:', error);
+            return res.json({ success: false, message: 'Error al verificar disponibilidad' });
+        }
+
+        if (duplicados.length > 0) {
+            return res.json({ success: false, message: 'Ya existe una evaluación en este horario' });
+        }
+
+        // 3. Obtener conexión para Transacción
+        conexion.getConnection((err, conn) => {
+            if (err) return res.json({ success: false, message: 'Error de conexión' });
+
+            conn.beginTransaction((err) => {
+                if (err) { conn.release(); return res.json({ success: false, message: 'Error de transacción' }); }
+
+                const insertEval = `INSERT INTO evaluacion (id_horario, ponderacion, cantidad_personas, contenido, competencias, instrumentos, fecha_evaluacion, id_seccion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+                const valoresEval = [id_horario, porcentaje, cant_personas, contenido, competencias, instrumentos, fecha_evaluacion, id_seccion];
+
+                conn.query(insertEval, valoresEval, (err, result) => {
+                    if (err) {
+                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al crear evaluación' }); });
+                    }
+
+                    const eval_id = result.insertId;
+
+                    // 4. Inserción Múltiple (Mucho más eficiente que un loop)
+                    const valoresEstrategias = estrategias_eval.map(estId => [estId, eval_id]);
+                    const insertEstrategias = `INSERT INTO estrategia_empleada (id_estrategia, id_eval) VALUES ?`;
+
+                    conn.query(insertEstrategias, [valoresEstrategias], (err) => {
+                        if (err) {
+                            return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al insertar estrategias' }); });
+                        }
+
+                        // 5. Finalizar
+                        conn.commit((err) => {
+                            if (err) {
+                                return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al confirmar' }); });
+                            }
+                            conn.release();
+                            res.json({ success: true, message: 'Evaluación agregada exitosamente :D', id: eval_id });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
 // API: Obtener carreras activas (duplicado, pero lo mantengo por compatibilidad)
 router.get('/api/carreras', (req, res) => {
     if(!req.session.login){

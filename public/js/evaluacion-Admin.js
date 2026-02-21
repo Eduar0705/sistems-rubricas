@@ -119,20 +119,48 @@ async function cargarEstrategias() {
         const data = await response.json();
         
         if (data.success) {
-            const select = document.getElementById('estrategias_eval');
-            select.innerHTML = '<option value="">Seleccione las estrategias para evaluar</option>';
-            
+            const div = document.getElementById('estrategias_eval');
+            div.innerHTML = ''
+            const labelHTML = ``;
+            let checkboxesHTML = '';
             data.estrategias_eval.forEach(estrategia => {
-                const option = document.createElement('option');
-                option.value = estrategia.id;
-                option.textContent = estrategia.nombre;
-                select.appendChild(option);
+                checkboxesHTML += `
+                    <div class="estrategia-item">
+                        <input type="checkbox" 
+                               class="form-check-input estrategia-item" 
+                               id="estrategia_${estrategia.id}" 
+                               value="${estrategia.id}"
+                               name="estrategias[]"
+                               ${estrategia.ponderable == 0 ? `onclick="verificarPonderacion(${estrategia.id})"` : 'onclick="verificarFormularioCompleto()"'}>
+                        <label class="form-check-label" 
+                               for="estrategia_${estrategia.id}">
+                            ${estrategia.nombre}
+                        </label>
+                    </div>
+                `;
             });
+            
+            div.innerHTML = labelHTML + checkboxesHTML;
         }
     } catch (error) {
         console.error('Error al cargar carreras:', error);
         Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
     }
+}
+function verificarPonderacion(id_chckbx)
+{
+    checkbox_no_ponderable = document.getElementById(`estrategia_${id_chckbx}`);
+    const input_pond = document.getElementById('porcentaje_evaluacion')
+    if (checkbox_no_ponderable.checked)
+    {
+        input_pond.disabled = true;
+        input_pond.value = 0;
+    }
+    else {
+        input_pond.value = 5;
+        input_pond.disabled = false;
+    }
+    verificarFormularioCompleto();
 }
 /* Cargar rúbricas disponibles
 async function cargarRubricas() {
@@ -271,22 +299,22 @@ async function cargarSecciones(materiaCodigo) {
         Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
     }
 }
-// Evento cuando se escribe en un campo tipo textarea
-document.getElementById('seccion_id')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('fecha_evaluacion_select')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('fecha_evaluacion_date')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('contenido')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('competencias')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('instrumentos')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('evidencia_aprendizaje')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('indicadores_competencia')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('actividades_aprendizaje')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('recursos_herramientas')?.addEventListener('input', verificarFormularioTrasCampo);
-
-function verificarFormularioTrasCampo()
-{
-    verificarFormularioCompleto();
-}
+// Eventos
+document.getElementById('seccion_id')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('fecha_evaluacion_select')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('fecha_evaluacion_date')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('hora_eval_inicio')?.addEventListener('change', verificarFormularioCompleto);
+document.getElementById('hora_eval_fin')?.addEventListener('change', verificarFormularioCompleto);
+document.getElementById('contenido')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('competencias')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('instrumentos')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('tipo_horario')?.addEventListener('change', verificarFormularioCompleto);
+document.getElementById('fecha_evaluacion_select')?.addEventListener('change', verificarFormularioCompleto);
+document.getElementById('fecha_evaluacion_date')?.addEventListener('change', verificarFormularioCompleto);
+document.getElementById('evidencia_aprendizaje')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('indicadores_competencia')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('actividades_aprendizaje')?.addEventListener('input', verificarFormularioCompleto);
+document.getElementById('recursos_herramientas')?.addEventListener('input', verificarFormularioCompleto);
 
 // Evento cuando se selecciona una sección
 document.getElementById('seccion_id')?.addEventListener('change', async function() {
@@ -360,23 +388,33 @@ function mostrarEstudiantes(estudiantes) {
     html += '</div>';
     container.innerHTML = html;
 }
-
+function condicionarFormularioCompleto()
+{
+    let checkboxes_estrags = Array.from(document
+                                            .getElementById('estrategias_eval')
+                                            .querySelectorAll('input[type="checkbox"]'))
+                                            .filter(estrategia_eval => estrategia_eval.checked)
+                                            .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
+    const porcentaje_eval = document.getElementById('porcentaje_evaluacion').value;
+    const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date').value;
+    const hora_eval_inicio = document.getElementById('hora_eval_inicio').value;
+    const hora_eval_fin = document.getElementById('hora_eval_fin').value;
+    const cant_personas = document.getElementById('cant_personas').value;
+    const id_seccion = document.getElementById('seccion_id').value;
+    const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select').value;
+    const contenido = document.getElementById('contenido').value;
+    const competencias = document.getElementById('competencias').value;
+    const instrumentos = document.getElementById('instrumentos').value;
+    
+    return ((fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin) || fecha_evaluacion_select) 
+        && cant_personas && id_seccion && contenido && porcentaje_eval && competencias && instrumentos
+        && checkboxes_estrags.length > 0
+        
+}
 // Verificar si el formulario está completo
 function verificarFormularioCompleto() {
     const btnGuardar = document.getElementById('btnGuardarEvaluacion');
-    const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date');
-    const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select');
-    const contenido = document.getElementById('contenido');
-    const competencias = document.getElementById('competencias');
-    const instrumentos = document.getElementById('instrumentos');
-    const evidencia_aprendizaje = document.getElementById('evidencia_aprendizaje');
-    const indicadores_competencia = document.getElementById('indicadores_competencia');
-    const actividades_aprendizaje = document.getElementById('actividades_aprendizaje');
-    const recursos_herramientas = document.getElementById('recursos_herramientas');
-    
-    if (estudiantesSeleccionados.length > 0 && (fecha_evaluacion_date.value || fecha_evaluacion_select.value) 
-        && contenido.value && competencias.value && instrumentos.value && evidencia_aprendizaje.value && 
-        indicadores_competencia.value && actividades_aprendizaje.value && recursos_herramientas.value) 
+    if (condicionarFormularioCompleto())
     {
         btnGuardar.disabled = false;
     } else 
@@ -387,27 +425,52 @@ function verificarFormularioCompleto() {
 
 // Guardar evaluación
 async function guardarEvaluacion() {
-    const observaciones = document.getElementById('observaciones').value;
-    const fecha_evaluacion = document.getElementById('fecha_evaluacion').value;
+    const checkboxes_estrags = Array.from(document
+                                            .getElementById('estrategias_eval')
+                                            .querySelectorAll('input[type="checkbox"]'))
+                                            .filter(estrategia_eval => estrategia_eval.checked)
+                                            .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
+    console.log(checkboxes_estrags)
+    const porcentaje_eval = document.getElementById('porcentaje_evaluacion').value;
+    const tipo_horario = document.getElementById('tipo_horario').value
+    const cant_personas = document.getElementById('cant_personas').value;
+    const id_seccion = document.getElementById('seccion_id').value;
     const contenido = document.getElementById('contenido').value;
     const competencias = document.getElementById('competencias').value;
     const instrumentos = document.getElementById('instrumentos').value;
-    const evidencia_aprendizaje = document.getElementById('evidencia_aprendizaje').value;
-    const indicadores_competencia = document.getElementById('indicadores_competencia').value;
-    const actividades_aprendizaje = document.getElementById('actividades_aprendizaje').value;
-    const recursos_herramientas = document.getElementById('recursos_herramientas').value;
-
-    if (estudiantesSeleccionados.length == 0 || !fecha_evaluacion || !contenido || !competencias
-        || !instrumentos || !evidencia_aprendizaje || !indicadores_competencia || 
-        !actividades_aprendizaje || !recursos_herramientas) {
-        Swal.fire('Error', 'No todos los campos fueron llenados. Por favor, asegurese de haber respondido todos.', 'error');
+    const observaciones = document.getElementById('observaciones').value;
+    let horario = "";
+    let fecha_evaluacion = "";
+    if(tipo_horario == "Sección")
+    {
+        console.log('caso seccion')
+        const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select').value;
+        horario = fecha_evaluacion_select;
+        console.log(horario)
+        fecha_evaluacion = JSON.parse(fecha_evaluacion_select);
+    }
+    else if (tipo_horario == "Otro")
+    {
+        console.log('caso otro')
+        const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date').value;
+        const hora_eval_inicio = document.getElementById('hora_eval_inicio').value;
+        const hora_eval_fin = document.getElementById('hora_eval_fin').value;
+        horario = fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin;
+        console.log(horario)
+        fecha_evaluacion = fecha_evaluacion_date
+    }
+    if(!
+        (horario && cant_personas && id_seccion && contenido && porcentaje_eval && competencias && instrumentos
+        && checkboxes_estrags.length > 0)
+      ) {
+        Swal.fire('Error', 'No todos los campos obligatorios fueron llenados. Por favor, asegurese de haber respondido los no opcionales.', 'error');
         return;
     }
 
     // Confirmar creación
     const result = await Swal.fire({
         title: '¿Crear evaluaciones?',
-        html: `Se crearán evaluaciones para los <strong>${estudiantesSeleccionados.length}</strong> estudiantes de la sección seleccionada`,
+        html: `Se creará la evaluación para los <strong>${estudiantesSeleccionados.length}</strong> estudiantes de la sección seleccionada`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, crear',
@@ -428,39 +491,83 @@ async function guardarEvaluacion() {
     });
 
     try {
-        const response = await fetch('/api/evaluaciones/crear', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                observaciones: observaciones,
-                fecha_evaluacion: fecha_evaluacion,
-                contenido: contenido,
-                competencias: competencias,
-                instrumentos: instrumentos,
-                evidencia_aprendizaje: evidencia_aprendizaje,
-                indicadores_competencia: indicadores_competencia,
-                actividades_aprendizaje: actividades_aprendizaje,
-                recursos_herramientas: recursos_herramientas,
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Evaluaciones creadas!',
-                html: `Se crearon <strong>${data.cantidad}</strong> evaluación(es) correctamente`,
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#667eea'
-            }).then(() => {
-                closeModalEvaluacion();
-                location.reload();
+        if (tipo_horario == "Sección")
+        {
+            const response = await fetch('/api/evaluaciones/crear_en_horario', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    observaciones: observaciones,
+                    fecha_evaluacion: fecha_evaluacion.fecha,
+                    id_horario: fecha_evaluacion.horarioId,
+                    id_seccion: id_seccion,
+                    cant_personas: cant_personas,
+                    contenido: contenido,
+                    competencias: competencias,
+                    instrumentos: instrumentos,
+                    porcentaje: porcentaje_eval,
+                    estrategias_eval: checkboxes_estrags
+                })
             });
-        } else {
-            Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Evaluaciones creadas!',
+                    html: `Se creó la evaluación correctamente`,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#667eea'
+                }).then(() => {
+                    closeModalEvaluacion();
+                    location.reload();
+                });
+            } else {
+                console.log("gdsfdsf")
+                Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
+            }
+        }
+        else if (tipo_horario == "Otro")
+        {
+            const response = await fetch('/api/evaluaciones/crear_fuera_de_horario', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    observaciones: observaciones,
+                    fecha_evaluacion: fecha_evaluacion.fecha,
+                    id_horario: fecha_evaluacion.horarioId,
+                    id_seccion: id_seccion,
+                    cant_personas: cant_personas,
+                    contenido: contenido,
+                    competencias: competencias,
+                    instrumentos: instrumentos,
+                    porcentaje: porcentaje_eval,
+                    estrategias_eval: checkboxes_estrags
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Evaluaciones creadas!',
+                    html: `Se creó la evaluación correctamente`,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#667eea'
+                }).then(() => {
+                    closeModalEvaluacion();
+                    location.reload();
+                });
+            } else {
+                console.log("gdsfdsf")
+                Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
@@ -778,54 +885,68 @@ function cambiarTipoHorario()
     const selectFechas = document.getElementById('fecha_evaluacion_select');
     const dateInput = document.getElementById('fecha_evaluacion_date');
     const hint = document.getElementById('date-eval-text');
+    const input_hora_inicio = document.getElementById('hora_eval_inicio');
+    const input_hora_fin = document.getElementById('hora_eval_fin');
     
     const tipo = tipoSelect.value;
     
     if (tipo === 'Sección') {
-        // Modo sección: mostrar select, ocultar date input
+        dateInput.value = ''
+        input_hora_inicio.value = '';
+        input_hora_fin.value = '';
         selectFechas.style.display = 'block';
         dateInput.style.display = 'none';
         dateInput.disabled = true;
         selectFechas.disabled = false;
+        input_hora_inicio.disabled = true;
+        input_hora_fin.disabled = true;
         
         // Actualizar hint
         hint.innerHTML = '<i class="fas fa-clock"></i> Solo se muestran los horarios de clases de la sección';
         
     } else if (tipo === 'Otro') {
         // Modo libre: ocultar select, mostrar date input
+        selectFechas.value = ''
         selectFechas.style.display = 'none';
         dateInput.style.display = 'block';
+        input_hora_inicio.style.display = 'block';
+        input_hora_fin.style.display = 'block';
         selectFechas.disabled = true;
         dateInput.disabled = false;
-        dateInput.min = configuracionFechas.fechaInicio
-        dateInput.max = configuracionFechas.fechaFin
+        input_hora_inicio.disabled = false;
+        input_hora_fin.disabled = false;
+        input_hora_inicio.value = '';
+        input_hora_fin.value = '';
+        dateInput.min = configuracionFechas.fechaInicio.slice(0,10);
+        dateInput.max = configuracionFechas.fechaFin.slice(0, 10);
         
         // Actualizar hint
         hint.innerHTML = '<i class="fas fa-calendar-alt"></i> Puedes seleccionar cualquier fecha del semestre';
     }
     else if (tipo == '')
     {
+        selectFechas.style.display = 'block';
+        dateInput.style.display = 'none';
         selectFechas.disabled = true;
         dateInput.disabled = true;
+        input_hora_inicio.disabled = true;
+        input_hora_fin.disabled = true;
         selectFechas.value = '';
         dateInput.value = '';
+        input_hora_inicio.value = '';
+        input_hora_fin.value = '';
     }
 }
-function convertirSelectADate(id_select) {
-    const select = document.getElementById(id_select);
-    
-    // Crear nuevo input date
-    const dateInput = document.createElement('input');
-    dateInput.type = 'date';
-    dateInput.id = select.id;
-    dateInput.className = select.className; // Copia clases
-    dateInput.name = select.name;
-    dateInput.required = select.required;
-    dateInput.disabled = false;
-    
-    // Reemplazar el select con el input
-    select.parentNode.replaceChild(dateInput, select);
-}
+document.getElementById('fecha_evaluacion_select')?.addEventListener('change', async function() {
+    const horas_eval_div = document.getElementById('horas_evaluacion');
+    fecha_select = JSON.parse(this.value)
+    inputs = horas_eval_div.querySelectorAll('input');
+    if (fecha_select)
+    {
+        inputs[0].value = fecha_select.horaInicio
+        inputs[1].value = fecha_select.horaCierre
+    }
+});
 // Actualizar la información del sistema en la UI
 function actualizarInfoSistema() {
     document.getElementById('date-eval-text').textContent = 'Solo se muestran los días habilitados para clases de la sección';
@@ -940,7 +1061,9 @@ function actualizarSelectFechas() {
             const optionData = {
                 fecha: fecha.fechaStr,
                 horarioId: fecha.horarioId,
-                diaNumero: fecha.diaNumero
+                diaNumero: fecha.diaNumero,
+                horaInicio: fecha.horaInicio,
+                horaCierre: fecha.horaCierre
             };
             
             option.value = JSON.stringify(optionData);
@@ -971,61 +1094,29 @@ function getFechaSeleccionada() {
     }
 }
 
-// Función para filtrar por fecha seleccionada
-function filtrarPorFechaSistema() {
-    const fechaSeleccionada = getFechaSeleccionada();
-    
-    if (!fechaSeleccionada) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Seleccione una fecha',
-            text: 'Debe seleccionar una fecha para filtrar',
-            confirmButtonColor: '#667eea'
-        });
-        return;
+function limitarHora(id_input)
+{
+    input_cambiado = document.getElementById(id_input);
+    console.log('limitando horas...')
+    if(id_input == 'hora_eval_inicio')
+    {
+        const input_hora_fin = document.getElementById('hora_eval_fin');
+        if(input_cambiado.value >= input_hora_fin.value)
+        {
+            input_hora_fin.value = ''
+        }
+        input_hora_fin.min = input_cambiado.value
     }
-    
-    console.log('Fecha seleccionada:', fechaSeleccionada);
-    console.log('ID del horario:', fechaSeleccionada.horarioId);
-    console.log('Día:', fechaSeleccionada.diaSemana);
-    console.log('Horario:', fechaSeleccionada.horaInicio, '-', fechaSeleccionada.horaCierre);
-    console.log('Aula:', fechaSeleccionada.aula);
-    
-    // Aquí puedes aplicar el filtro con toda la información
-    aplicarFiltroFecha(fechaSeleccionada);
-}
-
-// Función para aplicar el filtro
-function aplicarFiltroFecha(infoFecha) {
-    // Guardar la información de la fecha seleccionada globalmente
-    window.fechaFiltroInfo = infoFecha;
-    
-    // Ejemplo de cómo podrías usar esta información
-    if (typeof cargarEvaluaciones === 'function') {
-        // Si tienes una función que carga evaluaciones por fecha y horario
-        cargarEvaluaciones({
-            fecha: infoFecha.fecha,
-            horarioId: infoFecha.horarioId,
-            aula: infoFecha.aula
-        });
+    else if(id_input == 'hora_eval_fin')
+    {
+        const input_hora_inicio = document.getElementById('hora_eval_inicio');
+        if(input_cambiado.value <= input_hora_inicio.value)
+        {
+            input_hora_inicio.value = ''
+        }
+        input_hora_inicio.max = input_cambiado.value
     }
-    
-    // Mostrar confirmación
-    Swal.fire({
-        icon: 'success',
-        title: 'Fecha seleccionada',
-        html: `
-            <strong>Fecha:</strong> ${infoFecha.fechaLocal}<br>
-            <strong>Día:</strong> ${infoFecha.diaSemana}<br>
-            <strong>Horario:</strong> ${infoFecha.horaInicio?.substring(0,5)} - ${infoFecha.horaCierre?.substring(0,5)}<br>
-            <strong>Aula:</strong> ${infoFecha.aula}<br>
-            <strong>Modalidad:</strong> ${infoFecha.modalidad}
-        `,
-        timer: 2000,
-        showConfirmButton: false
-    });
 }
-
 // Función para agrupar fechas por mes
 function agruparFechasPorMes(fechas) {
     const meses = [

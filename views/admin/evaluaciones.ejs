@@ -123,7 +123,7 @@
             <form id="formAddEvaluacion" class="modal-body-evaluacion">
             <div class="form-group">
                         <label for="observaciones">
-                            <i class="fas fa-newspaper-o"></i>
+                            <i class="fas fa-newspaper"></i>
                             Contenido (NOMBRE DE LA EVALUACIÓN)
                         </label>
                         <textarea id="contenido" name="contenido"
@@ -131,26 +131,38 @@
                                 placeholder="Temática de la planificación a evaluar durante el exámen."
                                 required></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="estrategias_eval">
+                            <i class="fas fa-graduation-cap"></i>
+                            Estrategias de evaluación *
+                        </label>
+                        <div id="estrategias_eval" class ="estrategias-grid">
+
+                        </div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="estrategias_eval">
-                                <i class="fas fa-graduation-cap"></i>
-                                Estrategias de evaluación *
+                            <label for="porcentaje_evaluacion">
+                                <i class="fas fa-thermometer"></i>
+                                Porcentaje de Evaluación (%) *
                             </label>
-                            <select id="estrategias_eval" name="estrategias_eval" class="form-control" required>
-                                <option value="">Seleccione las estrategias para evaluar</option>
-                            </select>
+                            <input type="number" id="porcentaje_evaluacion" name="porcentaje_evaluacion" class="form-input" required
+                            min="1" max="100" step="0.1" value="5" placeholder="Mínimo 5%" onkeydown="return false">
+                            <small class="form-help">Mínimo: 1% (0% solo para diagnósticos)</small>
                         </div>
                         <div class="form-group">
-                            <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
-                            <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
-                            min="1" max="100" step="0.1" value="5" placeholder="Mínimo 5%">
-                            <small class="form-help">Mínimo: 1% </small>
+                            <label for="cant_personas">
+                                <i class ="fas fa-users"></i>
+                                Cantidad de personas  *
+                            </label>
+                            <input type="number" id="cant_personas" name="cant_personas" class="form-input" required
+                            min="1" max="30" step="1" value="1" placeholder="1 para individuales, 2 para evaluaciones en pareja, etc.">
+                            <small class="form-help"> Ej: individual (1), en pareja (2), grupal (+3), etc.</small>
                         </div>
                     </div>
                 <div class="form-section">
                     <h3 class="section-title">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-search"></i>
                         Selección de Estudiantes
                     </h3>
                     <div class="form-row">
@@ -200,7 +212,7 @@
                             <strong id="periodoAcademico">2024-1</strong>
                         </div>
                         <div class="date-selector-system">
-                            <label for="fecha_evaluacion">
+                            <label for="tipo_horario">
                                 <i class="fas fa-calendar-check"></i>
                                 Seleccione el horario donde lo realizará:
                             </label>
@@ -234,9 +246,14 @@
                                 <option value="">-- Seleccione una fecha --</option>
                             </select>
                             <input type='date' id="fecha_evaluacion_date" class="form-select system-date-select" style="display: none;" required disabled>
-                                <option value="">-- Seleccione una fecha --</option>
                             </input>
-                            
+                            <div class="form-row"></div>
+                            <div id="horas_evaluacion" class="time-inputs-compact">
+                                <label for="hora_eval_inicio">Hora de inicio</label>
+                                <input type="time" id="hora_eval_inicio" class="time-input" placeholder="Ej: 8:00" onchange="limitarHora(this.id)" disabled></input>
+                                <label for="hora_eval_fin">Hora de cierre </label>
+                                <input type="time" id="hora_eval_fin" class="time-input" placeholder="Ej: 9:45" onchange="limitarHora(this.id)" disabled></input>
+                            </div>
                             <div class="date-hint-system">
                                 <span id="date-eval-text">Aquí dictas qué horarios te aparecen para seleccionar cuándo se hará la evaluación</span>
                             </div>
@@ -247,14 +264,8 @@
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-file-alt"></i>
-                        Información Adicional de la Evaluación
+                        Información de la Evaluación
                     </h3>
-                    <div class="form-group">
-                        <label for="porcentaje">Cantidad de personas  *</label>
-                        <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
-                          min="1" max="30" step="1" value="1" placeholder="1 para individuales, 2 para evaluaciones en pareja, etc.">
-                        <small class="form-help"> Cantidad de integrantes por evaluación, sea individual o grupal.</small>
-                    </div>
                     <div class="form-group">
                         <label for="competencias">
                             <i class="fas fa-sticky-note"></i>
@@ -275,116 +286,11 @@
                                 placeholder="Herramientas a utilizar para evaluar al estudiante."
                                 required></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="evidencia_aprendizaje">
-                            <i class="fas fa-search"></i>
-                            Evidencia de Aprendizaje
-                        </label>
-                        <textarea id="evidencia_aprendizaje" name="evidencia_aprendizaje"
-                                class="form-control" rows="3"
-                                placeholder="Características que tiene la evaluación para evidenciar el saber del estudiante."
-                                required></textarea>
-                    </div>
-                    <div class="form-group">
-                    <label for="indicadores_competencia">
-                            <i class="fas fa-thermometer"></i>
-                            Indicadores de Competencia
-                        </label>
-                        <textarea id="indicadores_competencia" name="indicadores_competencia"
-                                class="form-control" rows="3"
-                                placeholder="Hazañas del estudiante en la evaluación que indiquen su competencia en el tema."
-                                required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="actividades_aprendizaje">
-                            <i class="fas fa-pencil"></i>
-                            Actividades de Aprendizaje
-                        </label>
-                        <textarea id="actividades_aprendizaje" name="actividades_aprendizaje"
-                                class="form-control" rows="3"
-                                placeholder="Tipos de actividades a desempeñar en la evaluación."
-                                required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="recursos_herramientas">
-                            <i class="fas fa-wrench"></i>
-                            Recursos o Herramientos
-                        </label>
-                        <textarea id="recursos_herramientas" name="recursos_herramientas"
-                                class="form-control" rows="3"
-                                placeholder="Herramientas a utilizar por el estudiante en la evaluación."
-                                required></textarea>
-                    </div>
-                    
                 </div>
-                <!-------------
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="rubrica_id">
-                                <i class="fas fa-list-check"></i>
-                                Rúbrica *
-                            </label>
-                            <select id="rubrica_id" name="rubrica_id" class="form-control" required>
-                                <option value="">Seleccione una rúbrica</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="rubricaInfo" class="rubrica-info-box" style="display: none;">
-                        <div class="info-row">
-                            <span class="info-label">Carrera:</span>
-                            <span class="info-value" id="rubricaCarrera">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Código carrera:</span>
-                            <span class="info-value" id="rubricaCarreraCodigo">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Semestre:</span>
-                            <span class="info-value" id="rubricaSemestre">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Materia:</span>
-                            <span class="info-value" id="rubricaMateria">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Código materia:</span>
-                            <span class="info-value" id="rubricaMateriaCodigo">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Sección:</span>
-                            <span class="info-value" id="rubricaSeccion">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Lapso:</span>
-                            <span class="info-value" id="rubricaLapso">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Docente:</span>
-                            <span class="info-value" id="rubricaDocente">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Tipo:</span>
-                            <span class="info-value" id="rubricaTipo">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Porcentaje:</span>
-                            <span class="info-value" id="rubricaPorcentaje">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">Modalidad:</span>
-                            <span class="info-value" id="rubricaModalidad">-</span>
-                        </div>
-                    </div>
-                </div>
-                ------------->
-
-                <div class="form-section">
-                    <h3 class="section-title">
+                <h3 class="section-title">
                         <i class="fas fa-info-circle"></i>
-                        Información Adicional
-                    </h3>
-
+                        Datos Adicionales
+                </h3>
                     <div class="form-group">
                         <label for="observaciones">
                             <i class="fas fa-comment"></i>
@@ -394,7 +300,6 @@
                                 class="form-control" rows="3"
                                 placeholder="Observaciones generales de la evaluación (opcional)"></textarea>
                     </div>
-                </div>
             </form>
 
             <div class="modal-footer-evaluacion">
