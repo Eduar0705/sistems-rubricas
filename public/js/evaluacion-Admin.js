@@ -107,7 +107,6 @@ function closeModalEvaluacion() {
     document.getElementById('modalAddEvaluacion').classList.remove('active');
     document.body.style.overflow = 'auto';
     document.getElementById('formAddEvaluacion').reset();
-    document.getElementById('rubricaInfo').style.display = 'none';
     document.getElementById('materia_codigo').disabled = true;
     document.getElementById('seccion_id').disabled = true;
     document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione carrera, materia y sección para cargar estudiantes</div>';
@@ -121,7 +120,7 @@ async function cargarEstrategias() {
         
         if (data.success) {
             const select = document.getElementById('estrategias_eval');
-            select.innerHTML = '<option value="">Seleccione una carrera</option>';
+            select.innerHTML = '<option value="">Seleccione las estrategias para evaluar</option>';
             
             data.estrategias_eval.forEach(estrategia => {
                 const option = document.createElement('option');
@@ -274,7 +273,8 @@ async function cargarSecciones(materiaCodigo) {
 }
 // Evento cuando se escribe en un campo tipo textarea
 document.getElementById('seccion_id')?.addEventListener('input', verificarFormularioTrasCampo);
-document.getElementById('fecha_evaluacion')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('fecha_evaluacion_select')?.addEventListener('input', verificarFormularioTrasCampo);
+document.getElementById('fecha_evaluacion_date')?.addEventListener('input', verificarFormularioTrasCampo);
 document.getElementById('contenido')?.addEventListener('input', verificarFormularioTrasCampo);
 document.getElementById('competencias')?.addEventListener('input', verificarFormularioTrasCampo);
 document.getElementById('instrumentos')?.addEventListener('input', verificarFormularioTrasCampo);
@@ -295,7 +295,15 @@ document.getElementById('seccion_id')?.addEventListener('change', async function
     if (seccionId) {
         await cargarEstudiantes(seccionId);
         await cargarConfiguracionFechas(seccionId);
+        document.getElementById('tipo_horario').disabled = false;
     } else {
+        select_tipo_horario = document.getElementById('tipo_horario');
+        select_tipo_horario.value = ''; 
+        select_tipo_horario.disabled = true;
+        date_input = document.getElementById('fecha_evaluacion_date')
+        date_input.value = ''; date_input.disabled = true;
+        date_select = document.getElementById('fecha_evaluacion_select')
+        date_select.value = ''; date_select.disabled = true;
         document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-info-circle"></i> Seleccione una sección para cargar estudiantes</div>';
     }
     verificarFormularioCompleto();
@@ -356,7 +364,8 @@ function mostrarEstudiantes(estudiantes) {
 // Verificar si el formulario está completo
 function verificarFormularioCompleto() {
     const btnGuardar = document.getElementById('btnGuardarEvaluacion');
-    const fecha_evaluacion = document.getElementById('fecha_evaluacion');
+    const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date');
+    const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select');
     const contenido = document.getElementById('contenido');
     const competencias = document.getElementById('competencias');
     const instrumentos = document.getElementById('instrumentos');
@@ -365,9 +374,9 @@ function verificarFormularioCompleto() {
     const actividades_aprendizaje = document.getElementById('actividades_aprendizaje');
     const recursos_herramientas = document.getElementById('recursos_herramientas');
     
-    if (estudiantesSeleccionados.length > 0 && fecha_evaluacion.value && contenido.value && competencias.value
-        && instrumentos.value && evidencia_aprendizaje.value && indicadores_competencia.value && 
-        actividades_aprendizaje.value && recursos_herramientas.value) 
+    if (estudiantesSeleccionados.length > 0 && (fecha_evaluacion_date.value || fecha_evaluacion_select.value) 
+        && contenido.value && competencias.value && instrumentos.value && evidencia_aprendizaje.value && 
+        indicadores_competencia.value && actividades_aprendizaje.value && recursos_herramientas.value) 
     {
         btnGuardar.disabled = false;
     } else 
@@ -711,72 +720,115 @@ function generatePaginationButtons() {
     };
     paginationContainer.appendChild(nextBtn);
 }
-
-// Cargar configuración de fechas desde el backend
-// Cargar configuración de fechas desde el backend
 async function cargarConfiguracionFechas(seccionId) {
+    // Filtrar evaluaciones por el ID de sección actual
+    evals = JSON.parse(window.evaluaciones);
+    const evaluacionesSecc = evals.filter(
+          evalu => evalu.id_seccion == seccionId);               
+    // Crear array de fechas y IDs de horario con evaluaciones existentes de ESTA sección
+    const fechas_y_ids_horario = evaluacionesSecc.map(evalu => ({
+        fecha: formatearFechaParaInput(new Date(evalu.fecha_evaluacion)),
+        id_horario: evalu.id_horario
+        }));
     try {
-        console.log('Cargando horarios para sección:', seccionId);
-        const response = await fetch(`/api/seccion/${seccionId}/horario`);
-        const data = await response.json();
+        if(!configuracionFechas?.seccion || configuracionFechas?.seccion != seccionId)
+        {
+            console.log('Cargando horarios para sección:', seccionId);
+            const response = await fetch(`/api/seccion/${seccionId}/horario`);
+            const data = await response.json();
 
-        if (data.success && data.horarios.length > 0) {
-            // Guardar todos los horarios completos
-            horariosSeccion = data.horarios.map(horario => ({
-                id: horario.id,
-                dia: horario.dia,
-                dia_num: horario.dia_num,
-                aula: horario.aula,
-                modalidad: horario.modalidad,
-                hora_inicio: horario.hora_inicio,
-                hora_cierre: horario.hora_cierre,
-                id_seccion: horario.id_seccion
-            }));
-            
-            // CORRECCIÓN: Filtrar evaluaciones por el ID de sección actual
-            // Nota: Usamos seccionId (el parámetro) en lugar de horariosSeccion.id_seccion
-            console.log(seccionId)
-            evals = JSON.parse(window.evaluaciones)
-            console.log(evals.map(evalu => evalu.id_seccion))
-            const evaluacionesSecc = evals.filter(
-                evalu => evalu.id_seccion == seccionId
-            );
-            
-            console.log('Evaluaciones de esta sección:', evaluacionesSecc.length);
-            
-            // Crear array de fechas y IDs de horario con evaluaciones existentes de ESTA sección
-            const fechas_y_ids_horario = evaluacionesSecc.map(evalu => ({
-                fecha: formatearFechaParaInput(new Date(evalu.fecha_evaluacion)),
-                id_horario: evalu.id_horario
-            }));
-            
-            console.log('Fechas con evaluaciones existentes en esta sección:', fechas_y_ids_horario);
-
-            // Obtener días únicos permitidos
-            const diasUnicos = [...new Set(horariosSeccion.map(h => h.dia_num))];
-            
-            configuracionFechas = {
-                ids: horariosSeccion.map(h => h.id),
-                periodo: data.horarios[0].periodo,
-                diasPermitidos: diasUnicos,
-                fechaInicio: data.horarios[0].fecha_inicio,
-                fechaFin: data.horarios[0].fecha_fin,
-                horarios: horariosSeccion
-            };
-            
+            if (data.success && data.horarios.length > 0) {
+                // Guardar todos los horarios completos
+                horariosSeccion = data.horarios.map(horario => ({
+                    id: horario.id,
+                    dia: horario.dia,
+                    dia_num: horario.dia_num,
+                    aula: horario.aula,
+                    modalidad: horario.modalidad,
+                    hora_inicio: horario.hora_inicio,
+                    hora_cierre: horario.hora_cierre,
+                    id_seccion: horario.id_seccion
+                }));
+                
+                // Obtener días únicos permitidos
+                const diasUnicos = [...new Set(horariosSeccion.map(h => h.dia_num))];
+                
+                configuracionFechas = {
+                    seccion: seccionId,
+                    ids: horariosSeccion.map(h => h.id),
+                    periodo: data.horarios[0].periodo,
+                    diasPermitidos: diasUnicos,
+                    fechaInicio: data.horarios[0].fecha_inicio,
+                    fechaFin: data.horarios[0].fecha_fin,
+                    horarios: horariosSeccion
+                };
+            }
+        }
             actualizarInfoSistema();
             // Pasar las fechas ocupadas de ESTA sección a la función
             generarFechasDisponibles(fechas_y_ids_horario);
-        }
     } catch (error) {
         console.error('Error al cargar configuración de fechas:', error);
         mostrarErrorFechas();
     }
 }
-
-
+function cambiarTipoHorario()
+{
+    const tipoSelect = document.getElementById('tipo_horario');
+    const selectFechas = document.getElementById('fecha_evaluacion_select');
+    const dateInput = document.getElementById('fecha_evaluacion_date');
+    const hint = document.getElementById('date-eval-text');
+    
+    const tipo = tipoSelect.value;
+    
+    if (tipo === 'Sección') {
+        // Modo sección: mostrar select, ocultar date input
+        selectFechas.style.display = 'block';
+        dateInput.style.display = 'none';
+        dateInput.disabled = true;
+        selectFechas.disabled = false;
+        
+        // Actualizar hint
+        hint.innerHTML = '<i class="fas fa-clock"></i> Solo se muestran los horarios de clases de la sección';
+        
+    } else if (tipo === 'Otro') {
+        // Modo libre: ocultar select, mostrar date input
+        selectFechas.style.display = 'none';
+        dateInput.style.display = 'block';
+        selectFechas.disabled = true;
+        dateInput.disabled = false;
+        dateInput.min = configuracionFechas.fechaInicio
+        dateInput.max = configuracionFechas.fechaFin
+        
+        // Actualizar hint
+        hint.innerHTML = '<i class="fas fa-calendar-alt"></i> Puedes seleccionar cualquier fecha del semestre';
+    }
+    else if (tipo == '')
+    {
+        selectFechas.disabled = true;
+        dateInput.disabled = true;
+        selectFechas.value = '';
+        dateInput.value = '';
+    }
+}
+function convertirSelectADate(id_select) {
+    const select = document.getElementById(id_select);
+    
+    // Crear nuevo input date
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.id = select.id;
+    dateInput.className = select.className; // Copia clases
+    dateInput.name = select.name;
+    dateInput.required = select.required;
+    dateInput.disabled = false;
+    
+    // Reemplazar el select con el input
+    select.parentNode.replaceChild(dateInput, select);
+}
 // Actualizar la información del sistema en la UI
 function actualizarInfoSistema() {
+    document.getElementById('date-eval-text').textContent = 'Solo se muestran los días habilitados para clases de la sección';
     const periodoEl = document.getElementById('periodoAcademico');
     const diasEl = document.getElementById('diasEvaluacion');
     const rangoEl = document.getElementById('rangoFechas');
@@ -807,11 +859,7 @@ function generarFechasDisponibles(fechasOcupadasSeccion = []) {
     // Crear un Set para búsqueda rápida de fechas ocupadas de ESTA sección
     const fechasOcupadas = new Set(
         fechasOcupadasSeccion.map(item => `${item.fecha}_${item.id_horario}`)
-    );
-    
-    console.log('Fechas ocupadas de esta sección (Set):', fechasOcupadas);
-    console.log('IDs de horarios de esta sección:', configuracionFechas.horarios.map(h => h.id));
-    
+    );    
     const fechaInicio = new Date(configuracionFechas.fechaInicio);
     const fechaFin = new Date(configuracionFechas.fechaFin);
     const diasPermitidos = configuracionFechas.diasPermitidos;
@@ -837,9 +885,7 @@ function generarFechasDisponibles(fechasOcupadasSeccion = []) {
             horariosDelDia.forEach(horario => {
                 const fechaStr = formatearFechaParaInput(fechaActual);
                 const claveFechaHorario = `${fechaStr}_${horario.id}`;
-                
-                console.log(`Evaluando: ${claveFechaHorario} - Ocupado? ${fechasOcupadas.has(claveFechaHorario)}`);
-                
+                                
                 // Solo agregar si NO hay evaluación en ESTA sección para esta fecha y horario
                 if (!fechasOcupadas.has(claveFechaHorario)) {
                     fechasSistema.push({
@@ -861,15 +907,13 @@ function generarFechasDisponibles(fechasOcupadasSeccion = []) {
         fechaActual.setDate(fechaActual.getDate() + 1);
     }
     
-    console.log(`Fechas disponibles generadas: ${fechasSistema.length}`);
     fechasSistema.sort((a, b) => a.fecha - b.fecha);
     actualizarSelectFechas();
 }
 
 // Actualizar el select con las fechas disponibles
 function actualizarSelectFechas() {
-    const select = document.getElementById('fecha_evaluacion');
-    select.disabled = false;
+    const select = document.getElementById('fecha_evaluacion_select');
     if (!select) return;
     
     select.innerHTML = '<option value="">-- Seleccione una fecha --</option>';
@@ -916,7 +960,7 @@ function actualizarSelectFechas() {
 
 // Función para obtener la fecha seleccionada con toda su información
 function getFechaSeleccionada() {
-    const select = document.getElementById('fecha_evaluacion');
+    const select = document.getElementById('fecha_evaluacion_select');
     if (!select || !select.value) return null;
     
     try {
@@ -1031,7 +1075,7 @@ function obtenerNombreDia(diaNumero) {
 }
 
 function mostrarErrorFechas() {
-    const select = document.getElementById('fecha_evaluacion');
+    const select = document.getElementById('fecha_evaluacion_select');
     if (select) {
         select.innerHTML = '<option value="">Error al cargar fechas</option>';
     }

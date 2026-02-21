@@ -133,13 +133,6 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
-                            <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
-                            min="1" max="100" step="0.1" value="5" placeholder="Mínimo 5%">
-                            <small class="form-help">Mínimo: 1% </small>
-                        </div>
-                        
-                        <div class="form-group">
                             <label for="estrategias_eval">
                                 <i class="fas fa-graduation-cap"></i>
                                 Estrategias de evaluación *
@@ -147,6 +140,12 @@
                             <select id="estrategias_eval" name="estrategias_eval" class="form-control" required>
                                 <option value="">Seleccione las estrategias para evaluar</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
+                            <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input" required
+                            min="1" max="100" step="0.1" value="5" placeholder="Mínimo 5%">
+                            <small class="form-help">Mínimo: 1% </small>
                         </div>
                     </div>
                 <div class="form-section">
@@ -200,17 +199,29 @@
                             <span>Período académico:</span>
                             <strong id="periodoAcademico">2024-1</strong>
                         </div>
+                        <div class="date-selector-system">
+                            <label for="fecha_evaluacion">
+                                <i class="fas fa-calendar-check"></i>
+                                Seleccione el horario donde lo realizará:
+                            </label>
+                            <select id="tipo_horario" class="form-select system-date-select" onchange="cambiarTipoHorario()" disabled>
+                                <option value="">-- Seleccione una opción de horario --</option>
+                                <option value="Sección">Horarios de la sección</option>
+                                <option value="Otro">Otros (libre)</option>
+                            </select>
+                            <br>
+                        </div>
                         
                         <div class="date-range-info">
                             <div class="range-item">
                                 <i class="fas fa-calendar-day"></i>
-                                <span>Días de evaluación:</span>
-                                <strong id="diasEvaluacion">Lunes y Jueves</strong>
+                                <span>Días de clase:</span>
+                                <strong id="diasEvaluacion">Según la sección</strong>
                             </div>
                             <div class="range-item">
                                 <i class="fas fa-calendar-alt"></i>
                                 <span>Rango disponible:</span>
-                                <strong id="rangoFechas">15/01/2024 - 15/03/2024</strong>
+                                <strong id="rangoFechas">Inicio del semestre - Fin del semestre</strong>
                             </div>
                         </div>
                         
@@ -219,14 +230,17 @@
                                 <i class="fas fa-calendar-check"></i>
                                 Seleccionar fecha de evaluación:
                             </label>
-                            <select id="fecha_evaluacion" class="form-select system-date-select" required disabled>
+                            <select id="fecha_evaluacion_select" class="form-select system-date-select" required disabled>
                                 <option value="">-- Seleccione una fecha --</option>
                             </select>
+                            <input type='date' id="fecha_evaluacion_date" class="form-select system-date-select" style="display: none;" required disabled>
+                                <option value="">-- Seleccione una fecha --</option>
+                            </input>
                             
                             <div class="date-hint-system">
-                                <i class="fas fa-clock"></i>
-                                <span>Solo se muestran los días habilitados para evaluaciones</span>
+                                <span id="date-eval-text">Aquí dictas qué horarios te aparecen para seleccionar cuándo se hará la evaluación</span>
                             </div>
+                            
                         </div>
                     </div>
                 </div>
