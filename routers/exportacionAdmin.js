@@ -764,41 +764,36 @@ router.get('/api/evaluacion/detalles/:rubricaId', (req, res) => {
     // Consulta para estudiantes evaluados
     const queryEstudiantes = `
         SELECT
-            evaluacion_id,
-            puntaje_total,
-            fecha_evaluacion,
-            observaciones,
-            estudiante_cedula,
-            estudiante_nombre,
-            estudiante_apellido,
+            e.id AS evaluacion_id,
+            COALESCE(er.puntaje_total, 0) as puntaje_total,
+            IFNULL(er.fecha_evaluado, 'Sin Evaluar') as fecha_evaluacion,
+            IFNULL(er.observaciones, 'Sin comentarios.') AS observaciones,
+            u.cedula AS estudiante_cedula,
+            u.nombre AS estudiante_nombre,
+            u.apeliido AS estudiante_apellido,
             CASE
-                WHEN puntaje_total > 0 THEN 'Completada'
+                WHEN er.id IS NOT NULL AND er.puntaje_total > 0 THEN 'Completada'
+                WHEN er.id IS NOT NULL AND er.puntaje_total = 0 THEN 'En Progreso'
                 ELSE 'Pendiente'
             END AS estado
-        FROM
-        (		   SELECT
-                        er.id AS evaluacion_id,
-                        COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
-                        er.fecha_evaluado as fecha_evaluacion,
-                        er.observaciones,
-                        u.cedula AS estudiante_cedula,
-                        u.nombre AS estudiante_nombre,
-                        u.apeliido AS estudiante_apellido
-                    FROM detalle_evaluacion de
-                    RIGHT JOIN evaluacion_realizada er ON de.evaluacion_r_id = er.id  
-                    RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id  
-                    INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
-                    INNER JOIN rubrica r ON r.id = ru.id_rubrica
-                    INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
-                    INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
-                    INNER JOIN seccion s ON e.id_seccion = s.id
-                    INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
-                    INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-                    INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                    INNER JOIN usuario u ON u.cedula = er.cedula_evaluado
-                    WHERE e.id = ? AND u.activo = 1
-                    GROUP BY er.id
-                    ORDER BY u.nombre, u.apeliido DESC) AS todo
+        FROM seccion s
+        INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+        INNER JOIN usuario u ON u.cedula = ins.cedula_estudiante
+        INNER JOIN evaluacion e ON e.id_seccion = s.id
+        LEFT JOIN (
+            SELECT 
+                er.id,
+                er.cedula_evaluado,
+                er.id_evaluacion,
+                er.fecha_evaluado,
+                er.observaciones,
+                COALESCE(SUM(de.puntaje_obtenido), 0) as puntaje_total
+            FROM evaluacion_realizada er
+            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id
+            GROUP BY er.id
+        ) er ON er.id_evaluacion = e.id AND er.cedula_evaluado = u.cedula
+        WHERE e.id = ? AND u.activo = 1
+        ORDER BY u.nombre, u.apeliido;
     `;
 
     // Ejecutar las consultas PENDIENTEEEEE: CAMBIAR RUBRICAID POR E.ID EN EL FRONT Y EL FETCH

@@ -517,23 +517,22 @@
                                         <th>Estudiante</th>
                                         <th>Puntaje</th>
                                         <th>Estado</th>
-                                        <th>Fecha</th>
+                                        <th>Fecha Evaluado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${estudiantes.map((est, idx) => {
                                         const puntaje = est.puntaje_total !== null ? parseFloat(est.puntaje_total).toFixed(2) : '-';
-                                        const fecha = est.fecha_evaluacion ? 
-                                            new Date(est.fecha_evaluacion).toLocaleDateString('es-ES') : '-';
+                                        const fecha = est.fecha_evaluacion
                                         
                                         let estadoClass = 'pendiente';
                                         if (est.estado === 'Completada') estadoClass = 'completada';
                                         
                                         let puntajeClass = '';
-                                        if (est.puntaje_total !== null) {
-                                            if (est.puntaje_total >= 8) puntajeClass = 'excelente';
-                                            else if (est.puntaje_total >= 6) puntajeClass = 'bueno';
-                                            else if (est.puntaje_total >= 4) puntajeClass = 'regular';
+                                        if (est.puntaje_total !== 0 && fecha != 'Sin evaluar') {
+                                            if (est.puntaje_total >= 40) puntajeClass = 'excelente';
+                                            else if (est.puntaje_total >= 30) puntajeClass = 'bueno';
+                                            else if (est.puntaje_total >= 20) puntajeClass = 'regular';
                                             else puntajeClass = 'deficiente';
                                         }
                                         

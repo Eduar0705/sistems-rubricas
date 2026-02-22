@@ -31,7 +31,7 @@ router.get("/admin/evaluaciones", function(req, res) {
             tipo_horario,
             CASE
                 WHEN rubrica_id IS NULL THEN 'Pendiente'
-                WHEN rubrica_id IS NOT NULL AND total_evaluaciones=completadas THEN 'Completada'
+                WHEN rubrica_id IS NOT NULL AND total_evaluaciones = completadas AND total_evaluaciones != 0 THEN 'Completada'
                 ELSE 'En Progreso'
             END as estado
         FROM
