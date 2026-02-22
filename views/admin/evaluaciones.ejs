@@ -92,10 +92,17 @@
                                 <td> <span class="estado"><%= ev.estado_formateado %></span></td>
                                 <td>
                                     <div class="table-actions">
-                                        <button class="btns detalles" onclick="openModalDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-                                        <button class="btns pdf" title="Descargar PDF" onclick="DescargarPDF('<%= ev.rubrica_id %>')"><i class="fas fa-file-pdf"></i></button>
-                                        <button class="btns excel" title="Descargar Excel" onclick="DescargarExcel('<%= ev.rubrica_id %>')"><i class="fas fa-file-excel"></i></button>
-                                    </div>
+    <% if (ev.estado === 'Completada' || ev.estado === 'En Progreso') { %>
+        <button class="btns detalles" onclick="openModalDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+        <button class="btns pdf" title="Descargar PDF" onclick="DescargarPDF('<%= ev.rubrica_id %>')"><i class="fas fa-file-pdf"></i></button>
+        <button class="btns excel" title="Descargar Excel" onclick="DescargarExcel('<%= ev.rubrica_id %>')"><i class="fas fa-file-excel"></i></button>
+    <% } %>
+    
+    <% if (ev.estado === 'Pendiente') { %>
+        <!-- Botones específicos para "Pendiente" -->
+        <button class="btns iniciar" title="Iniciar Evaluación"><i class="fas fa-star"></i></button>
+    <% } %>
+</div>
                                 </td>
                             </tr>
                         <% }); %>
@@ -348,7 +355,7 @@
     <script src="../js/evaluacion-Admin.js"></script>
     <script>
         // Funciones del modal de ver detalles
-        function openModalDetalles(rubricaId) {
+        function openModalDetalles(rubricId) {
             const modal = document.getElementById('detalles-admin');
             const modalBody = document.getElementById('modalBodyDetalles');
             
@@ -365,7 +372,7 @@
             `;
             
             // Hacer petición para obtener detalles
-            fetch(`/api/evaluacion/detalles/${rubricaId}`)
+            fetch(`/api/evaluacion/detalles/${rubricId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -404,7 +411,7 @@
             
             // Calcular estadísticas
             const totalEstudiantes = estudiantes.length;
-            const completadas = estudiantes.filter(e => e.puntaje_total !== null).length;
+            const completadas = estudiantes.filter(e => e.puntaje_total > 0).length;
             const pendientes = totalEstudiantes - completadas;
             const promedio = estudiantes.reduce((sum, e) => sum + (parseFloat(e.puntaje_total) || 0), 0) / (completadas || 1);
             

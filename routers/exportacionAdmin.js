@@ -704,60 +704,104 @@ router.get('/api/evaluacion/detalles/:rubricaId', (req, res) => {
 
     // Consulta para información de la rúbrica
     const queryInfo = `
-        SELECT
-            r.id as rubrica_id,
-            r.nombre_rubrica,
-            r.porcentaje_evaluacion,
-            r.tipo_evaluacion,
-            r.modalidad,
-            m.nombre as materia_nombre,
-            m.codigo as materia_codigo,
-            m.semestre,
-            c.nombre as carrera_nombre,
-            c.codigo as carrera_codigo,
-            s.codigo as seccion_codigo,
-            s.horario as seccion_horario,
-            s.aula as seccion_aula,
-            s.lapso_academico,
-            d.nombre as docente_nombre,
-            d.apellido as docente_apellido,
-            d.cedula as docente_cedula
-        FROM rubrica_evaluacion r
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        INNER JOIN seccion s ON r.seccion_id = s.id
-        INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-        LEFT JOIN docente d ON r.docente_cedula = d.cedula
-        WHERE r.id = ? AND r.activo = 1
+                            SELECT
+                				r.id AS rubrica_id,
+                                r.nombre_rubrica,
+                                e.contenido,
+                                e.competencias,
+                                e.instrumentos,
+                                e.ponderacion AS porcentaje_evaluacion,
+	               				GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                                CASE
+                                    WHEN e.cantidad_personas=1 THEN 'Individual'
+                                    WHEN e.cantidad_personas=2 THEN 'En Pareja'
+                                    ELSE 'Grupal'
+                                END AS modalidad,
+                                m.nombre AS materia_nombre,
+                				m.codigo AS materia_codigo,
+                                pp.num_semestre AS semestre,
+                                c.nombre AS carrera_nombre,
+                                c.codigo AS carrera_codigo,
+                                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ' (', hs.aula, ')', ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                                pp.codigo_periodo AS lapso_academico,
+                                u.nombre AS docente_nombre,
+                                u.apeliido AS docente_apellido,
+                                u.cedula AS docente_cedula,
+                				e.fecha_evaluacion,
+                				r.fecha_creacion
+                            FROM rubrica r
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                            INNER JOIN evaluacion e ON ru.id_eval = e.id
+                			INNER JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+                            INNER JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
+                            INNER JOIN seccion s ON e.id_seccion = s.id
+                            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+                            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                			INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
+                			INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+                            WHERE e.id = 2 
+                            AND r.activo = 1
+                            GROUP BY r.id
+                            ORDER BY fecha_creacion DESC;
     `;
 
     // Consulta para criterios
     const queryCriterios = `
-        SELECT id, descripcion, puntaje_maximo, orden
-        FROM criterio_evaluacion
-        WHERE rubrica_id = ?
-        ORDER BY orden
+        SELECT
+            cr.id,
+            cr.descripcion,
+            cr.puntaje_maximo,
+            cr.orden
+        FROM criterio_rubrica cr
+        WHERE cr.rubrica_id = ?
+        ORDER BY cr.orden
     `;
 
     // Consulta para estudiantes evaluados
     const queryEstudiantes = `
         SELECT
-            ee.id as evaluacion_id,
-            ee.puntaje_total,
-            ee.fecha_evaluacion,
-            e.cedula as estudiante_cedula,
-            e.nombre as estudiante_nombre,
-            e.apellido as estudiante_apellido,
+            evaluacion_id,
+            puntaje_total,
+            fecha_evaluacion,
+            observaciones,
+            estudiante_cedula,
+            estudiante_nombre,
+            estudiante_apellido,
             CASE
-                WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
+                WHEN puntaje_total > 0 THEN 'Completada'
                 ELSE 'Pendiente'
-            END as estado
-        FROM evaluacion_estudiante ee
-        INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
-        WHERE ee.rubrica_id = ? AND e.activo = 1
-        ORDER BY e.apellido, e.nombre
+            END AS estado
+        FROM
+        (		   SELECT
+                        er.id AS evaluacion_id,
+                        COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                        er.fecha_evaluado as fecha_evaluacion,
+                        er.observaciones,
+                        u.cedula AS estudiante_cedula,
+                        u.nombre AS estudiante_nombre,
+                        u.apeliido AS estudiante_apellido
+                    FROM detalle_evaluacion de
+                    RIGHT JOIN evaluacion_realizada er ON de.evaluacion_r_id = er.id  
+                    RIGHT JOIN evaluacion e ON er.id_evaluacion = e.id  
+                    INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+                    INNER JOIN rubrica r ON r.id = ru.id_rubrica
+                    INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+                    INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+                    INNER JOIN seccion s ON e.id_seccion = s.id
+                    INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+                    INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                    INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                    INNER JOIN usuario u ON u.cedula = er.cedula_evaluado
+                    WHERE e.id = ? AND u.activo = 1
+                    GROUP BY er.id
+                    ORDER BY u.nombre, u.apeliido DESC) AS todo
     `;
 
-    // Ejecutar las consultas
+    // Ejecutar las consultas PENDIENTEEEEE: CAMBIAR RUBRICAID POR E.ID EN EL FRONT Y EL FETCH
     conexion.query(queryInfo, [rubricaId], (error, infoResults) => {
         if (error) {
             console.error('Error al obtener información:', error);

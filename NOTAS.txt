@@ -14,29 +14,28 @@ Detalle global:
 		eliminamos el aula como campo y lo agregamos directamente a horario. Implementar en otras querys con horario y aula.
 Refactorizados:
 	Controladores:
-		- login.js					CHECK
+		- addProfeController.js		CHECK
+		- deleteRubrica				CHECK
 		- Evaluar.js				CHECK
+		- login.js					CHECK
+		- logoutControllers			CHECK
 		- reportesController		CHECK
+		- updateProfeController.js	CHECK
+		- 
+		
+	Routers:
+		- admin.js					CHECK
+		- evaluacionAdmin.js		
+		- evaluacionStudents.js		CHECK
+		- notificaciones.js 		CHECK
+		- profeAdmin.js				CHECK
+		- rubricasAdmin: VERIFICAR COMPORATMIENTO DE IDS TAMBIEN. ADEMAS, VERIFICAR COMPORTAMIENTO DE SECCION-CODIGO Y SI FUNCIONA, AGREGARLO A OTRAS CONSULTAS.
+				Aun falta que tome la carrera, semestre y demas al editar.
+									CHECK
 		- rubricasTeacher: (EN PROGRESO) la consulta de ver las rubricas muestra en estado si esta activa o no.
 						Queremos que si esta activa muestre el campo "estado" de aprobacion o desaprobacion. ESTO SE IMPLEMENTO 
 						Y ESTA EN PRUEBAS.
 									CHECK
-		- rubricasAdmin: VERIFICAR COMPORATMIENTO DE IDS TAMBIEN. ADEMAS, VERIFICAR COMPORTAMIENTO DE SECCION-CODIGO Y SI FUNCIONA, AGREGARLO A OTRAS CONSULTAS.
-				Aun falta que tome la carrera, semestre y demas al editar.
-									CHECK
-		- deleteRubrica				CHECK
-		- logout					CHECK
-		- profeAdmin.js				CHECK
-		- updateProfeController.js	CHECK
-		- addProfeController.js		CHECK
-		- evaluacionAdmin.js: SOLO tabla principal consultada. Este modulo ha de remodelarse en su casi totalidad.
-		La nueva modalidad sera que aqui solo se insertaran evaluaciones, se eliminaran los 2 campos de rubricas de la
-		tabla y estos se mostraran solo si se presiona el ojo de "ver" y existe la relacion. Adicionalmente, debe haber
-		1 submodulo que permita evaluar los estudiantes individualmente, similar al de evaluacionDocente.js
-		- 
-		
-	Routers:
 		- student.js				CHECK
 		- teacher.js				CHECK
-		- evaluacionStudents.js		CHECK
-		- admin.js					CHECK
+	js: evaluaciones.js

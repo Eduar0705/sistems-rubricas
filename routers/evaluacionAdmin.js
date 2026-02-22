@@ -10,7 +10,7 @@ router.get("/admin/evaluaciones", function(req, res) {
     }
 
     const query = `
-SELECT
+        SELECT
             evaluacion_id,
             id_seccion,
             contenido_evaluacion,

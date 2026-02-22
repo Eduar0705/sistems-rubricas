@@ -23,7 +23,7 @@ router.get("/admin/rubricas", function(req, res) {
                                 r.activo,
                                 m.nombre AS materia_nombre,
                 				m.codigo AS materia_codigo,
-                				s.letra AS seccion_codigo,
+                				CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
                 				CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
                             FROM rubrica r
                             INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
@@ -678,7 +678,7 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
                 CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, '-', s.letra) AS codigo,
                 pp.codigo_periodo AS lapso_academico,
                 s.letra,
-                IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
+                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ' (', hs.aula, ')', ')') SEPARATOR ', '), 'No encontrado') AS horario,
                 hs.aula,
                 s.capacidad_maxima,
                 u.nombre AS docente_nombre,
