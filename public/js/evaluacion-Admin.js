@@ -430,7 +430,6 @@ async function guardarEvaluacion() {
                                             .querySelectorAll('input[type="checkbox"]'))
                                             .filter(estrategia_eval => estrategia_eval.checked)
                                             .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
-    console.log(checkboxes_estrags)
     const porcentaje_eval = document.getElementById('porcentaje_evaluacion').value;
     const tipo_horario = document.getElementById('tipo_horario').value
     const cant_personas = document.getElementById('cant_personas').value;
@@ -439,24 +438,20 @@ async function guardarEvaluacion() {
     const competencias = document.getElementById('competencias').value;
     const instrumentos = document.getElementById('instrumentos').value;
     const observaciones = document.getElementById('observaciones').value;
+    const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date').value;
+    const hora_eval_inicio = document.getElementById('hora_eval_inicio').value;
+    const hora_eval_fin = document.getElementById('hora_eval_fin').value;
     let horario = "";
     let fecha_evaluacion = "";
     if(tipo_horario == "Sección")
     {
-        console.log('caso seccion')
         const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select').value;
         horario = fecha_evaluacion_select;
-        console.log(horario)
         fecha_evaluacion = JSON.parse(fecha_evaluacion_select);
     }
     else if (tipo_horario == "Otro")
     {
-        console.log('caso otro')
-        const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date').value;
-        const hora_eval_inicio = document.getElementById('hora_eval_inicio').value;
-        const hora_eval_fin = document.getElementById('hora_eval_fin').value;
         horario = fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin;
-        console.log(horario)
         fecha_evaluacion = fecha_evaluacion_date
     }
     if(!
@@ -526,7 +521,6 @@ async function guardarEvaluacion() {
                     location.reload();
                 });
             } else {
-                console.log("gdsfdsf")
                 Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
             }
         }
@@ -538,16 +532,17 @@ async function guardarEvaluacion() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    observaciones: observaciones,
-                    fecha_evaluacion: fecha_evaluacion.fecha,
-                    id_horario: fecha_evaluacion.horarioId,
-                    id_seccion: id_seccion,
-                    cant_personas: cant_personas,
-                    contenido: contenido,
-                    competencias: competencias,
-                    instrumentos: instrumentos,
-                    porcentaje: porcentaje_eval,
-                    estrategias_eval: checkboxes_estrags
+                        observaciones: observaciones,
+                        fecha_evaluacion: fecha_evaluacion,
+                        hora_eval_inicio: hora_eval_inicio,
+                        hora_eval_fin: hora_eval_fin,  
+                        id_seccion: id_seccion,
+                        cant_personas: cant_personas,
+                        contenido: contenido,
+                        competencias: competencias,
+                        instrumentos: instrumentos,
+                        porcentaje: porcentaje_eval,
+                        estrategias_eval: checkboxes_estrags
                 })
             });
 
@@ -565,7 +560,6 @@ async function guardarEvaluacion() {
                     location.reload();
                 });
             } else {
-                console.log("gdsfdsf")
                 Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
             }
         }
@@ -1097,7 +1091,6 @@ function getFechaSeleccionada() {
 function limitarHora(id_input)
 {
     input_cambiado = document.getElementById(id_input);
-    console.log('limitando horas...')
     if(id_input == 'hora_eval_inicio')
     {
         const input_hora_fin = document.getElementById('hora_eval_fin');
