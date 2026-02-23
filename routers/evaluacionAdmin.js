@@ -10,7 +10,7 @@ router.get("/admin/evaluaciones", function(req, res) {
     }
 
     const query = `
-        SELECT
+SELECT
             evaluacion_id,
             id_seccion,
             contenido_evaluacion,
@@ -59,10 +59,6 @@ router.get("/admin/evaluaciones", function(req, res) {
                 END AS tipo_horario,
                 s.id AS id_seccion
             FROM evaluacion e
-            LEFT JOIN horario_eval he ON e.id = he.id_eval
-            LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
-            LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
-            LEFT JOIN rubrica r ON ru.id_rubrica = r.id
             INNER JOIN seccion s ON e.id_seccion = s.id
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
@@ -86,6 +82,10 @@ router.get("/admin/evaluaciones", function(req, res) {
                 INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
                 GROUP BY er.id, er.id_evaluacion
             ) AS eval_est ON eval_est.id_evaluacion = e.id
+            LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
+            LEFT JOIN rubrica r ON ru.id_rubrica = r.id
+            LEFT JOIN horario_eval he ON e.id = he.id_eval
+            LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
             GROUP BY e.id
         ) AS todo
         ORDER BY fecha_evaluacion DESC;

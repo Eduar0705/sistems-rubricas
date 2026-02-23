@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const semestreSelect = document.getElementById('semestre');
     const materiaSelect = document.getElementById('materia');
     const seccionSelect = document.getElementById('seccion');
+    const evalSelect = document.getElementById('evaluacion')
 
     // Cuando cambia la carrera
     if (carreraSelect) {
@@ -19,10 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Resetear selects dependientes
             semestreSelect.innerHTML = '<option value="">Cargando...</option>';
             materiaSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
-            seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            evalSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
             
             materiaSelect.disabled = true;
             seccionSelect.disabled = true;
+            evalSelect.disabled = true;
 
             if (!carreraCode) {
                 semestreSelect.innerHTML = '<option value="">Primero seleccione una carrera</option>';
@@ -56,7 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             materiaSelect.innerHTML = '<option value="">Cargando...</option>';
             seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            evalSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
             seccionSelect.disabled = true;
+            evalSelect.disabled = true;
 
             if (!semestre) {
                 materiaSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
@@ -88,6 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const materiaCode = this.value;
             
             seccionSelect.innerHTML = '<option value="">Cargando...</option>';
+            evalSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            evalSelect.disabled = true;
 
             if (!materiaCode) {
                 seccionSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
@@ -96,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const response = await fetch(`/api/secciones/${materiaCode}`);
+                const response = await fetch(`/api/secciones/${materiaCode}/${carreraSelect.value}`);
                 const secciones = await response.json();
                 
                 seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
@@ -113,6 +119,38 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    // Cuando cambia la sección
+    if (seccionSelect) {
+        seccionSelect.addEventListener('change', async function() {
+            const seccionId = this.value;
+            
+            evalSelect.innerHTML = '<option value="">Cargando...</option>';
+
+
+            if (!seccionId) {
+                evalSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+                evalSelect.disabled = true;
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/evaluaciones/${seccionId}`);
+                const evaluaciones = await response.json();
+                
+                evalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+                evaluaciones.evaluaciones.forEach(evalu => {
+                    const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
+                    evalSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
+                });
+                
+                evalSelect.disabled = false;
+            } catch (error) {
+                console.error('Error:', error);
+                evalSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
+                Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+            }
+        });
+    }
 
     // Inicializar
     agregarCriterio();
@@ -123,7 +161,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================================
 // DISTRIBUCIÓN AUTOMÁTICA DE PUNTAJES
 // ============================================================
-
 function calcularDistribucionAutomatica() {
     const porcentajeInput = document.getElementById('porcentaje');
     if (!porcentajeInput) return;
