@@ -91,13 +91,15 @@
                                 <td><%= ev.fecha_formateada %></td>
                                 <td> <span class="estado"><%= ev.estado_formateado %></span></td>
                                 <td>
-                                    <div class="table-actions">
+    <div class="table-actions">
+    <!-- Botón de edición agregado en la columna de acciones -->
+    <button class="btns edit" onclick="openEditModal('<%= ev.evaluacion_id %>')" title="Editar Evaluación"><i class="fas fa-edit"></i></button>
     <% if (ev.estado === 'Completada' || ev.estado === 'En Progreso') { %>
-        <button class="btns detalles" onclick="openModalDetalles('<%= ev.rubrica_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
-        <button class="btns pdf" title="Descargar PDF" onclick="DescargarPDF('<%= ev.rubrica_id %>')"><i class="fas fa-file-pdf"></i></button>
-        <button class="btns excel" title="Descargar Excel" onclick="DescargarExcel('<%= ev.rubrica_id %>')"><i class="fas fa-file-excel"></i></button>
+        <button class="btns detalles" onclick="openModalDetalles('<%= ev.evaluacion_id %>')" title="Ver Detalles"><i class="fas fa-eye"></i></button>
+        <button class="btns pdf" title="Descargar PDF" onclick="DescargarPDF('<%= ev.evaluacion_id %>')"><i class="fas fa-file-pdf"></i></button>
+        <button class="btns excel" title="Descargar Excel" onclick="DescargarExcel('<%= ev.evaluacion_id %>')"><i class="fas fa-file-excel"></i></button>
     <% } %>
-    
+        
     <% if (ev.estado === 'Pendiente') { %>
         <!-- Botones específicos para "Pendiente" -->
         <button class="btns iniciar" title="Iniciar Evaluación"><i class="fas fa-star"></i></button>
@@ -129,6 +131,7 @@
 
             <form id="formAddEvaluacion" class="modal-body-evaluacion">
             <div class="form-group">
+                        <input type="hidden" id="evaluacion_id" name="evaluacion_id">
                         <label for="observaciones">
                             <i class="fas fa-newspaper"></i>
                             Contenido (NOMBRE DE LA EVALUACIÓN)
@@ -355,7 +358,7 @@
     <script src="../js/evaluacion-Admin.js"></script>
     <script>
         // Funciones del modal de ver detalles
-        function openModalDetalles(rubricId) {
+        function openModalDetalles(evalId) {
             const modal = document.getElementById('detalles-admin');
             const modalBody = document.getElementById('modalBodyDetalles');
             
@@ -372,7 +375,7 @@
             `;
             
             // Hacer petición para obtener detalles
-            fetch(`/api/evaluacion/detalles/${rubricId}`)
+            fetch(`/api/evaluacion/detalles/${evalId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -411,9 +414,10 @@
             
             // Calcular estadísticas
             const totalEstudiantes = estudiantes.length;
-            const completadas = estudiantes.filter(e => e.puntaje_total > 0).length;
+            const completadas = estudiantes.filter(e => e.puntaje_total != null).length;
             const pendientes = totalEstudiantes - completadas;
             const promedio = estudiantes.reduce((sum, e) => sum + (parseFloat(e.puntaje_total) || 0), 0) / (completadas || 1);
+            if (info.porcentaje_evaluacion == null) info.porcentaje_evaluacion = 0
             
             let html = `
                 <div class="detalles-evaluacion">
@@ -522,14 +526,14 @@
                                 </thead>
                                 <tbody>
                                     ${estudiantes.map((est, idx) => {
-                                        const puntaje = est.puntaje_total !== null ? parseFloat(est.puntaje_total).toFixed(2) : '-';
+                                        const puntaje = est.puntaje_total !== null ? parseFloat(est.puntaje_total).toFixed(2) : '0.00';
                                         const fecha = est.fecha_evaluacion
                                         
                                         let estadoClass = 'pendiente';
-                                        if (est.estado === 'Completada') estadoClass = 'completada';
+                                        if (est.estado === 'Completada') {estadoClass = 'completada';}
                                         
                                         let puntajeClass = '';
-                                        if (est.puntaje_total !== 0 && fecha != 'Sin evaluar') {
+                                        if (est.puntaje_total >= 0 && fecha != 'Sin evaluar') {
                                             if (est.puntaje_total >= 40) puntajeClass = 'excelente';
                                             else if (est.puntaje_total >= 30) puntajeClass = 'bueno';
                                             else if (est.puntaje_total >= 20) puntajeClass = 'regular';
@@ -556,7 +560,7 @@
             
             modalBody.innerHTML = html;
         }
-
+        
         // Cerrar modal de detalles con ESC
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {

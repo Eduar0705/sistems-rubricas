@@ -492,7 +492,6 @@ async function openModalDetalles(evaluacionId) {
         `;
     }
 }
-
 function closeModalDetalles() {
     const modal = document.getElementById('modalVerDetalles');
     if (modal) {

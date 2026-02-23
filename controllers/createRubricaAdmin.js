@@ -14,9 +14,13 @@ router.get("/admin/createrubricas", (req, res) => {
 
     // Query para obtener carreras activas
     const queryCarreras = `
-        SELECT codigo, nombre, duracion_semestres 
-        FROM carrera 
-        WHERE activo = TRUE 
+        SELECT 
+            c.codigo, 
+            c.nombre, 
+            COUNT(DISTINCT pp.num_semestre) AS duracion_semestres
+        FROM carrera c
+        INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
+        WHERE c.activo = 1
         ORDER BY nombre
     `;
 
@@ -51,12 +55,13 @@ router.get("/api/semestres/:carrera", (req, res) => {
     const { carrera } = req.params;
 
     const query = `
-        SELECT 
-            DISTINCT num_semestre AS semestre
-        FROM plan_periodo pp
-        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+        SELECT  	
+            DISTINCT pp.num_semestre AS semestre,
+            c.codigo
+        FROM carrera c
+        INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
         WHERE c.codigo = ? 
-        AND c.activo = 1 
+        AND c.activo = 1
         ORDER BY semestre;
     `;
 
@@ -77,13 +82,15 @@ router.get("/api/materias/:carrera/:semestre", (req, res) => {
         SELECT 
             m.codigo,
             m.nombre,
+            pp.num_semestre AS semestre,
             pp.unidades_credito AS creditos
         FROM materia m
         INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
-        INNER JOIN carrera c ON  pp.codigo_carrera = c.codigo
-        WHERE pp.codigo_carrera = ? AND pp.num_semestre = ? 
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+        WHERE pp.codigo_carrera = ?
+        AND pp.num_semestre = ?
         AND c.activo = 1
-        ORDER BY nombre
+        ORDER BY semestre, nombre;
     `;
 
     conexion.query(query, [carrera, semestre], (error, results) => {
@@ -95,22 +102,25 @@ router.get("/api/materias/:carrera/:semestre", (req, res) => {
     });
 });
 
-// API: Obtener secciones por materia
-router.get("/api/secciones/:materia", (req, res) => {
+// API: Obtener secciones por materia y carrera
+router.get("/api/secciones/:materia/:carrera", (req, res) => {
     const { materia } = req.params;
 
     const query = `
         SELECT 
             s.id, 
             CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
-            pp.codigo_periodo AS lapso_academico, 
-            IFNULL(GROUP_CONCAT(CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS horario,
-            hs.aula,
-            s.capacidad_maxima
+            IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ' (', hs.aula, ')', ')') SEPARATOR ', '), 'No encontrado') AS horario,
+            s.capacidad_maxima,
+            COUNT(ins.cedula_estudiante) AS estudiantes_inscritos
         FROM seccion s
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
-        WHERE pp.codigo_materia = ? AND s.activo = 1
+        LEFT JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        WHERE pp.codigo_materia = ? 
+        AND pp.codigo_carrera = ? 
+        AND s.activo = 1
+        GROUP BY s.id
         ORDER BY codigo;
     `;
 
@@ -124,7 +134,7 @@ router.get("/api/secciones/:materia", (req, res) => {
 });
 
 // ============================================================
-// RUTA POST PARA GUARDAR LA RÚBRICA (ACTUALIZADA)
+// RUTA POST PARA GUARDAR LA RÚBRICA
 // ============================================================
 
 router.post('/envioRubrica', (req, res) => {

@@ -25,7 +25,7 @@ router.get("/admin/evaluaciones", function(req, res) {
             total_evaluaciones,
             seccion_codigo,
             completadas,
-            pendientes,
+            total_evaluaciones - completadas AS pendientes,
             fecha_evaluacion,
             id_horario,
             tipo_horario,
@@ -36,62 +36,59 @@ router.get("/admin/evaluaciones", function(req, res) {
             END as estado
         FROM
         (
+            SELECT 
+                e.id AS evaluacion_id,
+                e.contenido AS contenido_evaluacion,
+                MAX(r.id) AS rubrica_id,  -- Usar MAX para obtener un valor único
+                IFNULL(MAX(r.nombre_rubrica), 'Sin rubrica') AS nombre_rubrica,  -- Usar MAX aquí también
+                e.ponderacion as valor,
+                u.cedula as docente_cedula,
+                u.nombre as docente_nombre,
+                u.apeliido as docente_apellido,
+                m.nombre as materia_nombre,
+                c.nombre as carrera_nombre,
+                estud_sec.cantidad_en_seccion AS total_evaluaciones, 
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                COUNT(DISTINCT eval_est.id) AS completadas,
+                e.fecha_evaluacion,
+                IFNULL(MAX(he.id_horario), MAX(hec.id)) AS id_horario, 
+                CASE 
+                    WHEN MAX(he.id_horario) IS NOT NULL THEN 'Sección'
+                    WHEN MAX(hec.id) IS NOT NULL THEN 'Clandestina'
+                    ELSE 'Sin horario'
+                END AS tipo_horario,
+                s.id AS id_seccion
+            FROM evaluacion e
+            LEFT JOIN horario_eval he ON e.id = he.id_eval
+            LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
+            LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
+            LEFT JOIN rubrica r ON ru.id_rubrica = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN (
                 SELECT 
-                    e.id AS evaluacion_id,
-                    e.contenido AS contenido_evaluacion,
-                    r.id AS rubrica_id,
-                    IFNULL(r.nombre_rubrica, 'Sin rubrica') AS nombre_rubrica,
-                    e.ponderacion as valor,
-                    u.cedula as docente_cedula,
-                    u.nombre as docente_nombre,
-                    u.apeliido as docente_apellido,
-                    m.nombre as materia_nombre,
-                    c.nombre as carrera_nombre,
-                    COUNT(e.id) AS total_evaluaciones,
-                    CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-                    COUNT(eval_est.id) AS completadas,
-                    SUM(CASE WHEN eval_est.id IS NULL THEN 1 ELSE 0 END) AS pendientes,
-                    e.fecha_evaluacion,
-                    IFNULL(he.id_horario, hec.id) AS id_horario,
-            		CASE 
-                        WHEN he.id_horario IS NOT NULL THEN 'Sección'
-                        WHEN hec.id IS NOT NULL THEN 'Clandestina'
-                        ELSE 'Sin horario'
-                    END AS tipo_horario,
-                    s.id AS id_seccion
-                FROM evaluacion e
-                LEFT JOIN horario_eval he ON e.id = he.id_eval
-                LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
-                LEFT JOIN rubrica_uso ru ON e.id = ru.id_eval
-                LEFT JOIN rubrica r ON ru.id_rubrica = r.id
-                INNER JOIN seccion s ON e.id_seccion = s.id
-                INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-                INNER JOIN materia m ON pp.codigo_materia = m.codigo
-                INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
-                INNER JOIN
-                    (
-                            SELECT 
-                                COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
-                                ins.id_seccion
-                            FROM inscripcion_seccion ins
-                            GROUP BY ins.id_seccion
-                        ) AS estud_sec on s.id = estud_sec.id_seccion
-                INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
-                INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
-                INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
-                        LEFT JOIN 
-                        (
-                            SELECT 
-                                er.id,
-                                er.id_evaluacion,
-                                SUM(de.puntaje_obtenido) AS puntaje_eval
-                            FROM evaluacion_realizada er 
-                            INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
-                            GROUP BY er.id
-                        ) AS eval_est ON eval_est.id_evaluacion = e.id
-                GROUP BY e.id
-                ORDER BY e.fecha_evaluacion DESC
-        ) AS todo;
+                    COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                    ins.id_seccion
+                FROM inscripcion_seccion ins
+                GROUP BY ins.id_seccion
+            ) AS estud_sec ON s.id = estud_sec.id_seccion
+            INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            LEFT JOIN (
+                SELECT 
+                    er.id,
+                    er.id_evaluacion,
+                    SUM(de.puntaje_obtenido) AS puntaje_eval
+                FROM evaluacion_realizada er 
+                INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                GROUP BY er.id, er.id_evaluacion
+            ) AS eval_est ON eval_est.id_evaluacion = e.id
+            GROUP BY e.id
+        ) AS todo
+        ORDER BY fecha_evaluacion DESC;
         `;
 
     conexion.query(query, (error, evaluaciones) => {
@@ -114,16 +111,13 @@ router.get("/admin/evaluaciones", function(req, res) {
                     year: 'numeric'
                 }) : 'Sin evaluaciones';
             
-            // Formato del estado con contadores
-            let estadoFormateado = ev.estado;
             
             return {
                 ...ev,
                 fecha_formateada: fecha,
-                estado_formateado: estadoFormateado
+                estado_formateado: ev.estado
             };
         });
-
         res.render("admin/evaluaciones", {
             datos: req.session, 
             title: 'SGR - Evaluaciones', 
@@ -214,12 +208,12 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
 });
 
 // API: Obtener secciones por materia
-router.get('/api/materia/:materiaCodigo/secciones', (req, res) => {
+router.get('/api/materia/:materiaCodigo/:carreraCodigo/secciones', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
     }
 
-    const { materiaCodigo } = req.params;
+    const { materiaCodigo, carreraCodigo } = req.params;
 
     const query = `
         SELECT 
@@ -231,13 +225,15 @@ router.get('/api/materia/:materiaCodigo/secciones', (req, res) => {
         FROM seccion s
         INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
         LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
-        INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
-        WHERE pp.codigo_materia = ? AND s.activo = 1
+        LEFT JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        WHERE pp.codigo_materia = ? 
+        AND pp.codigo_carrera = ? 
+        AND s.activo = 1
         GROUP BY s.id
         ORDER BY codigo;
     `;
 
-    conexion.query(query, [materiaCodigo], (error, secciones) => {
+    conexion.query(query, [materiaCodigo, carreraCodigo], (error, secciones) => {
         if (error) {
             console.error('Error al obtener secciones:', error);
             return res.json({ success: false, message: 'Error al obtener secciones' });
@@ -513,6 +509,202 @@ router.post('/api/evaluaciones/crear_fuera_de_horario', express.json(), (req, re
         });
     });
 });
+});
+// API: Obtener detalles de una evaluación para editar
+router.get('/api/evaluacion/:id', (req, res) => {
+    if(!req.session.login) return res.json({ success: false, message: 'No autorizado' });
+
+    const { id } = req.params;
+
+    const query = `
+        SELECT 
+            e.id AS evaluacion_id,
+            e.contenido,
+            e.ponderacion AS porcentaje,
+            e.cantidad_personas,
+            e.competencias,
+            e.instrumentos,
+            e.fecha_evaluacion,
+            e.id_seccion,
+            s.id AS seccion_id,
+            s.letra AS seccion_letra,
+            pp.codigo_carrera AS carrera_codigo,
+            pp.codigo_materia AS materia_codigo,
+            CASE 
+                WHEN he.id_horario IS NOT NULL THEN 'Sección'
+                WHEN hec.id IS NOT NULL THEN 'Otro'
+                ELSE 'Sin horario'
+            END AS tipo_horario,
+            he.id_horario,
+            hs.dia,
+            hs.dia_num,
+            hs.aula,
+            IFNULL(hs.hora_inicio, hec.hora_inicio) AS hora_inicio,
+            IFNULL(hs.hora_cierre, hec.hora_cierre) AS hora_cierre
+        FROM evaluacion e
+        INNER JOIN seccion s ON e.id_seccion = s.id
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        LEFT JOIN horario_eval he ON e.id = he.id_eval
+        LEFT JOIN horario_seccion hs ON hs.id = he.id_horario
+        LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
+        WHERE e.id = ?
+    `;
+
+    conexion.query(query, [id], (error, results) => {
+        if (error) {
+            console.error('Error al obtener evaluación:', error);
+            return res.json({ success: false, message: 'Error al obtener evaluación' });
+        }
+        if (results.length === 0) {
+            return res.json({ success: false, message: 'Evaluación no encontrada' });
+        }
+
+        const evaluacion = results[0];
+
+        // Obtener estrategias asociadas
+        const queryEstrategias = `
+            SELECT ee.id_estrategia
+            FROM estrategia_empleada ee
+            WHERE ee.id_eval = ?
+        `;
+        conexion.query(queryEstrategias, [id], (err, estrategias) => {
+            if (err) {
+                console.error('Error al obtener estrategias:', err);
+                return res.json({ success: false, message: 'Error al obtener estrategias' });
+            }
+            evaluacion.estrategias = estrategias.map(e => e.id_estrategia);
+            res.json({ success: true, evaluacion });
+        });
+    });
+});
+// API: Actualizar evaluación
+router.put('/api/evaluacion/:id', express.json(), (req, res) => {
+    if (!req.session.login) return res.json({ success: false, message: 'No autorizado' });
+
+    const { id } = req.params;
+    const { 
+        contenido, estrategias_eval, porcentaje, cant_personas, id_seccion,
+        fecha_evaluacion, tipo_horario, id_horario, hora_inicio, hora_fin,
+        competencias, instrumentos 
+    } = req.body;
+
+    // Validaciones básicas
+    if (!contenido || !estrategias_eval || !porcentaje || !cant_personas || !id_seccion || !fecha_evaluacion || !tipo_horario || !competencias || !instrumentos) {
+        return res.json({ success: false, message: 'Datos incompletos' });
+    }
+
+    // Verificar si la evaluación existe y si tiene evaluaciones realizadas
+    const checkQuery = `
+        SELECT COUNT(*) AS count FROM evaluacion_realizada WHERE id_evaluacion = ?
+    `;
+    conexion.query(checkQuery, [id], (err, result) => {
+        if (err) {
+            console.error('Error al verificar evaluaciones realizadas:', err);
+            return res.json({ success: false, message: 'Error al verificar estado de la evaluación' });
+        }
+        /*if (result[0].count > 0) {
+            return res.json({ success: false, message: 'No se puede editar una evaluación que ya tiene estudiantes evaluados' });
+        }*/
+
+        // Iniciar transacción
+        conexion.getConnection((err, conn) => {
+            if (err) return res.json({ success: false, message: 'Error de conexión' });
+
+            conn.beginTransaction(err => {
+                if (err) { conn.release(); return res.json({ success: false, message: 'Error de transacción' }); }
+
+                // Actualizar evaluacion
+                const updateEval = `
+                    UPDATE evaluacion 
+                    SET contenido = ?, ponderacion = ?, cantidad_personas = ?, competencias = ?, instrumentos = ?, fecha_evaluacion = ?, id_seccion = ?
+                    WHERE id = ?
+                `;
+                conn.query(updateEval, [contenido, porcentaje, cant_personas, competencias, instrumentos, fecha_evaluacion, id_seccion, id], (err, result) => {
+                    if (err) {
+                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al actualizar evaluación' }); });
+                    }
+
+                    // Eliminar horarios existentes
+                    const deleteHorarioEval = `DELETE FROM horario_eval WHERE id_eval = ?`;
+                    const deleteHorarioClandestina = `DELETE FROM horario_eval_clandestina WHERE id_eval = ?`;
+                    
+                    conn.query(deleteHorarioEval, [id], err => {
+                        if (err) {
+                            return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al actualizar horario' }); });
+                        }
+                        conn.query(deleteHorarioClandestina, [id], err => {
+                            if (err) {
+                                return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al actualizar horario' }); });
+                            }
+
+                            // Insertar nuevo horario según tipo
+                            if (tipo_horario === 'Sección') {
+                                if (!id_horario) {
+                                    return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Horario de sección no proporcionado' }); });
+                                }
+                                const insertHorario = `INSERT INTO horario_eval (id_horario, id_eval) VALUES (?, ?)`;
+                                conn.query(insertHorario, [id_horario, id], err => {
+                                    if (err) {
+                                        console.error(err.message)
+                                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al insertar horario de sección' }); });
+                                    }
+                                    updateEstrategias();
+                                });
+                            } else if (tipo_horario === 'Otro') {
+                                if (!hora_inicio || !hora_fin) {
+                                    return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Horario de otro tipo incompleto' }); });
+                                }
+                                const insertClandestina = `INSERT INTO horario_eval_clandestina (hora_inicio, hora_cierre, id_eval) VALUES (?, ?, ?)`;
+                                conn.query(insertClandestina, [hora_inicio, hora_fin, id], err => {
+                                    if (err) {
+                                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al insertar horario clandestino' }); });
+                                    }
+                                    updateEstrategias();
+                                });
+                            } else {
+                                return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Tipo de horario inválido' }); });
+                            }
+
+                            function updateEstrategias() {
+                                // Eliminar estrategias existentes
+                                const deleteEstrategias = `DELETE FROM estrategia_empleada WHERE id_eval = ?`;
+                                conn.query(deleteEstrategias, [id], err => {
+                                    if (err) {
+                                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al actualizar estrategias' }); });
+                                    }
+
+                                    // Insertar nuevas estrategias
+                                    if (estrategias_eval && estrategias_eval.length > 0) {
+                                        const values = estrategias_eval.map(estId => [estId, id]);
+                                        const insertEstrategias = `INSERT INTO estrategia_empleada (id_estrategia, id_eval) VALUES ?`;
+                                        conn.query(insertEstrategias, [values], err => {
+                                            if (err) {
+                                                return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al insertar estrategias' }); });
+                                            }
+                                            commitTransaction();
+                                        });
+                                    } else {
+                                        commitTransaction();
+                                    }
+                                });
+                            }
+
+                            function commitTransaction() {
+                                conn.commit(err => {
+                                    if (err) {
+                                        return conn.rollback(() => { conn.release(); res.json({ success: false, message: 'Error al confirmar transacción' }); });
+                                    }
+                                    conn.release();
+                                    res.json({ success: true, message: 'Evaluación actualizada correctamente' });
+                                });
+                            }
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
 // API: Obtener carreras activas (duplicado, pero lo mantengo por compatibilidad)
 router.get('/api/carreras', (req, res) => {
     if(!req.session.login){
@@ -520,9 +712,13 @@ router.get('/api/carreras', (req, res) => {
     }
 
     const query = `
-        SELECT codigo, nombre, descripcion
-        FROM carrera
-        WHERE activo = 1
+        SELECT 
+            c.codigo, 
+            c.nombre, 
+            COUNT(DISTINCT pp.num_semestre) AS duracion_semestres
+        FROM carrera c
+        INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
+        WHERE c.activo = 1
         ORDER BY nombre
     `;
 
@@ -568,7 +764,6 @@ router.get('/api/carrera/:carreraCodigo/secciones', (req, res) => {
         res.json({ success: true, secciones});
         });
     });
-});
 
 // API: Obtener horarios por sección
 router.get('/api/seccion/:seccionId/horario', (req, res) => {

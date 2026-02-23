@@ -10,7 +10,7 @@ let fechasSistema = [];
 let horariosSeccion = []; // Guardar todos los horarios de la sección
 
 // Aplicar clases de estado cuando se cargue la página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const estadoElements = document.querySelectorAll('.estado');
 
     estadoElements.forEach(element => {
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const claseEstado = 'estado-' + estadoTexto.replace(/ /g, '-');
         element.classList.add(claseEstado);
     });
-    
+
     // Inicializar datos
     allRows = Array.from(document.querySelectorAll('.evaluacion-row'));
     filteredRows = [...allRows]; // Inicialmente, todas las filas están filtradas
@@ -30,26 +30,26 @@ function filtrarEvaluaciones() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const docenteFilter = document.getElementById('filterDocente')?.value || '';
     const estadoFilter = document.getElementById('filterEstado')?.value || '';
-    
+
     // Filtrar sobre todas las filas originales
     filteredRows = allRows.filter(row => {
         // Obtener texto de todas las celdas para búsqueda general
         const rowText = row.textContent.toLowerCase();
-        
+
         // Obtener docente del atributo data
         const docenteAttr = row.dataset.docente || '';
-        
+
         // Filtrado de búsqueda
         const matchSearch = !searchTerm || rowText.includes(searchTerm);
-        
+
         // Filtro por docente
         const matchDocente = !docenteFilter || docenteAttr === docenteFilter;
-        
+
         // Filtro por estado
         let matchEstado = true;
         if (estadoFilter) {
             const estadoCell = row.cells[7]?.textContent.trim() || ''; // Columna de estado (índice 7)
-            
+
             if (estadoFilter === 'Completada') {
                 matchEstado = estadoCell.includes('Completada') || estadoCell === 'Completada';
             } else if (estadoFilter === 'Pendiente') {
@@ -63,24 +63,24 @@ function filtrarEvaluaciones() {
 
         return matchSearch && matchDocente && matchEstado;
     });
-      // Reiniciar a la primera página
+    // Reiniciar a la primera página
     currentPage = 1;
-    
+
     // Actualizar la tabla con las filas filtradas
     updateTable();
 }
 
 // Event listeners para los filtros
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Input de búsqueda
     document.getElementById('searchInput')?.addEventListener('input', filtrarEvaluaciones);
-    
+
     // Filtro por docente
     document.getElementById('filterDocente')?.addEventListener('change', filtrarEvaluaciones);
-    
+
     // Filtro por estado
     document.getElementById('filterEstado')?.addEventListener('change', filtrarEvaluaciones);
-    
+
     // Inicializar paginación
     inicializarPaginacion();
 });
@@ -95,10 +95,14 @@ function evaluar(evaluacionId) {
 }
 
 // Funciones del modal
+// Modificar la función de apertura del modal de creación
 function openModalEvaluacion() {
+    document.getElementById('evaluacion_id').value = '';
+    document.querySelector('#modalAddEvaluacion .modal-header-evaluacion h2').innerHTML = '<i class="fas fa-clipboard-check"></i> Nueva Evaluación';
+    document.getElementById('btnGuardarEvaluacion').innerHTML = '<i class="fas fa-save"></i> Crear Evaluación';
+    document.getElementById('btnGuardarEvaluacion').onclick = guardarEvaluacion;
     document.getElementById('modalAddEvaluacion').classList.add('active');
     document.body.style.overflow = 'hidden';
-    //cargarRubricas();
     cargarEstrategias();
     cargarCarreras();
 }
@@ -117,7 +121,7 @@ async function cargarEstrategias() {
     try {
         const response = await fetch('/api/estrategias_eval');
         const data = await response.json();
-        
+
         if (data.success) {
             const div = document.getElementById('estrategias_eval');
             div.innerHTML = ''
@@ -139,7 +143,7 @@ async function cargarEstrategias() {
                     </div>
                 `;
             });
-            
+
             div.innerHTML = labelHTML + checkboxesHTML;
         }
     } catch (error) {
@@ -147,12 +151,10 @@ async function cargarEstrategias() {
         Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
     }
 }
-function verificarPonderacion(id_chckbx)
-{
+function verificarPonderacion(id_chckbx) {
     checkbox_no_ponderable = document.getElementById(`estrategia_${id_chckbx}`);
     const input_pond = document.getElementById('porcentaje_evaluacion')
-    if (checkbox_no_ponderable.checked)
-    {
+    if (checkbox_no_ponderable.checked) {
         input_pond.disabled = true;
         input_pond.value = 0;
     }
@@ -192,11 +194,11 @@ async function cargarCarreras() {
     try {
         const response = await fetch('/api/carreras');
         const data = await response.json();
-        
+
         if (data.success) {
             const select = document.getElementById('carrera_codigo');
             select.innerHTML = '<option value="">Seleccione una carrera</option>';
-            
+
             data.carreras.forEach(carrera => {
                 const option = document.createElement('option');
                 option.value = carrera.codigo;
@@ -210,15 +212,15 @@ async function cargarCarreras() {
     }
 }
 // Evento cuando se selecciona una carrera
-document.getElementById('carrera_codigo')?.addEventListener('change', async function() {
+document.getElementById('carrera_codigo')?.addEventListener('change', async function () {
     const carreraCodigo = this.value;
     const materiaSelect = document.getElementById('materia_codigo');
     const seccionSelect = document.getElementById('seccion_id');
-    
+
     if (carreraCodigo) {
         materiaSelect.disabled = false;
         await cargarMaterias(carreraCodigo);
-        
+
         // Reset materia y sección
         materiaSelect.value = '';
         seccionSelect.disabled = true;
@@ -239,10 +241,10 @@ async function cargarMaterias(carreraCodigo) {
     try {
         const response = await fetch(`/api/carrera/${carreraCodigo}/materias`);
         const data = await response.json();
-        
+
         const select = document.getElementById('materia_codigo');
         select.innerHTML = '<option value="">Seleccione una materia</option>';
-        
+
         if (data.success && data.materias.length > 0) {
             data.materias.forEach(materia => {
                 const option = document.createElement('option');
@@ -260,13 +262,14 @@ async function cargarMaterias(carreraCodigo) {
 }
 
 // Evento cuando se selecciona una materia
-document.getElementById('materia_codigo')?.addEventListener('change', async function() {
+document.getElementById('materia_codigo')?.addEventListener('change', async function () {
+    const carreraCodigo = document.getElementById('carrera_codigo').value
     const materiaCodigo = this.value;
     const seccionSelect = document.getElementById('seccion_id');
-    
+
     if (materiaCodigo) {
         seccionSelect.disabled = false;
-        await cargarSecciones(materiaCodigo);
+        await cargarSecciones(materiaCodigo, carreraCodigo);
     } else {
         seccionSelect.disabled = true;
         seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
@@ -276,14 +279,14 @@ document.getElementById('materia_codigo')?.addEventListener('change', async func
 });
 
 // Cargar secciones por materia
-async function cargarSecciones(materiaCodigo) {
+async function cargarSecciones(materiaCodigo, carreraCodigo) {
     try {
-        const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
+        const response = await fetch(`/api/materia/${materiaCodigo}/${carreraCodigo}/secciones`);
         const data = await response.json();
-        
+
         const select = document.getElementById('seccion_id');
         select.innerHTML = '<option value="">Seleccione una sección</option>';
-        
+
         if (data.success && data.secciones.length > 0) {
             data.secciones.forEach(seccion => {
                 const option = document.createElement('option');
@@ -317,16 +320,16 @@ document.getElementById('actividades_aprendizaje')?.addEventListener('input', ve
 document.getElementById('recursos_herramientas')?.addEventListener('input', verificarFormularioCompleto);
 
 // Evento cuando se selecciona una sección
-document.getElementById('seccion_id')?.addEventListener('change', async function() {
+document.getElementById('seccion_id')?.addEventListener('change', async function () {
     const seccionId = this.value;
-    
+
     if (seccionId) {
         await cargarEstudiantes(seccionId);
         await cargarConfiguracionFechas(seccionId);
         document.getElementById('tipo_horario').disabled = false;
     } else {
         select_tipo_horario = document.getElementById('tipo_horario');
-        select_tipo_horario.value = ''; 
+        select_tipo_horario.value = '';
         select_tipo_horario.disabled = true;
         date_input = document.getElementById('fecha_evaluacion_date')
         date_input.value = ''; date_input.disabled = true;
@@ -340,7 +343,7 @@ document.getElementById('seccion_id')?.addEventListener('change', async function
 // Cargar estudiantes de la sección
 async function cargarEstudiantes(seccionId) {
     document.getElementById('estudiantesPreview').innerHTML = '<div class="loading-estudiantes"><i class="fas fa-spinner fa-spin"></i> Cargando estudiantes...</div>';
-    
+
     try {
         const response = await fetch(`/api/seccion/${seccionId}/estudiantes`);
         const data = await response.json();
@@ -362,7 +365,7 @@ async function cargarEstudiantes(seccionId) {
 // Mostrar lista de estudiantes
 function mostrarEstudiantes(estudiantes) {
     const container = document.getElementById('estudiantesPreview');
-    
+
     let html = `
         <div class="estudiantes-header">
             <i class="fas fa-users"></i>
@@ -388,13 +391,12 @@ function mostrarEstudiantes(estudiantes) {
     html += '</div>';
     container.innerHTML = html;
 }
-function condicionarFormularioCompleto()
-{
+function condicionarFormularioCompleto() {
     let checkboxes_estrags = Array.from(document
-                                            .getElementById('estrategias_eval')
-                                            .querySelectorAll('input[type="checkbox"]'))
-                                            .filter(estrategia_eval => estrategia_eval.checked)
-                                            .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
+        .getElementById('estrategias_eval')
+        .querySelectorAll('input[type="checkbox"]'))
+        .filter(estrategia_eval => estrategia_eval.checked)
+        .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
     const porcentaje_eval = document.getElementById('porcentaje_evaluacion').value;
     const fecha_evaluacion_date = document.getElementById('fecha_evaluacion_date').value;
     const hora_eval_inicio = document.getElementById('hora_eval_inicio').value;
@@ -405,20 +407,18 @@ function condicionarFormularioCompleto()
     const contenido = document.getElementById('contenido').value;
     const competencias = document.getElementById('competencias').value;
     const instrumentos = document.getElementById('instrumentos').value;
-    
-    return ((fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin) || fecha_evaluacion_select) 
+
+    return ((fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin) || fecha_evaluacion_select)
         && cant_personas && id_seccion && contenido && porcentaje_eval && competencias && instrumentos
         && checkboxes_estrags.length > 0
-        
+
 }
 // Verificar si el formulario está completo
 function verificarFormularioCompleto() {
     const btnGuardar = document.getElementById('btnGuardarEvaluacion');
-    if (condicionarFormularioCompleto())
-    {
+    if (condicionarFormularioCompleto()) {
         btnGuardar.disabled = false;
-    } else 
-    {
+    } else {
         btnGuardar.disabled = true;
     }
 }
@@ -426,10 +426,10 @@ function verificarFormularioCompleto() {
 // Guardar evaluación
 async function guardarEvaluacion() {
     const checkboxes_estrags = Array.from(document
-                                            .getElementById('estrategias_eval')
-                                            .querySelectorAll('input[type="checkbox"]'))
-                                            .filter(estrategia_eval => estrategia_eval.checked)
-                                            .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
+        .getElementById('estrategias_eval')
+        .querySelectorAll('input[type="checkbox"]'))
+        .filter(estrategia_eval => estrategia_eval.checked)
+        .map(estrategia_eval => estrategia_eval.value); //obtiene las checkbox
     const porcentaje_eval = document.getElementById('porcentaje_evaluacion').value;
     const tipo_horario = document.getElementById('tipo_horario').value
     const cant_personas = document.getElementById('cant_personas').value;
@@ -443,21 +443,19 @@ async function guardarEvaluacion() {
     const hora_eval_fin = document.getElementById('hora_eval_fin').value;
     let horario = "";
     let fecha_evaluacion = "";
-    if(tipo_horario == "Sección")
-    {
+    if (tipo_horario == "Sección") {
         const fecha_evaluacion_select = document.getElementById('fecha_evaluacion_select').value;
         horario = fecha_evaluacion_select;
         fecha_evaluacion = JSON.parse(fecha_evaluacion_select);
     }
-    else if (tipo_horario == "Otro")
-    {
+    else if (tipo_horario == "Otro") {
         horario = fecha_evaluacion_date && hora_eval_inicio && hora_eval_fin;
         fecha_evaluacion = fecha_evaluacion_date
     }
-    if(!
+    if (!
         (horario && cant_personas && id_seccion && contenido && porcentaje_eval && competencias && instrumentos
-        && checkboxes_estrags.length > 0)
-      ) {
+            && checkboxes_estrags.length > 0)
+    ) {
         Swal.fire('Error', 'No todos los campos obligatorios fueron llenados. Por favor, asegurese de haber respondido los no opcionales.', 'error');
         return;
     }
@@ -486,8 +484,7 @@ async function guardarEvaluacion() {
     });
 
     try {
-        if (tipo_horario == "Sección")
-        {
+        if (tipo_horario == "Sección") {
             const response = await fetch('/api/evaluaciones/crear_en_horario', {
                 method: 'POST',
                 headers: {
@@ -524,25 +521,24 @@ async function guardarEvaluacion() {
                 Swal.fire('Error', data.message || 'No se pudieron crear las evaluaciones', 'error');
             }
         }
-        else if (tipo_horario == "Otro")
-        {
+        else if (tipo_horario == "Otro") {
             const response = await fetch('/api/evaluaciones/crear_fuera_de_horario', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                        observaciones: observaciones,
-                        fecha_evaluacion: fecha_evaluacion,
-                        hora_eval_inicio: hora_eval_inicio,
-                        hora_eval_fin: hora_eval_fin,  
-                        id_seccion: id_seccion,
-                        cant_personas: cant_personas,
-                        contenido: contenido,
-                        competencias: competencias,
-                        instrumentos: instrumentos,
-                        porcentaje: porcentaje_eval,
-                        estrategias_eval: checkboxes_estrags
+                    observaciones: observaciones,
+                    fecha_evaluacion: fecha_evaluacion,
+                    hora_eval_inicio: hora_eval_inicio,
+                    hora_eval_fin: hora_eval_fin,
+                    id_seccion: id_seccion,
+                    cant_personas: cant_personas,
+                    contenido: contenido,
+                    competencias: competencias,
+                    instrumentos: instrumentos,
+                    porcentaje: porcentaje_eval,
+                    estrategias_eval: checkboxes_estrags
                 })
             });
 
@@ -570,7 +566,7 @@ async function guardarEvaluacion() {
 }
 
 // Cerrar modal con ESC
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         const modal = document.getElementById('modalAddEvaluacion');
         if (modal && modal.classList.contains('active')) {
@@ -580,7 +576,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 // Cerrar modal al hacer clic fuera
-document.getElementById('modalAddEvaluacion')?.addEventListener('click', function(event) {
+document.getElementById('modalAddEvaluacion')?.addEventListener('click', function (event) {
     if (event.target === this) {
         closeModalEvaluacion();
     }
@@ -634,10 +630,240 @@ function closeModalDetalles() {
     document.getElementById('modalVerDetalles').classList.remove('active');
     document.body.style.overflow = 'auto';
 }
+// Funciones para edición
+function openEditModal(evaluacionId) {
+    document.getElementById('modalAddEvaluacion').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('evaluacion_id').value = evaluacionId;
+    document.querySelector('#modalAddEvaluacion .modal-header-evaluacion h2').innerHTML = '<i class="fas fa-edit"></i> Editar Evaluación';
+    document.getElementById('btnGuardarEvaluacion').innerHTML = '<i class="fas fa-save"></i> Actualizar Evaluación';
+    document.getElementById('btnGuardarEvaluacion').onclick = actualizarEvaluacion;
 
+    // Mostrar loading mientras se cargan datos
+    document.getElementById('estrategias_eval').innerHTML = '<div class="loading">Cargando...</div>';
+
+    Promise.all([
+        fetch('/api/estrategias_eval').then(r => r.json()),
+        fetch(`/api/evaluacion/${evaluacionId}`).then(r => r.json())
+    ]).then(([estrategiasResp, evaluacionResp]) => {
+        if (estrategiasResp.success && evaluacionResp.success) {
+            cargarEstrategiasEdit(estrategiasResp.estrategias_eval, evaluacionResp.evaluacion.estrategias);
+            cargarDatosEvaluacionEdit(evaluacionResp.evaluacion);
+        } else {
+            Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
+            closeModalEvaluacion();
+        }
+    }).catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Error al cargar datos', 'error');
+        closeModalEvaluacion();
+    });
+}
+
+function cargarEstrategiasEdit(listaEstrategias, seleccionadas = []) {
+    const container = document.getElementById('estrategias_eval');
+    container.innerHTML = '';
+    listaEstrategias.forEach(est => {
+        const label = document.createElement('label');
+        label.className = 'estrategia-checkbox';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = est.id;
+        checkbox.checked = seleccionadas.includes(est.id);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(est.nombre));
+        container.appendChild(label);
+    });
+}
+
+function cargarDatosEvaluacionEdit(evaluacion) {
+    document.getElementById('contenido').value = evaluacion.contenido;
+    document.getElementById('porcentaje_evaluacion').value = evaluacion.porcentaje;
+    document.getElementById('cant_personas').value = evaluacion.cantidad_personas;
+    document.getElementById('competencias').value = evaluacion.competencias || '';
+    document.getElementById('instrumentos').value = evaluacion.instrumentos || '';
+
+    // Cargar cascada de carrera, materia, sección
+    cargarCarrerasYSeleccionarEdit(evaluacion.carrera_codigo, evaluacion.materia_codigo, evaluacion.seccion_id, evaluacion);
+}
+
+function cargarCarrerasYSeleccionarEdit(carreraCodigo, materiaCodigo, seccionId, evaluacion) {
+    fetch('/api/carreras')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const selectCarrera = document.getElementById('carrera_codigo');
+                selectCarrera.innerHTML = '<option value="">Seleccione una carrera</option>';
+                data.carreras.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c.codigo;
+                    option.textContent = c.nombre;
+                    if (c.codigo === carreraCodigo) option.selected = true;
+                    selectCarrera.appendChild(option);
+                });
+                // Disparar cambio para cargar materias
+                if (carreraCodigo) {
+                    cargarMateriasYSeleccionarEdit(carreraCodigo, materiaCodigo, seccionId, evaluacion);
+                }
+            }
+        });
+}
+
+function cargarMateriasYSeleccionarEdit(carreraCodigo, materiaCodigo, seccionId, evaluacion) {
+    fetch(`/api/carrera/${carreraCodigo}/materias`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const selectMateria = document.getElementById('materia_codigo');
+                selectMateria.disabled = false;
+                selectMateria.innerHTML = '<option value="">Seleccione una materia</option>';
+                data.materias.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m.codigo;
+                    option.textContent = `${m.nombre} (Semestre ${m.semestre})`;
+                    if (m.codigo === materiaCodigo) option.selected = true;
+                    selectMateria.appendChild(option);
+                });
+                if (materiaCodigo) {
+                    cargarSeccionesYSeleccionarEdit(materiaCodigo, seccionId, evaluacion);
+                }
+            }
+        });
+}
+
+async function cargarSeccionesYSeleccionarEdit(materiaCodigo, seccionId, evaluacion) {
+    try {
+        const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
+        const data = await response.json();
+
+        if (data.success) {
+            const selectSeccion = document.getElementById('seccion_id');
+            selectSeccion.disabled = false;
+            selectSeccion.innerHTML = '<option value="">Seleccione una sección</option>';
+
+            data.secciones.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.id;
+                option.textContent = `Sección ${s.codigo} - ${s.horario}`;
+                if (s.id === seccionId) option.selected = true;
+                selectSeccion.appendChild(option);
+            });
+
+            if (seccionId) {
+                await cargarEstudiantes(seccionId);
+                await cargarConfiguracionFechas(seccionId);
+                document.getElementById('tipo_horario').disabled = false;
+                await cargarHorarioYFechaEdit(evaluacion);
+            }
+        }
+    } catch (error) {
+        console.error('Error en cargarSeccionesYSeleccionarEdit:', error);
+    }
+}
+
+async function cargarHorarioYFechaEdit(evaluacion) {
+    const tipoHorario = document.getElementById('tipo_horario');
+    tipoHorario.disabled = false;
+    tipoHorario.value = evaluacion.tipo_horario;
+
+    cambiarTipoHorario();
+
+    if (evaluacion.tipo_horario === 'Sección') {
+        const selectFecha = document.getElementById('fecha_evaluacion_select');
+        let par_conseguido = false
+        // Buscar y seleccionar la opción correcta
+        for (let i = 0; i < selectFecha.options.length; i++) {
+            const opcion = selectFecha.options[i];
+            if (opcion.value) {
+                try {
+                    const data = JSON.parse(opcion.value);
+                    if (data.fecha == formatearFechaParaInput(new Date(evaluacion.fecha_evaluacion))) {
+                        opcion.selected = true;
+                        selectFecha.dispatchEvent(new Event('change', { bubbles: true }));
+                        par_conseguido = true;
+                        break;
+                    }
+                } catch (e) { }
+            }
+        }
+        if (!par_conseguido) {
+            const option = document.createElement('option');
+            valor_json = {
+                fecha: formatearFechaLocal(new Date(evaluacion.fecha_evaluacion)),
+                horarioId: evaluacion.id_horario,
+                diaNumero: evaluacion.dia_num,
+                horaInicio: evaluacion.hora_inicio,
+                horaCierre: evaluacion.hora_cierre
+            };
+            option.value = JSON.stringify(valor_json);
+            option.textContent = `${valor_json.fecha} (${evaluacion.dia}) - ${valor_json.horaInicio} a ${valor_json.horaCierre} - Aula: ${evaluacion.aula}`;
+            new_opcion = selectFecha.appendChild(option);
+            new_opcion.selected = true;
+            actualizarInputsHoras(valor_json.horaInicio, valor_json.horaCierre)
+        }
+    } else if (evaluacion.tipo_horario === 'Otro') {
+        document.getElementById('fecha_evaluacion_date').value = evaluacion.fecha_evaluacion.split('T')[0];
+        document.getElementById('hora_eval_inicio').value = evaluacion.hora_inicio;
+        document.getElementById('hora_eval_fin').value = evaluacion.hora_cierre;
+    }
+    verificarFormularioCompleto();
+}
+
+function actualizarEvaluacion() {
+    const evaluacionId = document.getElementById('evaluacion_id').value;
+    if (!evaluacionId) return;
+
+    const data = {
+        contenido: document.getElementById('contenido').value,
+        estrategias_eval: Array.from(document.querySelectorAll('#estrategias_eval input:checked')).map(cb => cb.value),
+        porcentaje: document.getElementById('porcentaje_evaluacion').value,
+        cant_personas: document.getElementById('cant_personas').value,
+        id_seccion: document.getElementById('seccion_id').value,
+        fecha_evaluacion: document.getElementById('fecha_evaluacion_select').style.display !== 'none' ? JSON.parse(document.getElementById('fecha_evaluacion_select').value).fecha : document.getElementById('fecha_evaluacion_date').value,
+        tipo_horario: document.getElementById('tipo_horario').value,
+        competencias: document.getElementById('competencias').value,
+        instrumentos: document.getElementById('instrumentos').value
+    };
+
+    if (data.tipo_horario === 'Sección') {
+        data.id_horario = JSON.parse(document.getElementById('fecha_evaluacion_select').value).horarioId;
+    } else {
+        data.hora_inicio = document.getElementById('hora_eval_inicio').value;
+        data.hora_fin = document.getElementById('hora_eval_fin').value;
+    }
+
+    // Validaciones básicas
+    if (!data.contenido || data.estrategias_eval.length === 0 || !data.porcentaje || !data.cant_personas || !data.id_seccion || !data.fecha_evaluacion || !data.competencias || !data.instrumentos) {
+        Swal.fire('Error', 'Complete todos los campos requeridos', 'error');
+        return;
+    }
+
+    Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    fetch(`/api/evaluacion/${evaluacionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                Swal.fire({ icon: 'success', title: 'Actualizado', text: res.message }).then(() => {
+                    closeModalEvaluacion();
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            Swal.fire('Error', 'Error de red', 'error');
+        });
+}
 function mostrarDetallesEvaluacion(data) {
     const modalBody = document.getElementById('modalVerDetalles').querySelector('.modal-body-detalles');
-    
+
     // For now, just show a simple message since we're showing rubric-level data
     modalBody.innerHTML = `
         <div class="detalles-evaluacion">
@@ -651,7 +877,7 @@ function mostrarDetallesEvaluacion(data) {
 }
 
 // Cerrar modal de detalles con ESC
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         const modalDetalles = document.getElementById('modalVerDetalles');
         if (modalDetalles && modalDetalles.classList.contains('active')) {
@@ -661,7 +887,7 @@ document.addEventListener('keydown', function(event) {
 });
 
 // Cerrar modal de detalles al hacer clic fuera
-document.getElementById('modalVerDetalles')?.addEventListener('click', function(event) {
+document.getElementById('modalVerDetalles')?.addEventListener('click', function (event) {
     if (event.target === this) {
         closeModalDetalles();
     }
@@ -675,7 +901,7 @@ function inicializarPaginacion() {
     // Event listener para el selector de entradas
     const entriesSelect = document.getElementById('entriesPerPage');
     if (entriesSelect) {
-        entriesSelect.addEventListener('change', function() {
+        entriesSelect.addEventListener('change', function () {
             if (this.value === 'all') {
                 entriesPerPage = filteredRows.length;
             } else {
@@ -685,17 +911,17 @@ function inicializarPaginacion() {
             updateTable();
         });
     }
-    
+
     // Inicializar la tabla
     updateTable();
 }
 // Actualizar tabla según paginación
 function updateTable() {
     const totalEntries = filteredRows.length;
-    
+
     // Ocultar todas las filas primero
     allRows.forEach(row => row.style.display = 'none');
-    
+
     if (totalEntries === 0) {
         // Mostrar mensaje de "No hay resultados"
         document.getElementById('showingStart').textContent = '0';
@@ -704,23 +930,23 @@ function updateTable() {
         document.getElementById('paginationButtons').innerHTML = '';
         return;
     }
-    
+
     // Calcular rango
     const start = (currentPage - 1) * entriesPerPage;
     const end = Math.min(start + entriesPerPage, totalEntries);
-    
+
     // Mostrar filas del rango actual
     for (let i = start; i < end; i++) {
         if (filteredRows[i]) {
             filteredRows[i].style.display = '';
         }
     }
-    
+
     // Actualizar información
     document.getElementById('showingStart').textContent = start + 1;
     document.getElementById('showingEnd').textContent = end;
     document.getElementById('totalEntries').textContent = totalEntries;
-    
+
     // Generar botones de paginación
     generatePaginationButtons();
 }
@@ -729,13 +955,13 @@ function updateTable() {
 function generatePaginationButtons() {
     const totalPages = Math.ceil(filteredRows.length / entriesPerPage);
     const paginationContainer = document.getElementById('paginationButtons');
-    
+
     if (!paginationContainer) return;
-    
+
     paginationContainer.innerHTML = '';
-    
+
     if (totalPages <= 1) return;
-    
+
     // Botón anterior
     const prevBtn = document.createElement('button');
     prevBtn.className = 'pagination-btn';
@@ -748,16 +974,16 @@ function generatePaginationButtons() {
         }
     };
     paginationContainer.appendChild(prevBtn);
-    
+
     // Botones de páginas
     const maxButtons = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
     let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-    
+
     if (endPage - startPage < maxButtons - 1) {
         startPage = Math.max(1, endPage - maxButtons + 1);
     }
-    
+
     // Primera página
     if (startPage > 1) {
         const firstBtn = document.createElement('button');
@@ -768,7 +994,7 @@ function generatePaginationButtons() {
             updateTable();
         };
         paginationContainer.appendChild(firstBtn);
-        
+
         if (startPage > 2) {
             const dots = document.createElement('span');
             dots.className = 'pagination-dots';
@@ -776,7 +1002,7 @@ function generatePaginationButtons() {
             paginationContainer.appendChild(dots);
         }
     }
-    
+
     // Páginas del rango
     for (let i = startPage; i <= endPage; i++) {
         const pageBtn = document.createElement('button');
@@ -788,7 +1014,7 @@ function generatePaginationButtons() {
         };
         paginationContainer.appendChild(pageBtn);
     }
-    
+
     // Última página
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
@@ -797,7 +1023,7 @@ function generatePaginationButtons() {
             dots.textContent = '...';
             paginationContainer.appendChild(dots);
         }
-        
+
         const lastBtn = document.createElement('button');
         lastBtn.className = 'pagination-btn';
         lastBtn.textContent = totalPages;
@@ -807,7 +1033,7 @@ function generatePaginationButtons() {
         };
         paginationContainer.appendChild(lastBtn);
     }
-    
+
     // Botón siguiente
     const nextBtn = document.createElement('button');
     nextBtn.className = 'pagination-btn';
@@ -825,15 +1051,14 @@ async function cargarConfiguracionFechas(seccionId) {
     // Filtrar evaluaciones por el ID de sección actual
     evals = JSON.parse(window.evaluaciones);
     const evaluacionesSecc = evals.filter(
-          evalu => evalu.id_seccion == seccionId);               
+        evalu => evalu.id_seccion == seccionId);
     // Crear array de fechas y IDs de horario con evaluaciones existentes de ESTA sección
     const fechas_y_ids_horario = evaluacionesSecc.map(evalu => ({
         fecha: formatearFechaParaInput(new Date(evalu.fecha_evaluacion)),
         id_horario: evalu.id_horario
-        }));
+    }));
     try {
-        if(!configuracionFechas?.seccion || configuracionFechas?.seccion != seccionId)
-        {
+        if (!configuracionFechas?.seccion || configuracionFechas?.seccion != seccionId) {
             console.log('Cargando horarios para sección:', seccionId);
             const response = await fetch(`/api/seccion/${seccionId}/horario`);
             const data = await response.json();
@@ -850,10 +1075,10 @@ async function cargarConfiguracionFechas(seccionId) {
                     hora_cierre: horario.hora_cierre,
                     id_seccion: horario.id_seccion
                 }));
-                
+
                 // Obtener días únicos permitidos
                 const diasUnicos = [...new Set(horariosSeccion.map(h => h.dia_num))];
-                
+
                 configuracionFechas = {
                     seccion: seccionId,
                     ids: horariosSeccion.map(h => h.id),
@@ -865,25 +1090,24 @@ async function cargarConfiguracionFechas(seccionId) {
                 };
             }
         }
-            actualizarInfoSistema();
-            // Pasar las fechas ocupadas de ESTA sección a la función
-            generarFechasDisponibles(fechas_y_ids_horario);
+        actualizarInfoSistema();
+        // Pasar las fechas ocupadas de ESTA sección a la función
+        generarFechasDisponibles(fechas_y_ids_horario);
     } catch (error) {
         console.error('Error al cargar configuración de fechas:', error);
         mostrarErrorFechas();
     }
 }
-function cambiarTipoHorario()
-{
+function cambiarTipoHorario() {
     const tipoSelect = document.getElementById('tipo_horario');
     const selectFechas = document.getElementById('fecha_evaluacion_select');
     const dateInput = document.getElementById('fecha_evaluacion_date');
     const hint = document.getElementById('date-eval-text');
     const input_hora_inicio = document.getElementById('hora_eval_inicio');
     const input_hora_fin = document.getElementById('hora_eval_fin');
-    
+
     const tipo = tipoSelect.value;
-    
+
     if (tipo === 'Sección') {
         dateInput.value = ''
         input_hora_inicio.value = '';
@@ -894,10 +1118,10 @@ function cambiarTipoHorario()
         selectFechas.disabled = false;
         input_hora_inicio.disabled = true;
         input_hora_fin.disabled = true;
-        
+
         // Actualizar hint
         hint.innerHTML = '<i class="fas fa-clock"></i> Solo se muestran los horarios de clases de la sección';
-        
+
     } else if (tipo === 'Otro') {
         // Modo libre: ocultar select, mostrar date input
         selectFechas.value = ''
@@ -911,14 +1135,13 @@ function cambiarTipoHorario()
         input_hora_fin.disabled = false;
         input_hora_inicio.value = '';
         input_hora_fin.value = '';
-        dateInput.min = configuracionFechas.fechaInicio.slice(0,10);
+        dateInput.min = configuracionFechas.fechaInicio.slice(0, 10);
         dateInput.max = configuracionFechas.fechaFin.slice(0, 10);
-        
+
         // Actualizar hint
         hint.innerHTML = '<i class="fas fa-calendar-alt"></i> Puedes seleccionar cualquier fecha del semestre';
     }
-    else if (tipo == '')
-    {
+    else if (tipo == '') {
         selectFechas.style.display = 'block';
         dateInput.style.display = 'none';
         selectFechas.disabled = true;
@@ -931,27 +1154,29 @@ function cambiarTipoHorario()
         input_hora_fin.value = '';
     }
 }
-document.getElementById('fecha_evaluacion_select')?.addEventListener('change', async function() {
-    const horas_eval_div = document.getElementById('horas_evaluacion');
+document.getElementById('fecha_evaluacion_select')?.addEventListener('change', async function () {
     fecha_select = JSON.parse(this.value)
-    inputs = horas_eval_div.querySelectorAll('input');
-    if (fecha_select)
-    {
-        inputs[0].value = fecha_select.horaInicio
-        inputs[1].value = fecha_select.horaCierre
+    if (fecha_select) {
+        actualizarInputsHoras(fecha_select.horaInicio, fecha_select.horaCierre)
     }
 });
+function actualizarInputsHoras(hora_inicio, hora_cierre) {
+    const horas_eval_div = document.getElementById('horas_evaluacion');
+    inputs = horas_eval_div.querySelectorAll('input');
+    inputs[0].value = hora_inicio;
+    inputs[1].value = hora_cierre;
+}
 // Actualizar la información del sistema en la UI
 function actualizarInfoSistema() {
     document.getElementById('date-eval-text').textContent = 'Solo se muestran los días habilitados para clases de la sección';
     const periodoEl = document.getElementById('periodoAcademico');
     const diasEl = document.getElementById('diasEvaluacion');
     const rangoEl = document.getElementById('rangoFechas');
-    
+
     if (periodoEl) {
         periodoEl.textContent = configuracionFechas.periodo || 'No disponible';
     }
-    
+
     if (diasEl) {
         // Obtener nombres de días únicos
         const diasNombres = configuracionFechas.diasPermitidos
@@ -959,7 +1184,7 @@ function actualizarInfoSistema() {
             .filter((dia, index, self) => self.indexOf(dia) === index);
         diasEl.textContent = diasNombres.join(', ');
     }
-    
+
     if (rangoEl) {
         const fechaInicio = formatearFechaLocal(configuracionFechas.fechaInicio);
         const fechaFin = formatearFechaLocal(configuracionFechas.fechaFin);
@@ -970,37 +1195,37 @@ function actualizarInfoSistema() {
 // Modificar generarFechasDisponibles para recibir las fechas ocupadas
 function generarFechasDisponibles(fechasOcupadasSeccion = []) {
     fechasSistema = [];
-    
+
     // Crear un Set para búsqueda rápida de fechas ocupadas de ESTA sección
     const fechasOcupadas = new Set(
         fechasOcupadasSeccion.map(item => `${item.fecha}_${item.id_horario}`)
-    );    
+    );
     const fechaInicio = new Date(configuracionFechas.fechaInicio);
     const fechaFin = new Date(configuracionFechas.fechaFin);
     const diasPermitidos = configuracionFechas.diasPermitidos;
-    
+
     fechaInicio.setHours(0, 0, 0, 0);
     fechaFin.setHours(0, 0, 0, 0);
-    
+
     const fechaActual = new Date(fechaInicio);
     while (fechaActual <= fechaFin) {
         const diaSemana = fechaActual.getDay();
-        
+
         // Convertir día de JS a tu formato (lunes=0)
         let diaEnTuFormato = diaSemana === 0 ? 6 : diaSemana - 1;
-        
+
         // Verificar si el día está permitido
         if (diasPermitidos.includes(diaEnTuFormato)) {
             // Buscar TODOS los horarios para este día
             const horariosDelDia = configuracionFechas.horarios.filter(
                 h => h.dia_num === diaEnTuFormato
             );
-            
+
             // Por cada horario en este día, crear una opción de fecha
             horariosDelDia.forEach(horario => {
                 const fechaStr = formatearFechaParaInput(fechaActual);
                 const claveFechaHorario = `${fechaStr}_${horario.id}`;
-                                
+
                 // Solo agregar si NO hay evaluación en ESTA sección para esta fecha y horario
                 if (!fechasOcupadas.has(claveFechaHorario)) {
                     fechasSistema.push({
@@ -1018,10 +1243,10 @@ function generarFechasDisponibles(fechasOcupadasSeccion = []) {
                 }
             });
         }
-        
+
         fechaActual.setDate(fechaActual.getDate() + 1);
     }
-    
+
     fechasSistema.sort((a, b) => a.fecha - b.fecha);
     actualizarSelectFechas();
 }
@@ -1030,9 +1255,9 @@ function generarFechasDisponibles(fechasOcupadasSeccion = []) {
 function actualizarSelectFechas() {
     const select = document.getElementById('fecha_evaluacion_select');
     if (!select) return;
-    
+
     select.innerHTML = '<option value="">-- Seleccione una fecha --</option>';
-    
+
     if (fechasSistema.length === 0) {
         const option = document.createElement('option');
         option.value = '';
@@ -1041,16 +1266,16 @@ function actualizarSelectFechas() {
         select.appendChild(option);
         return;
     }
-    
+
     const fechasPorMes = agruparFechasPorMes(fechasSistema);
-    
+
     for (const [mes, fechas] of Object.entries(fechasPorMes)) {
         const optgroup = document.createElement('optgroup');
         optgroup.label = mes;
-        
+
         fechas.forEach(fecha => {
             const option = document.createElement('option');
-            
+
             // Guardar TODA la información relevante
             const optionData = {
                 fecha: fecha.fechaStr,
@@ -1059,18 +1284,18 @@ function actualizarSelectFechas() {
                 horaInicio: fecha.horaInicio,
                 horaCierre: fecha.horaCierre
             };
-            
+
             option.value = JSON.stringify(optionData);
-            
+
             // Mostrar información completa en el texto
-            const horaInicioFormateada = fecha.horaInicio ? fecha.horaInicio.substring(0,5) : '';
-            const horaCierreFormateada = fecha.horaCierre ? fecha.horaCierre.substring(0,5) : '';
-            
+            const horaInicioFormateada = fecha.horaInicio ? fecha.horaInicio.substring(0, 5) : '';
+            const horaCierreFormateada = fecha.horaCierre ? fecha.horaCierre.substring(0, 5) : '';
+
             option.textContent = `${fecha.fechaLocal} (${fecha.diaSemana}) - ${horaInicioFormateada} a ${horaCierreFormateada} - Aula: ${fecha.aula}`;
-            
+
             optgroup.appendChild(option);
         });
-        
+
         select.appendChild(optgroup);
     }
 }
@@ -1079,7 +1304,7 @@ function actualizarSelectFechas() {
 function getFechaSeleccionada() {
     const select = document.getElementById('fecha_evaluacion_select');
     if (!select || !select.value) return null;
-    
+
     try {
         return JSON.parse(select.value);
     } catch (e) {
@@ -1088,23 +1313,18 @@ function getFechaSeleccionada() {
     }
 }
 
-function limitarHora(id_input)
-{
+function limitarHora(id_input) {
     input_cambiado = document.getElementById(id_input);
-    if(id_input == 'hora_eval_inicio')
-    {
+    if (id_input == 'hora_eval_inicio') {
         const input_hora_fin = document.getElementById('hora_eval_fin');
-        if(input_cambiado.value >= input_hora_fin.value)
-        {
+        if (input_cambiado.value >= input_hora_fin.value) {
             input_hora_fin.value = ''
         }
         input_hora_fin.min = input_cambiado.value
     }
-    else if(id_input == 'hora_eval_fin')
-    {
+    else if (id_input == 'hora_eval_fin') {
         const input_hora_inicio = document.getElementById('hora_eval_inicio');
-        if(input_cambiado.value <= input_hora_inicio.value)
-        {
+        if (input_cambiado.value <= input_hora_inicio.value) {
             input_hora_inicio.value = ''
         }
         input_hora_inicio.max = input_cambiado.value
@@ -1116,21 +1336,21 @@ function agruparFechasPorMes(fechas) {
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
-    
+
     const agrupadas = {};
-    
+
     fechas.forEach(fecha => {
         const mes = meses[fecha.fecha.getMonth()];
         const año = fecha.fecha.getFullYear();
         const clave = `${mes} ${año}`;
-        
+
         if (!agrupadas[clave]) {
             agrupadas[clave] = [];
         }
-        
+
         agrupadas[clave].push(fecha);
     });
-    
+
     return agrupadas;
 }
 
@@ -1145,7 +1365,7 @@ function formatearFechaParaInput(fecha) {
 function formatearFechaLocal(fecha) {
     if (!fecha) return '';
     if (typeof fecha === 'string') fecha = new Date(fecha);
-    
+
     const day = String(fecha.getDate()).padStart(2, '0');
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const year = fecha.getFullYear();
@@ -1163,7 +1383,7 @@ function mostrarErrorFechas() {
     if (select) {
         select.innerHTML = '<option value="">Error al cargar fechas</option>';
     }
-    
+
     Swal.fire({
         icon: 'error',
         title: 'Error',

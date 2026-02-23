@@ -25,7 +25,7 @@ Refactorizados:
 		
 	Routers:
 		- admin.js					CHECK
-		- evaluacionAdmin.js		
+		- evaluacionAdmin.js: mala data en la bd pero esta todo funcionando.		CHECK
 		- evaluacionStudents.js		CHECK
 		- notificaciones.js 		CHECK
 		- profeAdmin.js				CHECK
