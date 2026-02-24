@@ -67,7 +67,177 @@
     grid-template-columns: 1fr;
     gap: 20px;
 }
+.estrategias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
 
+.estrategia-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Estilo para items con checkbox deshabilitado */
+.estrategia-item:has(input[type="checkbox"]:disabled) {
+    background-color: #f0f0f0;
+    border-left: 3px solid #c0c0c0;
+}
+
+/* Checkbox deshabilitado - personalizado */
+.estrategia-item input[type="checkbox"]:disabled {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #aaa;
+    border-radius: 4px;
+    background-color: #e8e8e8;
+    cursor: default;
+    position: relative;
+    opacity: 1;
+}
+
+/* Checkbox deshabilitado y seleccionado */
+.estrategia-item input[type="checkbox"]:checked:disabled {
+    background-color: #4a6fa5;
+    border-color: #2c3e50;
+}
+
+.estrategia-item input[type="checkbox"]:checked:disabled::after {
+    content: "✓";
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Checkbox deshabilitado y NO seleccionado */
+.estrategia-item input[type="checkbox"]:not(:checked):disabled {
+    background-color: #e0e0e0;
+    border-color: #999;
+    border-style: dashed;
+}
+
+.estrategia-item input[type="checkbox"]:not(:checked):disabled::after {
+    content: "✕";
+    position: absolute;
+    color: #999;
+    font-size: 12px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+}
+
+/* Label para checkboxes deshabilitados */
+.estrategia-item:has(input[type="checkbox"]:disabled) label {
+    color: #555;
+    font-weight: 500;
+    text-decoration: none;
+    position: relative;
+    padding-left: 2px;
+}
+
+/* Label para checkbox deshabilitado SELECCIONADO */
+.estrategia-item:has(input[type="checkbox"]:checked:disabled) label {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Label para checkbox deshabilitado NO SELECCIONADO */
+.estrategia-item:has(input[type="checkbox"]:not(:checked):disabled) label {
+    color: #777;
+    font-style: italic;
+}
+
+/* Contenedor para inputs time compactos */
+.time-inputs-compact {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.time-input {
+    width: 120px;
+    padding: 6px 8px;
+    border: 2px solid var(--border-color, #dee2e6);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-primary, #1f2937);
+    background-color: white;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.time-input[type="time"] {
+    min-width: 0;
+}
+
+.time-input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    margin-left: 2px;
+}
+
+.time-input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+.time-input:hover:not(:disabled) {
+    border-color: var(--primary-color, #667eea);
+}
+
+.time-input:focus:not(:disabled) {
+    outline: none;
+    border-color: var(--primary-color, #667eea);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.time-input:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+    opacity: 0.7;
+    border-color: #ccc;
+    border-style: dotted;
+    color: #666;
+}
+
+/* Separador entre inputs */
+.time-separator {
+    color: var(--text-light, #6b7280);
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0 2px;
+}
+.error-border {
+    border: 2px solid #e74c3c !important;
+    background-color: #fff8f8 !important;
+    animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
 .criterios-section {
     margin-top: 30px;
 }

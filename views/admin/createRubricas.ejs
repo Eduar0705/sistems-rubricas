@@ -1,183 +1,210 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title || 'Crear Rúbrica' %></title>
+    <title>
+        <%= title || 'Crear Rúbrica' %>
+    </title>
     <link rel="stylesheet" href="../css/home.css">
     <link rel="stylesheet" href="../css/crearRubrica.css">
     <link rel="shortcut icon" href="../img/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+
 <body>
     <%- include('../inc/menu.ejs') %>
 
-    <main class="main-content">
-        <%- include('../inc/headerAdmin.ejs') %>
+        <main class="main-content">
+            <%- include('../inc/headerAdmin.ejs') %>
 
-        <div style="padding: 30px;" id="crear">
-            <div class="form-container">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <i class="fas fa-plus-circle"></i>
-                            Crear Nueva Rúbrica
-                        </h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            Complete todos los campos requeridos. Los puntajes se distribuirán automáticamente según el porcentaje de evaluación.
+                <div style="padding: 30px;" id="crear">
+                    <div class="form-container">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2 class="card-title">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Crear Nueva Rúbrica
+                                </h2>
+                            </div>
+                            <div class="card-content">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Complete todos los campos requeridos. Los puntajes se distribuirán automáticamente
+                                    según el porcentaje de evaluación.
+                                </div>
+
+                                <form id="rubricaForm" method="post" action="/envioRubrica">
+                                    <!-- Información General -->
+                                    <div class="form-group">
+                                        <label for="nombreRubrica">Nombre de la Rúbrica *</label>
+                                        <input type="text" id="nombreRubrica" name="nombre_rubrica" class="form-input"
+                                            required
+                                            placeholder="Ej: EVALUACIÓN INDIVIDUAL DISTRIBUCIÓN DE FRECUENCIAS">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="tipoRubrica">Tipo de Rubrica *</label>
+                                        <select id="tipoRubrica" name="tipo_rubrica" class="form-select"
+                                            required>
+                                            <option value="">Seleccionar tipo</option>
+                                            <% if(tipos_r && tipos_r.length> 0) { %>
+                                                    <% tipos_r.forEach(function(tipo_r) { %>
+                                                        <option value="<%= tipo_r.id %>">
+                                                            <%= tipo_r.nombre %>
+                                                        </option>
+                                                        <% }); %>
+                                                            <% } %>
+                                        </select>
+                                    </div>
+
+                                    <!-- Nueva estructura jerárquica -->
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="carrera">Carrera *</label>
+                                            <select id="carrera" class="form-select" required>
+                                                <option value="">Seleccione una carrera</option>
+                                                <% if(carreras && carreras.length> 0) { %>
+                                                    <% carreras.forEach(function(carrera) { %>
+                                                        <option value="<%= carrera.codigo %>">
+                                                            <%= carrera.nombre %>
+                                                        </option>
+                                                        <% }); %>
+                                                            <% } %>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="semestre">Semestre *</label>
+                                            <select id="semestre" class="form-select" required disabled>
+                                                <option value="">Primero seleccione una carrera</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="materia">Materia *</label>
+                                            <select id="materia" name="materia_codigo" class="form-select" required
+                                                disabled>
+                                                <option value="">Primero seleccione un semestre</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="seccion">Sección *</label>
+                                            <select id="seccion" name="seccion_id" class="form-select" required
+                                                disabled>
+                                                <option value="">Primero seleccione una materia</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="evaluacion">Evaluación que la utilizará *</label>
+                                        <select id="evaluacion" name="evaluacion" class="form-select" required disabled>
+                                            <option value="">Primero seleccione una carrera</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="fechaEvaluacion">Fecha de Evaluación *</label>
+                                            <input type="date" id="fechaEvaluacion" name="fecha_evaluacion"
+                                                class="form-input" disabled required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
+                                            <input type="number" id="porcentaje" name="porcentaje_evaluacion"
+                                                class="form-input" disabled required min="1" max="100" step="0.01"
+                                                value="10" placeholder="Mínimo 1%">
+                                            <small class="form-help">Mínimo: 1% | Se distribuirá automáticamente entre
+                                                criterios</small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="estrategias_eval">
+                                            Estrategias de evaluación *
+                                        </label>
+                                        <div id="estrategias_eval" class ="estrategias-grid">
+
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="competencias">Competencias</label>
+                                            <textarea id="competencias" name="competencias" class="form-textarea"
+                                                rows="3" placeholder="Descripción las competencias que se evaluarán..."
+                                                disabled></textarea>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="instrumentos">Instrumentos</label>
+                                            <textarea id="instrumentos" name="instrumentos" class="form-textarea"
+                                                rows="3" placeholder="Lista de los instrumentos usados para evaluar..."
+                                                disabled></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="instrucciones">Instrucciones</label>
+                                        <textarea id="instrucciones" name="instrucciones" class="form-textarea" rows="3"
+                                            placeholder="Instrucciones para la evaluación..."></textarea>
+                                    </div>
+
+                                    <!-- Información de distribución -->
+                                    <div class="alert alert-warning" id="distribucionInfo" style="display: none;">
+                                        <i class="fas fa-calculator"></i>
+                                        <span id="distribucionTexto"></span>
+                                    </div>
+
+                                    <!-- Criterios de Evaluación -->
+                                    <div class="criterios-section">
+                                        <div class="section-header">
+                                            <h3><i class="fas fa-list-check"></i> Criterios de Evaluación</h3>
+                                            <button type="button" class="btn-secondary" onclick="agregarCriterio()">
+                                                <i class="fas fa-plus"></i>
+                                                Agregar Criterio
+                                            </button>
+                                        </div>
+
+                                        <div id="criteriosList">
+                                            <!-- Los criterios se agregarán dinámicamente aquí -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Botones de Acción -->
+                                    <div class="form-actions">
+                                        <button type="button" class="btn-secondary" onclick="agregarCriterio()">
+                                            <i class="fas fa-plus"></i>
+                                            Agregar Criterio
+                                        </button>
+                                        <button type="button" class="btn-secondary"
+                                            onclick="window.location.href='/admin/rubricas'">
+                                            <i class="fas fa-times"></i>
+                                            Cancelar
+                                        </button>
+                                        <button type="submit" class="btn-primary">
+                                            <i class="fas fa-save"></i>
+                                            Crear Rúbrica
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-
-                        <form id="rubricaForm" method="post" action="/envioRubrica">
-                            <!-- Información General -->
-                            <div class="form-group">
-                                <label for="nombreRubrica">Nombre de la Rúbrica *</label>
-                                <input type="text" id="nombreRubrica" name="nombre_rubrica" class="form-input" required
-                                    placeholder="Ej: EVALUACIÓN INDIVIDUAL DISTRIBUCIÓN DE FRECUENCIAS">
-                            </div>
-
-                            <!-- Nueva estructura jerárquica -->
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="carrera">Carrera *</label>
-                                    <select id="carrera" class="form-select" required>
-                                        <option value="">Seleccione una carrera</option>
-                                        <% if(carreras && carreras.length > 0) { %>
-                                            <% carreras.forEach(function(carrera) { %>
-                                                <option value="<%= carrera.codigo %>"><%= carrera.nombre %></option>
-                                            <% }); %>
-                                        <% } %>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="semestre">Semestre *</label>
-                                    <select id="semestre" class="form-select" required disabled>
-                                        <option value="">Primero seleccione una carrera</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="materia">Materia *</label>
-                                    <select id="materia" name="materia_codigo" class="form-select" required disabled>
-                                        <option value="">Primero seleccione un semestre</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="seccion">Sección *</label>
-                                    <select id="seccion" name="seccion_id" class="form-select" required disabled>
-                                        <option value="">Primero seleccione una materia</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="evaluacion">Evaluación que la utilizará *</label>
-                               <select id="evaluacion" name="evaluacion" class="form-select" required disabled>
-                                        <option value="">Primero seleccione una carrera</option>
-                                    </select>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="fechaEvaluacion">Fecha de Evaluación *</label>
-                                    <input type="date" id="fechaEvaluacion" name="fecha_evaluacion" class="form-input" disabled required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="porcentaje">Porcentaje de Evaluación (%) *</label>
-                                    <input type="number" id="porcentaje" name="porcentaje_evaluacion" class="form-input"disabled required
-                                        min="5" max="100" step="0.01" value="10" placeholder="Mínimo 1%">
-                                    <small class="form-help">Mínimo: 1% | Se distribuirá automáticamente entre criterios</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="tipoEvaluacion">Tipo de Evaluación *</label>
-                                    <select id="tipoEvaluacion" name="tipo_evaluacion" class="form-select" disabled required>
-                                        <option value="">Seleccionar tipo</option>
-                                        <option value="Individual">Individual</option>
-                                        <option value="Grupal">Grupal</option>
-                                        <option value="Oral">Oral</option>
-                                        <option value="Taller">Taller</option>
-                                        <option value="Presentacion">Presentación</option>
-                                        <option value="Proyecto">Proyecto</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="competencias">Competencias</label>
-                                    <textarea id="competencias" name="competencias" class="form-textarea" rows="3"
-                                        placeholder="Descripción las competencias que se evaluarán..." disabled></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="instrumentos">Instrumentos</label>
-                                    <textarea id="instrumentos" name="instrumentos" class="form-textarea" rows="3"
-                                        placeholder="Lista de los instrumentos usados para evaluar..." disabled></textarea>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="instrucciones">Instrucciones</label>
-                                <textarea id="instrucciones" name="instrucciones" class="form-textarea" rows="3"
-                                    placeholder="Instrucciones para la evaluación..."></textarea>
-                            </div>
-
-                            <!-- Información de distribución -->
-                            <div class="alert alert-warning" id="distribucionInfo" style="display: none;">
-                                <i class="fas fa-calculator"></i>
-                                <span id="distribucionTexto"></span>
-                            </div>
-
-                            <!-- Criterios de Evaluación -->
-                            <div class="criterios-section">
-                                <div class="section-header">
-                                    <h3><i class="fas fa-list-check"></i> Criterios de Evaluación</h3>
-                                    <button type="button" class="btn-secondary" onclick="agregarCriterio()">
-                                        <i class="fas fa-plus"></i>
-                                        Agregar Criterio
-                                    </button>
-                                </div>
-
-                                <div id="criteriosList">
-                                    <!-- Los criterios se agregarán dinámicamente aquí -->
-                                </div>
-                            </div>
-
-                            <!-- Botones de Acción -->
-                            <div class="form-actions">
-                                <button type="button" class="btn-secondary" onclick="agregarCriterio()">
-                                    <i class="fas fa-plus"></i>
-                                    Agregar Criterio
-                                </button>
-                                <button type="button" class="btn-secondary" onclick="window.location.href='/admin/rubricas'">
-                                    <i class="fas fa-times"></i>
-                                    Cancelar
-                                </button>
-                                <button type="submit" class="btn-primary">
-                                    <i class="fas fa-save"></i>
-                                    Crear Rúbrica
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <% if (typeof locals.mensaje != 'undefined' || typeof mensaje != 'undefined') { %>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-            <script>
-                Swal.fire({
-                    icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
-                    title: 'Información',
-                    text: '<%= locals.mensaje || mensaje %>',
-                    confirmButtonText: 'Aceptar'
-                });
-            </script>
-        <% } %>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="../js/crear-rubrica.js"></script>
-    <script src="../js/home.js"></script>
+                <% if (typeof locals.mensaje !='undefined' || typeof mensaje !='undefined' ) { %>
+                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                    <script>
+                        Swal.fire({
+                            icon: '<%= (locals.mensaje || mensaje).includes("Error") ? "error" : "success" %>',
+                            title: 'Información',
+                            text: '<%= locals.mensaje || mensaje %>',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    </script>
+                    <% } %>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="../js/crear-rubrica.js"></script>
+        <script src="../js/home.js"></script>
 </body>
+
 </html>

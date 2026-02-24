@@ -15,7 +15,7 @@
     "IUJO",
     "Barquisimeto"
   ],
-  "author": "Eduar Suárez, Heracles Sanchez, Luis Nuñez, Franchesca Izquierdo",
+  "author": "Eduar Suárez, Heracles Sanchez, Franchesca Izquierdo",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",

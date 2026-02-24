@@ -5,12 +5,17 @@ let porcentajeEvaluacion = 10; // Valor inicial
 // SISTEMA DE SELECCIÓN JERÁRQUICO
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    estrategias_eval = await cargarEstrategias();
     const carreraSelect = document.getElementById('carrera');
     const semestreSelect = document.getElementById('semestre');
     const materiaSelect = document.getElementById('materia');
     const seccionSelect = document.getElementById('seccion');
-    const evalSelect = document.getElementById('evaluacion')
+    const evalSelect = document.getElementById('evaluacion');
+    const fechaInput = document.getElementById('fechaEvaluacion');
+    const porcentajeInput = document.getElementById('porcentaje');
+    const competenciasTextArea = document.getElementById('competencias');
+    const instrumentosTextArea = document.getElementById('instrumentos');
 
     // Cuando cambia la carrera
     if (carreraSelect) {
@@ -21,6 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
             semestreSelect.innerHTML = '<option value="">Cargando...</option>';
             materiaSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
             evalSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            fechaInput.value = '';
+            porcentajeInput.value = '';
+            competenciasTextArea.value = '';
+            instrumentosTextArea.value = '';
             
             materiaSelect.disabled = true;
             seccionSelect.disabled = true;
@@ -126,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             evalSelect.innerHTML = '<option value="">Cargando...</option>';
 
-
             if (!seccionId) {
                 evalSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
                 evalSelect.disabled = true;
@@ -137,17 +145,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch(`/admin/evaluaciones/${seccionId}`);
                 const evaluaciones = await response.json();
                 
-                evalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
-                evaluaciones.evaluaciones.forEach(evalu => {
-                    const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
-                    evalSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
-                });
-                
-                evalSelect.disabled = false;
+                if(evaluaciones.length > 0)
+                {
+                    evalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+                    evaluaciones.evaluaciones.forEach(evalu => {
+                        const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
+                        evalSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
+                    });
+                    
+                    evalSelect.disabled = false;
+                }
+                else
+                {
+                    evalSelect.innerHTML = `<option value="">No encontradas.</option>`;
+                    Swal.fire('0 evaluaciones sin rubrica encontradas', 'No se encontraron evaluaciones sin rubricas para esta sección. ¡Crea una y vuelve a intentar!', 'info');
+                }
             } catch (error) {
                 console.error('Error:', error);
                 evalSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
                 Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+            }
+        });
+    }
+    if (evalSelect) {
+        evalSelect.addEventListener('change', async function() {
+            const evalId = this.value;
+            fechaInput.placeholder = 'Cargando...';
+            porcentajeInput.placeholder = 'Cargando...';
+            competenciasTextArea.value = 'Cargando...';
+            instrumentosTextArea.value = 'Cargando...';
+
+            if (!evalId) {
+                fechaInput.placeholder = 'dd/mm/aaaa';
+                porcentajeInput.placeholder = 'Mínimo 1%';
+                competenciasTextArea.value = '';
+                instrumentosTextArea.value = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/evaluacion/${evalId}`);
+                const data = await response.json();
+
+                fechaInput.value = formatearFechaParaInput(new Date(data.evaluacion.fecha_evaluacion));
+                porcentajeInput.value = data.evaluacion.porcentaje;
+                competenciasTextArea.value = data.evaluacion.competencias;
+                instrumentosTextArea.value = data.evaluacion.instrumentos;
+                cargarEstrategiasEdit(estrategias_eval, data.evaluacion.estrategias)
+                
+            } catch (error) {
+                console.error('Error:', error);
+                //evalSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
+                Swal.fire('Error', 'No se pudo cargar la evaluación, pruebe de nuevo más tarde.', 'error');
             }
         });
     }
@@ -157,7 +206,64 @@ document.addEventListener('DOMContentLoaded', function() {
     agregarValidacionTiempoReal();
     setTimeout(calcularDistribucionAutomatica, 100);
 });
+function cargarEstrategiasEdit(listaEstrategias, seleccionadas = []) {
+    const container = document.getElementById('estrategias_eval');
+    container.innerHTML = '';
+    listaEstrategias.forEach(est => {
+        const label = document.createElement('label');
+        label.className = 'estrategia-item';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.disabled = true;
+        checkbox.value = est.id;
+        checkbox.checked = seleccionadas.includes(est.id);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(`  ${est.nombre}`));
+        container.appendChild(label);
+    });
+}
+function formatearFechaParaInput(fecha) {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+async function cargarEstrategias() {
+    try {
+        const response = await fetch('/api/estrategias_eval');
+        const data = await response.json();
 
+        if (data.success) {
+            const div = document.getElementById('estrategias_eval');
+            div.innerHTML = ''
+            const labelHTML = ``;
+            let checkboxesHTML = '';
+            data.estrategias_eval.forEach(estrategia => {
+                checkboxesHTML += `
+                    <div class="estrategia-item">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               id="estrategia_${estrategia.id}" 
+                               value="${estrategia.id}"
+                               name="estrategias[]"
+                               ${estrategia.ponderable == 0 ? `onclick="verificarPonderacion(${estrategia.id})"` : 'onclick="verificarFormularioCompleto()"'}
+                               disabled>
+                        <label class="form-check-label" 
+                               for="estrategia_${estrategia.id}">
+                            ${estrategia.nombre}
+                        </label>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = labelHTML + checkboxesHTML;
+            return data.estrategias_eval
+        }
+    } catch (error) {
+        console.error('Error al cargar carreras:', error);
+        Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
+    }
+}
 // ============================================================
 // DISTRIBUCIÓN AUTOMÁTICA DE PUNTAJES
 // ============================================================
@@ -533,174 +639,169 @@ function eliminarNivel(button, criterioId) {
 
 const rubricaForm = document.getElementById('rubricaForm');
 if (rubricaForm) {
-    rubricaForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    rubricaForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // ============================================================
+    // VALIDACIONES DEL FRONTEND (rápidas)
+    // ============================================================
+    
+    const nombreRubrica = document.getElementById('nombreRubrica')?.value.trim();
+    const tipoRubrica = document.getElementById('tipoRubrica').value.trim();
+    const instrucciones = document.getElementById('instrucciones')?.value.trim();
+    const idEval = document.getElementById('evaluacion')?.value;
+    const porcentaje = parseFloat(document.getElementById('porcentaje')?.value);
+
+    // Resetear bordes rojos
+    document.querySelectorAll('.error-border').forEach(el => {
+        el.classList.remove('error-border');
+    });
+
+    if (!nombreRubrica) {
+        Swal.fire('Error', 'El nombre de la rúbrica es obligatorio', 'error');
+        document.getElementById('nombreRubrica').classList.add('error-border');
+        return;
+    }
+
+    if (!tipoRubrica) {
+        Swal.fire('Error', 'Debe seleccionar un tipo de Rúbrica', 'error');
+        document.getElementById('tipoRubrica').classList.add('error-border');
+        return;
+    }
+
+    if (!instrucciones) {
+        Swal.fire('Error', 'Las instrucciones son obligatorias', 'error');
+        document.getElementById('instrucciones').classList.add('error-border');
+        return;
+    }
+
+    if (!idEval) {
+        Swal.fire('Error', 'Debe seleccionar una evaluación', 'error');
+        document.getElementById('evaluacion').classList.add('error-border');
+        return;
+    }
+    
+    // Validar que haya al menos un criterio
+    const criterios = document.querySelectorAll('.criterio-card');
+    if(criterios.length === 0) {
+        Swal.fire('Error', 'Debe agregar al menos un criterio de evaluación', 'error');
+        return;
+    }
+    
+    // Recopilar datos de la rúbrica
+    const rubricaData = {
+        nombre_rubrica: nombreRubrica,
+        id_evaluacion: idEval,
+        tipo_rubrica: tipoRubrica,
+        instrucciones: instrucciones,
+        porcentaje: porcentaje,
+        criterios: []
+    };
+    
+    // Recopilar criterios y niveles
+    criterios.forEach((criterioCard) => {
+        const descripcionInput = criterioCard.querySelector('.criterio-descripcion');
+        const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
+        const ordenInput = criterioCard.querySelector('.criterio-orden');
         
-        // Validar campos básicos
-        const nombreRubrica = document.getElementById('nombreRubrica')?.value.trim();
-        const materiaId = document.getElementById('materia')?.value;
-        const seccionId = document.getElementById('seccion')?.value;
-        const fechaEval = document.getElementById('fechaEvaluacion')?.value;
-        const porcentaje = parseFloat(document.getElementById('porcentaje')?.value);
-        const tipoEval = document.getElementById('tipoEvaluacion')?.value;
-
-        if (!nombreRubrica) {
-            Swal.fire('Error', 'El nombre de la rúbrica es obligatorio', 'error');
-            return;
-        }
-
-        if (!materiaId) {
-            Swal.fire('Error', 'Debe seleccionar una materia', 'error');
-            return;
-        }
-
-        if (!seccionId) {
-            Swal.fire('Error', 'Debe seleccionar una sección', 'error');
-            return;
-        }
-
-        if (!fechaEval) {
-            Swal.fire('Error', 'La fecha de evaluación es obligatoria', 'error');
-            return;
-        }
-
-        if (!porcentaje || porcentaje < 5 || porcentaje > 100) {
-            Swal.fire('Error', 'El porcentaje debe estar entre 5% y 100%', 'error');
-            return;
-        }
-
-        if (!tipoEval) {
-            Swal.fire('Error', 'Debe seleccionar un tipo de evaluación', 'error');
-            return;
-        }
-        
-        // Validar que haya al menos un criterio
-        const criterios = document.querySelectorAll('.criterio-card');
-        if(criterios.length === 0) {
-            Swal.fire('Error', 'Debe agregar al menos un criterio de evaluación', 'error');
-            return;
-        }
-        
-        // Recopilar datos de la rúbrica
-        const rubricaData = {
-            nombre_rubrica: nombreRubrica,
-            materia_codigo: materiaId,
-            seccion_id: seccionId,
-            fecha_evaluacion: fechaEval,
-            porcentaje_evaluacion: porcentaje,
-            tipo_evaluacion: tipoEval,
-            competencias: document.getElementById('competencias')?.value || '',
-            instrucciones: document.getElementById('instrucciones')?.value || '',
-            criterios: []
+        const criterio = {
+            descripcion: descripcionInput?.value.trim() || '',
+            puntaje_maximo: parseFloat(puntajeInput?.value) || 0,
+            orden: parseInt(ordenInput?.value) || 0,
+            niveles: []
         };
         
-        // Recopilar criterios y niveles
-        criterios.forEach((criterioCard) => {
-            const descripcionInput = criterioCard.querySelector('.criterio-descripcion');
-            const puntajeInput = criterioCard.querySelector('.criterio-puntaje');
-            const ordenInput = criterioCard.querySelector('.criterio-orden');
+        const niveles = criterioCard.querySelectorAll('.nivel-item');
+        niveles.forEach(nivelItem => {
+            const nombreInput = nivelItem.querySelector('.nivel-nombre');
+            const descripcionInput = nivelItem.querySelector('.nivel-descripcion');
+            const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
+            const ordenInput = nivelItem.querySelector('.nivel-orden');
             
-            const criterio = {
+            const nivel = {
+                nombre_nivel: nombreInput?.value.trim() || '',
                 descripcion: descripcionInput?.value.trim() || '',
-                puntaje_maximo: parseFloat(puntajeInput?.value) || 0,
-                orden: parseInt(ordenInput?.value) || 0,
-                niveles: []
+                puntaje: parseFloat(puntajeInput?.value) || 0,
+                orden: parseInt(ordenInput?.value) || 0
             };
-            
-            // Recopilar niveles del criterio
-            const niveles = criterioCard.querySelectorAll('.nivel-item');
-            niveles.forEach(nivelItem => {
-                const nombreInput = nivelItem.querySelector('.nivel-nombre');
-                const descripcionInput = nivelItem.querySelector('.nivel-descripcion');
-                const puntajeInput = nivelItem.querySelector('.nivel-puntaje');
-                const ordenInput = nivelItem.querySelector('.nivel-orden');
-                
-                const nivel = {
-                    nombre_nivel: nombreInput?.value.trim() || '',
-                    descripcion: descripcionInput?.value.trim() || '',
-                    puntaje: parseFloat(puntajeInput?.value) || 0,
-                    orden: parseInt(ordenInput?.value) || 0
-                };
-                criterio.niveles.push(nivel);
-            });
-            
-            rubricaData.criterios.push(criterio);
+            criterio.niveles.push(nivel);
         });
         
-        // Validar estructura completa
-        const validacion = validarEstructuraCriterios(rubricaData.criterios);
-        if (!validacion.valido) {
-            Swal.fire('Error', validacion.mensaje, 'error');
-            return;
-        }
-        
-        // Validar suma de puntajes
-        const sumaPuntajes = rubricaData.criterios.reduce((sum, c) => sum + c.puntaje_maximo, 0);
-        if (sumaPuntajes > porcentaje) {
-            Swal.fire('Error', 
-                `La suma de puntajes máximos (${sumaPuntajes.toFixed(2)}) no puede exceder el porcentaje de evaluación (${porcentaje}%)`, 
-                'error');
-            return;
-        }
-
-        // Validar puntajes mínimos
-        const criteriosInvalidos = rubricaData.criterios.filter(c => c.puntaje_maximo < 1);
-        if (criteriosInvalidos.length > 0) {
-            Swal.fire('Error', 'Todos los criterios deben tener un puntaje mínimo de 1 punto', 'error');
-            return;
-        }
-
-        // Validar niveles mínimos
-        let nivelesInvalidos = false;
-        rubricaData.criterios.forEach(criterio => {
-            criterio.niveles.forEach(nivel => {
-                if (nivel.puntaje < 0.25) {
-                    nivelesInvalidos = true;
-                }
-            });
-        });
-
-        if (nivelesInvalidos) {
-            Swal.fire('Error', 'Todos los niveles deben tener un puntaje mínimo de 0.25 puntos', 'error');
-            return;
-        }
-        
-        // Mostrar loading
-        Swal.fire({
-            title: 'Guardando rúbrica...',
-            text: 'Por favor espere',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-        
-        // Crear FormData y agregar todos los campos
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = document.getElementById('rubricaForm').action;
-        
-        // Agregar campos simples
-        const campos = ['nombre_rubrica', 'materia_codigo', 'seccion_id', 'fecha_evaluacion', 
-                        'porcentaje_evaluacion', 'tipo_evaluacion', 'competencias', 'instrucciones'];
-        
-        campos.forEach(campo => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = campo;
-            input.value = rubricaData[campo] || '';
-            form.appendChild(input);
-        });
-        
-        // Agregar criterios como JSON
-        const criteriosInput = document.createElement('input');
-        criteriosInput.type = 'hidden';
-        criteriosInput.name = 'criterios';
-        criteriosInput.value = JSON.stringify(rubricaData.criterios);
-        form.appendChild(criteriosInput);
-        
-        document.body.appendChild(form);
-        form.submit();
+        rubricaData.criterios.push(criterio);
     });
+    
+    // Mostrar loading
+    Swal.fire({
+        title: 'Guardando rúbrica...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    const datosParaEnviar = {
+        nombre_rubrica: rubricaData.nombre_rubrica,
+        id_evaluacion: rubricaData.id_evaluacion,
+        tipo_rubrica: rubricaData.tipo_rubrica,
+        instrucciones: rubricaData.instrucciones,
+        porcentaje: rubricaData.porcentaje,
+        criterios: JSON.stringify(rubricaData.criterios) // <-- ya viene stringified
+    };
+    
+    try {
+        // ============================================================
+        // ENVÍO CON FETCH
+        // ============================================================
+        
+        const response = await fetch('/envioRubrica', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(datosParaEnviar)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Éxito
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                html: `
+                    ${result.mensaje}<br>
+                    <small>ID: ${result.rubricaId}</small><br>
+                    <small>Criterios: ${result.datos.criterios} | Puntaje total: ${result.datos.sumaPuntajes}/${result.datos.porcentaje}</small>
+                `
+            }).then(() => {
+                window.location.href = '/admin/rubricas';
+            });
+        } else {
+            // Error controlado del servidor
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.mensaje
+            });
+            
+            // Resaltar campo específico si viene en la respuesta
+            if (result.campo) {
+                const elemento = document.querySelector(`[name="${result.campo}"], #${result.campo}`);
+                if (elemento) {
+                    elemento.classList.add('error-border');
+                    elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Verifique su conexión.'
+        });
+    }
+});
 }
