@@ -460,7 +460,108 @@
                 border-left: 4px solid #ffa726;
                 color: #e65100;
             }
+            .date-hint-system {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            color: #6c757d;
+            font-size: 0.85rem;
+        }
 
+        .date-hint-system i {
+            color: #28a745;
+        }
+        .estrategias-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                    gap: 10px;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    padding: 15px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    background-color: #f9f9f9;
+                }
+
+                .estrategia-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .estrategia-item input[type="checkbox"] {
+                    width: 18px;
+                    height: 18px;
+                    cursor: pointer;
+                }
+
+                .estrategia-item label {
+                    cursor: pointer;
+                    user-select: none;
+                    font-weight: lighter;
+                }
+                /* Contenedor para inputs time compactos */
+                .time-inputs-compact {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+
+                .time-input {
+                    width: 120px; /* Ancho muy reducido */
+                    padding: 6px 8px;
+                    border: 2px solid var(--border-color, #dee2e6);
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-family: inherit;
+                    color: var(--text-primary, #1f2937);
+                    background-color: white;
+                    transition: all 0.2s ease;
+                    text-align: center;
+                }
+
+                /* Estilo específico para el input time */
+                .time-input[type="time"] {
+                    min-width: 0; /* Permite que sea más pequeño que el mínimo por defecto */
+                }
+
+                .time-input[type="time"]::-webkit-calendar-picker-indicator {
+                    opacity: 0.5;
+                    width: 14px;
+                    height: 14px;
+                    cursor: pointer;
+                    margin-left: 2px;
+                }
+
+                .time-input[type="time"]::-webkit-calendar-picker-indicator:hover {
+                    opacity: 1;
+                }
+
+                .time-input:hover {
+                    border-color: var(--primary-color, #667eea);
+                }
+
+                .time-input:focus {
+                    outline: none;
+                    border-color: var(--primary-color, #667eea);
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+                }
+
+                .time-input:disabled {
+                    background-color: #f3f4f6;
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+
+                /* Separador entre inputs (opcional) */
+                .time-separator {
+                    color: var(--text-light, #6b7280);
+                    font-weight: 600;
+                    font-size: 14px;
+                    margin: 0 2px;
+                }
             @media (max-width: 768px) {
 
                 .modal-body-custom .form-row,
@@ -555,12 +656,12 @@
                             <div class="form-group">
                                 <label for="fechaEvaluacionEdit">Fecha de Evaluación *</label>
                                 <input type="date" id="fechaEvaluacionEdit" name="fecha_evaluacion" class="form-input"
-                                    required>
+                                    required disabled>
                             </div>
                             <div class="form-group">
                                 <label for="porcentajeEdit">Porcentaje de Evaluación (%) *</label>
                                 <input type="number" id="porcentajeEdit" name="porcentaje_evaluacion" class="form-input"
-                                    required min="5" max="100" step="0.01" value="10" placeholder="Mínimo 5%">
+                                    required min="1" max="100" step="0.01" value="10" placeholder="Mínimo 1%" disabled>
                                 <small class="form-help">Mínimo: 5% | Se distribuirá automáticamente entre
                                     criterios</small>
                             </div>
@@ -580,13 +681,18 @@
                                 placeholder="Docente que creó la rúbrica">
                             <small class="form-help">Este campo no se puede modificar</small>
                         </div>
-
-                        <div class="form-group">
-                            <label for="competenciasEdit">Competencias</label>
-                            <textarea id="competenciasEdit" name="competencias" class="form-textarea" rows="3"
-                                placeholder="Describa las competencias que se evaluarán..."></textarea>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="competenciasEdit">Competencias</label>
+                                <textarea id="competenciasEdit" name="competencias" class="form-textarea" rows="3"
+                                    placeholder="Describa las competencias que se evaluarán..." disabled></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="instrumentosEdit">Instrumentos</label>
+                                <textarea id="instrumentosEdit" name="instrumentosEdit" class="form-textarea" rows="3"
+                                    placeholder="Lista de los instrumentos usados para evaluar..." disabled></textarea>
+                            </div>
                         </div>
-
                         <div class="form-group">
                             <label for="instruccionesEdit">Instrucciones</label>
                             <textarea id="instruccionesEdit" name="instrucciones" class="form-textarea" rows="3"

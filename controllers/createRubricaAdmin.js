@@ -211,16 +211,16 @@ router.get("/admin/evaluaciones/:seccionId", function (req, res) {
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
-            INNER JOIN (
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            LEFT JOIN (
                 SELECT 
                     COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
                     ins.id_seccion
                 FROM inscripcion_seccion ins
                 GROUP BY ins.id_seccion
             ) AS estud_sec ON s.id = estud_sec.id_seccion
-            INNER JOIN permiso_docente pd ON estud_sec.id_seccion = pd.id_seccion
-            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
-            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
             LEFT JOIN (
                 SELECT 
                     er.id,
@@ -244,7 +244,7 @@ router.get("/admin/evaluaciones/:seccionId", function (req, res) {
     conexion.query(query, [seccionId], (error, evaluaciones) => {
         if (error) {
             console.error('Error al obtener evaluaciones:', error);
-            return res.json({ success: false, message: 'Error al obtener estrategias' });
+            return res.json({ success: false, message: 'Error al obtener evaluaciones' });
         }
         res.json({ success: true, evaluaciones });
     });

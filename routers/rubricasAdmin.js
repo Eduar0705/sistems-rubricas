@@ -634,7 +634,97 @@ router.get("/admin/tipos_rubrica/", (req, res) => {
 // ============================================================
 // APIs PARA SELECCIÓN JERÁRQUICA
 // ============================================================
-
+//BUSCAR EVALUACIONES EN LA SECCION CON O SIN RUBRICA
+router.get("/admin/evaluaciones_con_rubrica/:seccionId", function (req, res) {
+    if (!req.session.login) {
+        const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
+        return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
+    }
+    const { seccionId } = req.params;
+    const query = `
+        SELECT
+            evaluacion_id,
+            id_seccion,
+            contenido_evaluacion,
+            tipo_evaluacion,
+            rubrica_id,
+            nombre_rubrica,
+            valor,
+            docente_cedula,
+            docente_nombre,
+            docente_apellido,
+            materia_nombre,
+            carrera_nombre,
+            total_evaluaciones,
+            seccion_codigo,
+            completadas,
+            total_evaluaciones - completadas AS pendientes,
+            fecha_evaluacion,
+            CASE
+                WHEN rubrica_id IS NULL THEN 'Pendiente'
+                WHEN rubrica_id IS NOT NULL AND total_evaluaciones = completadas AND total_evaluaciones != 0 THEN 'Completada'
+                ELSE 'En Progreso'
+            END as estado
+        FROM
+        (
+            SELECT 
+                e.id AS evaluacion_id,
+                e.contenido AS contenido_evaluacion,
+            	GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                MAX(r.id) AS rubrica_id,  -- Usar MAX para obtener un valor único
+                IFNULL(MAX(r.nombre_rubrica), 'Sin rubrica') AS nombre_rubrica,  -- Usar MAX aquí también
+                e.ponderacion as valor,
+                u.cedula as docente_cedula,
+                u.nombre as docente_nombre,
+                u.apeliido as docente_apellido,
+                m.nombre as materia_nombre,
+                c.nombre as carrera_nombre,
+                estud_sec.cantidad_en_seccion AS total_evaluaciones, 
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                COUNT(DISTINCT eval_est.id) AS completadas,
+                e.fecha_evaluacion,
+                s.id AS id_seccion
+            FROM evaluacion e
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica r ON ru.id_rubrica = r.id
+            LEFT JOIN (
+                SELECT 
+                    COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                    ins.id_seccion
+                FROM inscripcion_seccion ins
+                GROUP BY ins.id_seccion
+            ) AS estud_sec ON s.id = estud_sec.id_seccion
+            LEFT JOIN (
+                SELECT 
+                    er.id,
+                    er.id_evaluacion,
+                    SUM(de.puntaje_obtenido) AS puntaje_eval
+                FROM evaluacion_realizada er 
+                INNER JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+                GROUP BY er.id, er.id_evaluacion
+            ) AS eval_est ON eval_est.id_evaluacion = e.id
+            LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+            LEFT JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
+            GROUP BY e.id
+        ) AS todo
+        WHERE id_seccion = ?
+        ORDER BY fecha_evaluacion DESC;
+        `;
+    connection.query(query, [seccionId], (error, evaluaciones) => {
+        if (error) {
+            console.error('Error al obtener evaluaciones:', error);
+            return res.json({ success: false, message: 'Error al obtener evaluaciones' });
+        }
+        res.json({ success: true, evaluaciones });
+    });
+});
 // Obtener semestres por carrera
 router.get("/api/admin/semestres/:carrera", (req, res) => {
     const { carrera } = req.params;

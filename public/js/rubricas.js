@@ -4,6 +4,7 @@
 let criterioCountEdit = 0;
 let porcentajeEvaluacionEdit = 10;
 let carrerasDataEdit = [];
+let estrategias_eval = null;
 
 // ============================================================
 // BÚSQUEDA Y FILTROS
@@ -565,7 +566,9 @@ async function loadRubricData(rubricId) {
         
         if (data.success) {
             populateModalEdit(data);
-            const estrategias_eval = await cargarEstrategias();
+            // Cargar estrategias y guardarlas globalmente
+            const estrategias = await cargarEstrategias();
+            estrategias_eval = estrategias; // Guardar global
             cargarEstrategiasEdit(estrategias_eval, data.rubrica.estrategias);
         } else {
             Swal.fire('Error', data.message || 'Error al cargar la rúbrica', 'error');
@@ -576,7 +579,12 @@ async function loadRubricData(rubricId) {
         Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
     }
 }
-
+function formatearFechaParaInput(fecha) {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const day = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 // ============================================================
 // SISTEMA DE SELECCIÓN JERÁRQUICO PARA EDICIÓN (MODIFICADO CON PROMESAS)
 // ============================================================
@@ -589,7 +597,7 @@ function cargarEstrategiasEdit(listaEstrategias, seleccionadas = []) {
         label.className = 'estrategia-item';
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.disabled = false;
+        checkbox.disabled = true;
         checkbox.value = est.id;
         checkbox.checked = seleccionadas.includes(est.id);
         label.appendChild(checkbox);
@@ -744,7 +752,7 @@ function cargarEvaluacionesEdit(seccionId, callback, valorSeleccionar = null) {
     evalSelect.innerHTML = '<option value="">Cargando...</option>';
     evalSelect.disabled = true;
 
-    fetch(`/admin/evaluaciones/${seccionId}`)
+    fetch(`/admin/evaluaciones_con_rubrica/${seccionId}`)
         .then(response => response.json())
         .then(data => {
             if (data.evaluaciones && data.evaluaciones.length > 0) {
@@ -804,9 +812,6 @@ function cargarTiposRubrica(valorSeleccionar = null) {
             tipo_r_select.innerHTML = '<option value="">Error al cargar</option>';
         });
 }
-// ============================================================
-// POPULATE MODAL EDIT - VERSIÓN CORREGIDA CON CARGA DE EVALUACIONES
-// ============================================================
 
 function populateModalEdit(data) {
     const rubrica = data.rubrica;
@@ -818,9 +823,9 @@ function populateModalEdit(data) {
     document.getElementById('porcentajeEdit').value = rubrica.porcentaje_evaluacion;
     document.getElementById('docenteCreadorEdit').value = rubrica.docente_nombre || '';
     document.getElementById('competenciasEdit').value = rubrica.competencias || '';
+    document.getElementById('instrumentosEdit').value = rubrica.instrumentos || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
     cargarTiposRubrica(rubrica.id_tipo)
-    porcentajeEvaluacionEdit = parseFloat(rubrica.porcentaje_evaluacion);
 
     // 1. Primero cargar carreras (sin valor a seleccionar aún porque no tenemos carreraData)
     cargarCarrerasEdit(() => {
@@ -1505,65 +1510,271 @@ function eliminarRubrica(id) {
 // EVENT LISTENERS PARA CASCADA DE SELECTS
 // ============================================================
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Cargar estrategias globalmente
+    estrategias_eval = await cargarEstrategias();
+    
     const carreraEditSelect = document.getElementById('carreraEdit');
     const semestreEditSelect = document.getElementById('semestreEdit');
     const materiaEditSelect = document.getElementById('materiaEdit');
+    const seccionEditSelect = document.getElementById('seccionEdit');
+    const evalEditSelect = document.getElementById('evaluacionEdit');
+    const fechaInputEdit = document.getElementById('fechaEvaluacionEdit');
+    const porcentajeInputEdit = document.getElementById('porcentajeEdit');
+    const competenciasTextAreaEdit = document.getElementById('competenciasEdit');
+    const instrumentosTextAreaEdit = document.getElementById('instrumentosEdit');
 
-    if (carreraEditSelect) {
-        carreraEditSelect.addEventListener('change', function() {
-            const carreraCode = this.value;
-            
+    // Función para limpiar todos los campos de evaluación
+    function limpiarCamposEvaluacion() {
+        fechaInputEdit.value = '';
+        porcentajeInputEdit.value = '';
+        competenciasTextAreaEdit.value = '';
+        instrumentosTextAreaEdit.value = '';
+        // Restaurar placeholders
+        fechaInputEdit.placeholder = 'dd/mm/aaaa';
+        porcentajeInputEdit.placeholder = 'Mínimo 5%';
+        if (estrategias_eval) {
+            cargarEstrategiasEdit(estrategias_eval, []);
+        }
+    }
+
+    // Función para resetear selects dependientes (excepto el actual)
+    function resetearSelects(hasta) {
+        if (hasta <= 1) { // carrera
             semestreEditSelect.innerHTML = '<option value="">Primero seleccione una carrera</option>';
             materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
-            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
-            
+            seccionEditSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+            semestreEditSelect.disabled = true;
             materiaEditSelect.disabled = true;
-            document.getElementById('seccionEdit').disabled = true;
+            seccionEditSelect.disabled = true;
+            evalEditSelect.disabled = true;
+        }
+        if (hasta <= 2) { // semestre
+            materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+            seccionEditSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+            materiaEditSelect.disabled = true;
+            seccionEditSelect.disabled = true;
+            evalEditSelect.disabled = true;
+        }
+        if (hasta <= 3) { // materia
+            seccionEditSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+            evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+            seccionEditSelect.disabled = true;
+            evalEditSelect.disabled = true;
+        }
+        if (hasta <= 4) { // sección
+            evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+            evalEditSelect.disabled = true;
+        }
+    }
 
-            if (carreraCode) {
-                cargarSemestresEdit(carreraCode);
-            } else {
-                semestreEditSelect.disabled = true;
+    // Cuando cambia la carrera
+    if (carreraEditSelect) {
+        carreraEditSelect.addEventListener('change', async function() {
+            const carreraCode = this.value;
+            
+            // Resetear selects dependientes (carrera afecta a todos los siguientes)
+            resetearSelects(1);
+            // Limpiar campos de evaluación
+            limpiarCamposEvaluacion();
+
+            if (!carreraCode) {
+                semestreEditSelect.innerHTML = '<option value="">Primero seleccione una carrera</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/semestres/${carreraCode}`);
+                const semestres = await response.json();
+                
+                semestreEditSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
+                if (semestres && semestres.length > 0) {
+                    semestres.forEach(sem => {
+                        semestreEditSelect.innerHTML += `<option value="${sem}">Semestre ${sem}</option>`;
+                    });
+                    semestreEditSelect.disabled = false;
+                } else {
+                    semestreEditSelect.innerHTML = '<option value="">No hay semestres disponibles</option>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                semestreEditSelect.innerHTML = '<option value="">Error al cargar semestres</option>';
+                Swal.fire('Error', 'No se pudieron cargar los semestres', 'error');
             }
         });
     }
 
+    // Cuando cambia el semestre
     if (semestreEditSelect) {
-        semestreEditSelect.addEventListener('change', function() {
+        semestreEditSelect.addEventListener('change', async function() {
             const carreraCode = carreraEditSelect.value;
             const semestre = this.value;
             
-            materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
-            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
-            document.getElementById('seccionEdit').disabled = true;
+            // Resetear selects dependientes (semestre afecta a materia, sección, evaluación)
+            resetearSelects(2);
+            // Limpiar campos de evaluación
+            limpiarCamposEvaluacion();
 
-            if (semestre) {
-                cargarMateriasEdit(carreraCode, semestre);
-            } else {
-                materiaEditSelect.disabled = true;
+            if (!semestre) {
+                materiaEditSelect.innerHTML = '<option value="">Primero seleccione un semestre</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/materias/${carreraCode}/${semestre}`);
+                const materias = await response.json();
+                
+                materiaEditSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+                if (materias && materias.length > 0) {
+                    materias.forEach(mat => {
+                        materiaEditSelect.innerHTML += `<option value="${mat.codigo}">${mat.nombre}</option>`;
+                    });
+                    materiaEditSelect.disabled = false;
+                } else {
+                    materiaEditSelect.innerHTML = '<option value="">No hay materias disponibles</option>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                materiaEditSelect.innerHTML = '<option value="">Error al cargar materias</option>';
+                Swal.fire('Error', 'No se pudieron cargar las materias', 'error');
             }
         });
     }
 
+    // Cuando cambia la materia
     if (materiaEditSelect) {
-        materiaEditSelect.addEventListener('change', function() {
+        materiaEditSelect.addEventListener('change', async function() {
             const materiaCode = this.value;
             
-            document.getElementById('seccionEdit').innerHTML = '<option value="">Primero seleccione una materia</option>';
+            // Resetear selects dependientes (materia afecta a sección y evaluación)
+            resetearSelects(3);
+            // Limpiar campos de evaluación
+            limpiarCamposEvaluacion();
 
-            if (materiaCode) {
-                cargarSeccionesEdit(materiaCode);
-            } else {
-                document.getElementById('seccionEdit').disabled = true;
+            if (!materiaCode) {
+                seccionEditSelect.innerHTML = '<option value="">Primero seleccione una materia</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/secciones/${materiaCode}/${carreraEditSelect.value}`);
+                const secciones = await response.json();
+                
+                seccionEditSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+                if (secciones && secciones.length > 0) {
+                    secciones.forEach(sec => {
+                        const info = `${sec.codigo} - ${sec.lapso_academico}${sec.horario ? ' - ' + sec.horario : ''}`;
+                        seccionEditSelect.innerHTML += `<option value="${sec.id}">${info}</option>`;
+                    });
+                    seccionEditSelect.disabled = false;
+                } else {
+                    seccionEditSelect.innerHTML = '<option value="">No hay secciones disponibles</option>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                seccionEditSelect.innerHTML = '<option value="">Error al cargar secciones</option>';
+                Swal.fire('Error', 'No se pudieron cargar las secciones', 'error');
             }
         });
     }
 
-    // Listener para calcular distribución
-    const porcentajeEditInput = document.getElementById('porcentajeEdit');
-    if (porcentajeEditInput) {
-        porcentajeEditInput.addEventListener('input', calcularDistribucionAutomaticaEdit);
+    // Cuando cambia la sección
+    if (seccionEditSelect) {
+        seccionEditSelect.addEventListener('change', async function() {
+            const seccionId = this.value;
+            
+            // Resetear select de evaluación
+            resetearSelects(4);
+            // Limpiar campos de evaluación (¡esto es lo que faltaba!)
+            limpiarCamposEvaluacion();
+
+            if (!seccionId) {
+                evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/evaluaciones_con_rubrica/${seccionId}`);
+                const data = await response.json();
+                
+                if (data.evaluaciones && data.evaluaciones.length > 0) {
+                    evalEditSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+                    data.evaluaciones.forEach(evalu => {
+                        const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
+                        evalEditSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
+                    });
+                    evalEditSelect.disabled = false;
+                } else {
+                    evalEditSelect.innerHTML = '<option value="">No hay evaluaciones disponibles</option>';
+                    Swal.fire('Sin evaluaciones', 'No se encontraron evaluaciones para esta sección.', 'info');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                evalEditSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
+                Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+            }
+        });
+    }
+
+    // Cuando cambia la evaluación
+    if (evalEditSelect) {
+        evalEditSelect.addEventListener('change', async function() {
+            const evalId = this.value;
+            
+            // Si no hay evaluación seleccionada, limpiar campos
+            if (!evalId) {
+                limpiarCamposEvaluacion();
+                return;
+            }
+
+            // Mostrar carga
+            fechaInputEdit.value = '';
+            porcentajeInputEdit.value = '';
+            competenciasTextAreaEdit.value = 'Cargando...';
+            instrumentosTextAreaEdit.value = 'Cargando...';
+            fechaInputEdit.placeholder = 'Cargando...';
+            porcentajeInputEdit.placeholder = 'Cargando...';
+
+            try {
+                const response = await fetch(`/api/evaluacion/${evalId}`);
+                const data = await response.json();
+
+                if (data.evaluacion) {
+                    fechaInputEdit.value = formatearFechaParaInput(new Date(data.evaluacion.fecha_evaluacion));
+                    porcentajeInputEdit.value = data.evaluacion.porcentaje;
+                    competenciasTextAreaEdit.value = data.evaluacion.competencias || '';
+                    instrumentosTextAreaEdit.value = data.evaluacion.instrumentos || '';
+                    
+                    // Restaurar placeholders
+                    fechaInputEdit.placeholder = 'dd/mm/aaaa';
+                    porcentajeInputEdit.placeholder = 'Mínimo 5%';
+                    
+                    // Actualizar estrategias
+                    if (estrategias_eval) {
+                        cargarEstrategiasEdit(estrategias_eval, data.evaluacion.estrategias || []);
+                    }
+                    
+                    // Recalcular distribución
+                    if (typeof calcularDistribucionAutomaticaEdit === 'function') {
+                        calcularDistribucionAutomaticaEdit();
+                    }
+                } else {
+                    Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
+                    limpiarCamposEvaluacion();
+                }
+            } catch (error) {
+                console.error('Error al cargar evaluación:', error);
+                Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
+                limpiarCamposEvaluacion();
+            }
+        });
+    }
+
+    // Listener para calcular distribución al cambiar porcentaje
+    if (porcentajeInputEdit) {
+        porcentajeInputEdit.addEventListener('input', calcularDistribucionAutomaticaEdit);
     }
 
     // Inicializar paginación y cargar datos
