@@ -1230,17 +1230,24 @@ function validarPuntajesEdit() {
 
 const rubricaFormEdit = document.getElementById('rubricaFormEdit');
 if (rubricaFormEdit) {
-    rubricaFormEdit.addEventListener('submit', function(e) {
+    rubricaFormEdit.addEventListener('submit', async function(e) {
         e.preventDefault();
+
+        // ============================================================
+        // VALIDACIONES DEL FRONTEND (rápidas)
+        // ============================================================
         
-        // Validar campos básicos
         const id = document.getElementById('rubricaIdEdit')?.value;
         const nombreRubrica = document.getElementById('nombreRubricaEdit')?.value.trim();
-        const materiaId = document.getElementById('materiaEdit')?.value;
-        const seccionId = document.getElementById('seccionEdit')?.value;
-        const fechaEval = document.getElementById('fechaEvaluacionEdit')?.value;
+        const tipoRubrica = document.getElementById('tipoRubrica')?.value; // Mismo ID que en creación
+        const instrucciones = document.getElementById('instruccionesEdit')?.value.trim();
+        const idEval = document.getElementById('evaluacionEdit')?.value;
         const porcentaje = parseFloat(document.getElementById('porcentajeEdit')?.value);
-        const tipoEval = document.getElementById('tipoEvaluacionEdit')?.value;
+
+        // Resetear bordes rojos
+        document.querySelectorAll('.error-border').forEach(el => {
+            el.classList.remove('error-border');
+        });
 
         if (!id) {
             Swal.fire('Error', 'ID de rúbrica no encontrado', 'error');
@@ -1249,31 +1256,25 @@ if (rubricaFormEdit) {
 
         if (!nombreRubrica) {
             Swal.fire('Error', 'El nombre de la rúbrica es obligatorio', 'error');
+            document.getElementById('nombreRubricaEdit').classList.add('error-border');
             return;
         }
 
-        if (!materiaId) {
-            Swal.fire('Error', 'Debe seleccionar una materia', 'error');
+        if (!tipoRubrica) {
+            Swal.fire('Error', 'Debe seleccionar un tipo de Rúbrica', 'error');
+            document.getElementById('tipoRubrica').classList.add('error-border');
             return;
         }
 
-        if (!seccionId) {
-            Swal.fire('Error', 'Debe seleccionar una sección', 'error');
+        if (!instrucciones) {
+            Swal.fire('Error', 'Las instrucciones son obligatorias', 'error');
+            document.getElementById('instruccionesEdit').classList.add('error-border');
             return;
         }
 
-        if (!fechaEval) {
-            Swal.fire('Error', 'La fecha de evaluación es obligatoria', 'error');
-            return;
-        }
-
-        if (!porcentaje || porcentaje < 5 || porcentaje > 100) {
-            Swal.fire('Error', 'El porcentaje debe estar entre 5% y 100%', 'error');
-            return;
-        }
-
-        if (!tipoEval) {
-            Swal.fire('Error', 'Debe seleccionar un tipo de evaluación', 'error');
+        if (!idEval) {
+            Swal.fire('Error', 'Debe seleccionar una evaluación', 'error');
+            document.getElementById('evaluacionEdit').classList.add('error-border');
             return;
         }
         
@@ -1284,18 +1285,18 @@ if (rubricaFormEdit) {
             return;
         }
         
-        // Recopilar datos de la rúbrica
+        // ============================================================
+        // RECOPILAR DATOS DE LA RÚBRICA
+        // ============================================================
         const rubricaData = {
             id: id,
             nombre_rubrica: nombreRubrica,
-            materia_codigo: materiaId,
-            seccion_id: seccionId,
-            fecha_evaluacion: fechaEval,
-            porcentaje_evaluacion: porcentaje,
-            tipo_evaluacion: tipoEval,
-            competencias: document.getElementById('competenciasEdit')?.value || '',
-            instrucciones: document.getElementById('instruccionesEdit')?.value || '',
-            criterios: []
+            id_evaluacion: idEval,
+            tipo_rubrica: tipoRubrica,
+            instrucciones: instrucciones,
+            porcentaje: porcentaje,
+            criterios: [],
+            estrategias: [] // Para los checkboxes
         };
         
         // Recopilar criterios y niveles
@@ -1311,7 +1312,6 @@ if (rubricaFormEdit) {
                 niveles: []
             };
             
-            // Recopilar niveles del criterio
             const niveles = criterioCard.querySelectorAll('.nivel-item');
             niveles.forEach(nivelItem => {
                 const nombreInput = nivelItem.querySelector('.nivel-nombre');
@@ -1330,8 +1330,17 @@ if (rubricaFormEdit) {
             
             rubricaData.criterios.push(criterio);
         });
+
+        // Recopilar estrategias seleccionadas (checkboxes)
+        const checkboxes = document.querySelectorAll('#estrategias_eval input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => {
+            rubricaData.estrategias.push(cb.value);
+        });
         
-        // Validar estructura
+        // ============================================================
+        // VALIDACIONES DE CONSISTENCIA (mismas que en creación)
+        // ============================================================
+        let sumaPuntajes = 0;
         for (let i = 0; i < rubricaData.criterios.length; i++) {
             const criterio = rubricaData.criterios[i];
             
@@ -1340,11 +1349,13 @@ if (rubricaFormEdit) {
                 return;
             }
             
-            if (criterio.puntaje_maximo < 1) {
-                Swal.fire('Error', `El criterio ${i + 1} necesita un puntaje mínimo de 1 punto`, 'error');
+            if (criterio.puntaje_maximo < 0.1) {
+                Swal.fire('Error', `El criterio ${i + 1} necesita un puntaje mínimo de 0.1 puntos`, 'error');
                 return;
             }
             
+            sumaPuntajes += criterio.puntaje_maximo;
+
             if (!criterio.niveles || criterio.niveles.length === 0) {
                 Swal.fire('Error', `El criterio ${i + 1} necesita al menos un nivel`, 'error');
                 return;
@@ -1363,8 +1374,8 @@ if (rubricaFormEdit) {
                     return;
                 }
                 
-                if (nivel.puntaje < 0.25) {
-                    Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" necesita un puntaje mínimo de 0.25`, 'error');
+                if (nivel.puntaje < 0.025) {
+                    Swal.fire('Error', `El nivel "${nivel.nombre_nivel}" necesita un puntaje mínimo de 0.925`, 'error');
                     return;
                 }
                 
@@ -1374,17 +1385,18 @@ if (rubricaFormEdit) {
                 }
             }
         }
-        
-        // Validar suma de puntajes
-        const sumaPuntajes = rubricaData.criterios.reduce((sum, c) => sum + c.puntaje_maximo, 0);
-        if (sumaPuntajes > porcentaje) {
+
+        // Validar suma de puntajes EXACTAMENTE IGUAL al porcentaje
+        if (Math.abs(sumaPuntajes - porcentaje) > 0.01) {
             Swal.fire('Error', 
-                `La suma de puntajes (${sumaPuntajes.toFixed(2)}) excede el porcentaje (${porcentaje}%)`, 
+                `La suma de puntajes (${sumaPuntajes.toFixed(2)}) debe ser EXACTAMENTE IGUAL al porcentaje de evaluación (${porcentaje}%)`, 
                 'error');
             return;
         }
         
-        // Mostrar loading
+        // ============================================================
+        // MOSTRAR LOADING
+        // ============================================================
         Swal.fire({
             title: 'Actualizando rúbrica...',
             text: 'Por favor espere',
@@ -1395,22 +1407,71 @@ if (rubricaFormEdit) {
             }
         });
         
-        // Crear FormData
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '/updateRubrica';
+        // ============================================================
+        // PREPARAR DATOS PARA ENVIAR (mismo formato que creación)
+        // ============================================================
+        const datosParaEnviar = {
+            id: rubricaData.id,
+            nombre_rubrica: rubricaData.nombre_rubrica,
+            id_evaluacion: rubricaData.id_evaluacion,
+            tipo_rubrica: rubricaData.tipo_rubrica,
+            instrucciones: rubricaData.instrucciones,
+            porcentaje: rubricaData.porcentaje,
+            criterios: JSON.stringify(rubricaData.criterios), // igual que en creación
+            estrategias: rubricaData.estrategias // array de IDs
+        };
         
-        // Agregar todos los campos
-        Object.keys(rubricaData).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = key === 'criterios' ? JSON.stringify(rubricaData[key]) : rubricaData[key];
-            form.appendChild(input);
-        });
-        
-        document.body.appendChild(form);
-        form.submit();
+        try {
+            // ============================================================
+            // ENVÍO CON FETCH (cambia la URL por tu endpoint de actualización)
+            // ============================================================
+            const response = await fetch(`/rubrica/actualizar/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(datosParaEnviar)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Éxito
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Actualizada!',
+                    html: `
+                        ${result.mensaje || 'Rúbrica actualizada correctamente'}<br>
+                        <small>Criterios: ${result.datos?.criterios || rubricaData.criterios.length} | Puntaje total: ${result.datos?.sumaPuntajes || sumaPuntajes.toFixed(2)}/${porcentaje}</small>
+                    `
+                }).then(() => {
+                    window.location.href = '/admin/rubricas'; // Redirige a la lista
+                });
+            } else {
+                // Error controlado del servidor
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.mensaje || 'No se pudo actualizar la rúbrica'
+                });
+                
+                // Resaltar campo específico si viene en la respuesta
+                if (result.campo) {
+                    const elemento = document.querySelector(`[name="${result.campo}"], #${result.campo}`);
+                    if (elemento) {
+                        elemento.classList.add('error-border');
+                        elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudo conectar con el servidor. Verifique su conexión.'
+            });
+        }
     });
 }
 
@@ -1525,18 +1586,22 @@ document.addEventListener('DOMContentLoaded', async function() {
     const instrumentosTextAreaEdit = document.getElementById('instrumentosEdit');
 
     // Función para limpiar todos los campos de evaluación
-    function limpiarCamposEvaluacion() {
-        fechaInputEdit.value = '';
-        porcentajeInputEdit.value = '';
-        competenciasTextAreaEdit.value = '';
-        instrumentosTextAreaEdit.value = '';
-        // Restaurar placeholders
-        fechaInputEdit.placeholder = 'dd/mm/aaaa';
-        porcentajeInputEdit.placeholder = 'Mínimo 5%';
-        if (estrategias_eval) {
-            cargarEstrategiasEdit(estrategias_eval, []);
-        }
+    // Función para limpiar todos los campos de evaluación y actualizar checkboxes
+function limpiarCamposEvaluacion(estrategiasSeleccionadas = []) {
+    fechaInputEdit.value = '';
+    porcentajeInputEdit.value = '';
+    competenciasTextAreaEdit.value = '';
+    instrumentosTextAreaEdit.value = '';
+    
+    // Restaurar placeholders
+    fechaInputEdit.placeholder = 'dd/mm/aaaa';
+    porcentajeInputEdit.placeholder = 'Mínimo 5%';
+    
+    // ACTUALIZAR CHECKBOXES CON LAS ESTRATEGIAS SELECCIONADAS
+    if (estrategias_eval) {
+        cargarEstrategiasEdit(estrategias_eval, estrategiasSeleccionadas);
     }
+}
 
     // Función para resetear selects dependientes (excepto el actual)
     function resetearSelects(hasta) {
@@ -1681,96 +1746,96 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Cuando cambia la sección
-    if (seccionEditSelect) {
-        seccionEditSelect.addEventListener('change', async function() {
-            const seccionId = this.value;
+if (seccionEditSelect) {
+    seccionEditSelect.addEventListener('change', async function() {
+        const seccionId = this.value;
+        
+        // Resetear select de evaluación
+        resetearSelects(4);
+        // Limpiar campos de evaluación y checkboxes (sin estrategias seleccionadas)
+        limpiarCamposEvaluacion([]); // Pasamos array vacío porque no hay evaluación seleccionada
+
+        if (!seccionId) {
+            evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/evaluaciones_con_rubrica/${seccionId}`);
+            const data = await response.json();
             
-            // Resetear select de evaluación
-            resetearSelects(4);
-            // Limpiar campos de evaluación (¡esto es lo que faltaba!)
-            limpiarCamposEvaluacion();
-
-            if (!seccionId) {
-                evalEditSelect.innerHTML = '<option value="">Primero seleccione una sección</option>';
-                return;
+            if (data.evaluaciones && data.evaluaciones.length > 0) {
+                evalEditSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+                data.evaluaciones.forEach(evalu => {
+                    const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
+                    evalEditSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
+                });
+                evalEditSelect.disabled = false;
+            } else {
+                evalEditSelect.innerHTML = '<option value="">No hay evaluaciones disponibles</option>';
+                Swal.fire('Sin evaluaciones', 'No se encontraron evaluaciones para esta sección.', 'info');
             }
+        } catch (error) {
+            console.error('Error:', error);
+            evalEditSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
+            Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
+        }
+    });
+}
 
-            try {
-                const response = await fetch(`/admin/evaluaciones_con_rubrica/${seccionId}`);
-                const data = await response.json();
+// Cuando cambia la evaluación
+if (evalEditSelect) {
+    evalEditSelect.addEventListener('change', async function() {
+        const evalId = this.value;
+        
+        // Si no hay evaluación seleccionada, limpiar campos y checkboxes
+        if (!evalId) {
+            limpiarCamposEvaluacion([]); // Pasamos array vacío para limpiar checkboxes
+            return;
+        }
+
+        // Mostrar carga
+        fechaInputEdit.value = '';
+        porcentajeInputEdit.value = '';
+        competenciasTextAreaEdit.value = 'Cargando...';
+        instrumentosTextAreaEdit.value = 'Cargando...';
+        fechaInputEdit.placeholder = 'Cargando...';
+        porcentajeInputEdit.placeholder = 'Cargando...';
+
+        try {
+            const response = await fetch(`/api/evaluacion/${evalId}`);
+            const data = await response.json();
+
+            if (data.evaluacion) {
+                fechaInputEdit.value = formatearFechaParaInput(new Date(data.evaluacion.fecha_evaluacion));
+                porcentajeInputEdit.value = data.evaluacion.porcentaje;
+                competenciasTextAreaEdit.value = data.evaluacion.competencias || '';
+                instrumentosTextAreaEdit.value = data.evaluacion.instrumentos || '';
                 
-                if (data.evaluaciones && data.evaluaciones.length > 0) {
-                    evalEditSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
-                    data.evaluaciones.forEach(evalu => {
-                        const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
-                        evalEditSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
-                    });
-                    evalEditSelect.disabled = false;
-                } else {
-                    evalEditSelect.innerHTML = '<option value="">No hay evaluaciones disponibles</option>';
-                    Swal.fire('Sin evaluaciones', 'No se encontraron evaluaciones para esta sección.', 'info');
+                // Restaurar placeholders
+                fechaInputEdit.placeholder = 'dd/mm/aaaa';
+                porcentajeInputEdit.placeholder = 'Mínimo 5%';
+                
+                // ACTUALIZAR CHECKBOXES CON LAS ESTRATEGIAS DE LA EVALUACIÓN SELECCIONADA
+                if (estrategias_eval) {
+                    cargarEstrategiasEdit(estrategias_eval, data.evaluacion.estrategias || []);
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                evalEditSelect.innerHTML = '<option value="">Error al cargar evaluaciones</option>';
-                Swal.fire('Error', 'No se pudieron cargar las evaluaciones', 'error');
-            }
-        });
-    }
-
-    // Cuando cambia la evaluación
-    if (evalEditSelect) {
-        evalEditSelect.addEventListener('change', async function() {
-            const evalId = this.value;
-            
-            // Si no hay evaluación seleccionada, limpiar campos
-            if (!evalId) {
-                limpiarCamposEvaluacion();
-                return;
-            }
-
-            // Mostrar carga
-            fechaInputEdit.value = '';
-            porcentajeInputEdit.value = '';
-            competenciasTextAreaEdit.value = 'Cargando...';
-            instrumentosTextAreaEdit.value = 'Cargando...';
-            fechaInputEdit.placeholder = 'Cargando...';
-            porcentajeInputEdit.placeholder = 'Cargando...';
-
-            try {
-                const response = await fetch(`/api/evaluacion/${evalId}`);
-                const data = await response.json();
-
-                if (data.evaluacion) {
-                    fechaInputEdit.value = formatearFechaParaInput(new Date(data.evaluacion.fecha_evaluacion));
-                    porcentajeInputEdit.value = data.evaluacion.porcentaje;
-                    competenciasTextAreaEdit.value = data.evaluacion.competencias || '';
-                    instrumentosTextAreaEdit.value = data.evaluacion.instrumentos || '';
-                    
-                    // Restaurar placeholders
-                    fechaInputEdit.placeholder = 'dd/mm/aaaa';
-                    porcentajeInputEdit.placeholder = 'Mínimo 5%';
-                    
-                    // Actualizar estrategias
-                    if (estrategias_eval) {
-                        cargarEstrategiasEdit(estrategias_eval, data.evaluacion.estrategias || []);
-                    }
-                    
-                    // Recalcular distribución
-                    if (typeof calcularDistribucionAutomaticaEdit === 'function') {
-                        calcularDistribucionAutomaticaEdit();
-                    }
-                } else {
-                    Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
-                    limpiarCamposEvaluacion();
+                
+                // Recalcular distribución
+                if (typeof calcularDistribucionAutomaticaEdit === 'function') {
+                    calcularDistribucionAutomaticaEdit();
                 }
-            } catch (error) {
-                console.error('Error al cargar evaluación:', error);
+            } else {
                 Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
-                limpiarCamposEvaluacion();
+                limpiarCamposEvaluacion([]); // Pasamos array vacío
             }
-        });
-    }
+        } catch (error) {
+            console.error('Error al cargar evaluación:', error);
+            Swal.fire('Error', 'No se pudo cargar la evaluación', 'error');
+            limpiarCamposEvaluacion([]); // Pasamos array vacío
+        }
+    });
+}
 
     // Listener para calcular distribución al cambiar porcentaje
     if (porcentajeInputEdit) {

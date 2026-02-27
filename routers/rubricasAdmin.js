@@ -167,7 +167,442 @@ router.get("/admin/rubricas/detalle/:id", function(req, res) {
         });
     });
 });
+router.post('/rubrica/actualizar/:id', (req, res) => {
+    // Validar sesión
+    if (!req.session || !req.session.cedula) {
+        return res.status(401).json({
+            success: false,
+            mensaje: 'Sesión no válida. Por favor, inicie sesión nuevamente.'
+        });
+    }
 
+    const {
+        id,                // id de la rúbrica a editar
+        nombre_rubrica,
+        id_evaluacion,     // nueva evaluación seleccionada
+        tipo_rubrica,
+        instrucciones,
+        criterios,
+        porcentaje         // se envía para validación, pero debería coincidir con el de la evaluación
+    } = req.body;
+
+    // Parse criterios si viene como string
+    let criteriosParsed = criterios;
+    if (typeof criterios === 'string') {
+        try {
+            criteriosParsed = JSON.parse(criterios);
+        } catch (e) {
+            console.error('Error al parsear criterios:', e);
+            return res.status(400).json({
+                success: false,
+                mensaje: 'Error: Formato de criterios inválido'
+            });
+        }
+    }
+
+    // ============================================================
+    // VALIDACIONES DEL SERVIDOR (mismas que en creación)
+    // ============================================================
+
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            mensaje: 'Error: ID de rúbrica no proporcionado'
+        });
+    }
+
+    if (!nombre_rubrica || !id_evaluacion || !tipo_rubrica || !instrucciones) {
+        return res.status(400).json({
+            success: false,
+            mensaje: 'Error: Todos los campos obligatorios deben estar completos',
+            errores: {
+                nombre_rubrica: !nombre_rubrica,
+                id_evaluacion: !id_evaluacion,
+                tipo_rubrica: !tipo_rubrica,
+                instrucciones: !instrucciones
+            }
+        });
+    }
+
+    if (!criteriosParsed || !Array.isArray(criteriosParsed) || criteriosParsed.length === 0) {
+        return res.status(400).json({
+            success: false,
+            mensaje: 'Error: Debe agregar al menos un criterio de evaluación'
+        });
+    }
+
+    let sumaPuntajes = 0;
+    for (let i = 0; i < criteriosParsed.length; i++) {
+        const criterio = criteriosParsed[i];
+
+        if (!criterio.descripcion || criterio.descripcion.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                mensaje: `Error: El criterio ${i + 1} necesita una descripción`,
+                campo: `criterio_${i}_descripcion`
+            });
+        }
+
+        const puntajeCriterio = parseFloat(criterio.puntaje_maximo);
+        if (isNaN(puntajeCriterio) || puntajeCriterio < 1) {
+            return res.status(400).json({
+                success: false,
+                mensaje: `Error: El criterio ${i + 1} debe tener un puntaje mínimo de 1 punto`
+            });
+        }
+
+        sumaPuntajes += puntajeCriterio;
+
+        if (!criterio.niveles || !Array.isArray(criterio.niveles) || criterio.niveles.length === 0) {
+            return res.status(400).json({
+                success: false,
+                mensaje: `Error: El criterio ${i + 1} debe tener al menos un nivel de desempeño`
+            });
+        }
+
+        for (let j = 0; j < criterio.niveles.length; j++) {
+            const nivel = criterio.niveles[j];
+
+            if (!nivel.nombre_nivel || nivel.nombre_nivel.trim() === '') {
+                return res.status(400).json({
+                    success: false,
+                    mensaje: `Error: El nivel ${j + 1} del criterio ${i + 1} necesita un nombre`
+                });
+            }
+
+            if (!nivel.descripcion || nivel.descripcion.trim() === '') {
+                return res.status(400).json({
+                    success: false,
+                    mensaje: `Error: El nivel "${nivel.nombre_nivel}" necesita una descripción`
+                });
+            }
+
+            const puntajeNivel = parseFloat(nivel.puntaje);
+            if (isNaN(puntajeNivel) || puntajeNivel < 0.25) {
+                return res.status(400).json({
+                    success: false,
+                    mensaje: `Error: El nivel "${nivel.nombre_nivel}" debe tener un puntaje mínimo de 0.25 puntos`
+                });
+            }
+
+            if (puntajeNivel > puntajeCriterio) {
+                return res.status(400).json({
+                    success: false,
+                    mensaje: `Error: El puntaje del nivel "${nivel.nombre_nivel}" (${puntajeNivel}) excede el puntaje máximo del criterio (${puntajeCriterio})`
+                });
+            }
+        }
+    }
+
+    if (Math.abs(sumaPuntajes - porcentaje) > 0.01) {
+        return res.status(400).json({
+            success: false,
+            mensaje: `Error: La suma de puntajes (${sumaPuntajes.toFixed(2)}) debe ser EXACTAMENTE IGUAL al porcentaje de evaluación (${porcentaje}%)`
+        });
+    }
+
+    // ============================================================
+    // INICIAR CONEXIÓN Y TRANSACCIÓN
+    // ============================================================
+    connection.getConnection((err, conn) => {
+        if (err) {
+            console.error('Error al obtener conexión del pool:', err);
+            return res.status(500).json({
+                success: false,
+                mensaje: 'Error del servidor al conectar con la base de datos'
+            });
+        }
+
+        // Primero, obtener la evaluación actual de la rúbrica (si existe)
+        const queryEvaluacionActual = 'SELECT id_eval FROM rubrica_uso WHERE id_rubrica = ?';
+        conn.query(queryEvaluacionActual, [id], (error, resultados) => {
+            if (error) {
+                conn.release();
+                console.error('Error al obtener evaluación actual:', error);
+                return res.status(500).json({
+                    success: false,
+                    mensaje: 'Error al verificar la evaluación actual'
+                });
+            }
+
+            const evaluacionAnterior = resultados.length > 0 ? resultados[0].id_eval : null;
+
+            // Si la nueva evaluación es diferente a la anterior, verificar que la nueva evaluación no tenga ya otra rúbrica asignada
+            if (evaluacionAnterior !== id_evaluacion) {
+                const queryVerificarNueva = 'SELECT id_rubrica FROM rubrica_uso WHERE id_eval = ? AND id_rubrica != ?';
+                conn.query(queryVerificarNueva, [id_evaluacion, id], (error, resultadosNueva) => {
+                    if (error) {
+                        conn.release();
+                        console.error('Error al verificar nueva evaluación:', error);
+                        return res.status(500).json({
+                            success: false,
+                            mensaje: 'Error al verificar disponibilidad de la evaluación'
+                        });
+                    }
+
+                    if (resultadosNueva.length > 0) {
+                        conn.release();
+                        return res.status(400).json({
+                            success: false,
+                            mensaje: 'La evaluación seleccionada ya tiene otra rúbrica asignada.'
+                        });
+                    }
+
+                    // Continuar con la actualización
+                    actualizarRubrica(conn, evaluacionAnterior);
+                });
+            } else {
+                // Misma evaluación, continuar
+                actualizarRubrica(conn, evaluacionAnterior);
+            }
+        });
+
+        function actualizarRubrica(conn, evaluacionAnterior) {
+            conn.beginTransaction((err) => {
+                if (err) {
+                    conn.release();
+                    console.error('Error al iniciar transacción:', err);
+                    return res.status(500).json({
+                        success: false,
+                        mensaje: 'Error del servidor al iniciar la transacción'
+                    });
+                }
+
+                // 1. Actualizar la tabla rubrica
+                const queryUpdateRubrica = `
+                    UPDATE rubrica 
+                    SET nombre_rubrica = ?, instrucciones = ?, id_tipo = ?
+                    WHERE id = ?
+                `;
+                const valuesUpdateRubrica = [nombre_rubrica, instrucciones, tipo_rubrica, id];
+
+                conn.query(queryUpdateRubrica, valuesUpdateRubrica, (error, resultUpdate) => {
+                    if (error) {
+                        return conn.rollback(() => {
+                            conn.release();
+                            console.error('Error al actualizar rúbrica:', error);
+                            res.status(500).json({
+                                success: false,
+                                mensaje: 'Error al actualizar la rúbrica en la base de datos'
+                            });
+                        });
+                    }
+
+                    if (resultUpdate.affectedRows === 0) {
+                        return conn.rollback(() => {
+                            conn.release();
+                            res.status(404).json({
+                                success: false,
+                                mensaje: 'No se encontró la rúbrica para actualizar'
+                            });
+                        });
+                    }
+
+                    // 2. Actualizar la relación en rubrica_uso
+                    // Primero eliminar la relación existente (si la hay)
+                    const queryDeleteRubricaUso = 'DELETE FROM rubrica_uso WHERE id_rubrica = ?';
+                    conn.query(queryDeleteRubricaUso, [id], (error) => {
+                        if (error) {
+                            return conn.rollback(() => {
+                                conn.release();
+                                console.error('Error al eliminar relación anterior:', error);
+                                res.status(500).json({
+                                    success: false,
+                                    mensaje: 'Error al actualizar la relación con la evaluación'
+                                });
+                            });
+                        }
+
+                        // Insertar la nueva relación
+                        const queryInsertRubricaUso = 'INSERT INTO rubrica_uso (id_eval, id_rubrica) VALUES (?, ?)';
+                        conn.query(queryInsertRubricaUso, [id_evaluacion, id], (error) => {
+                            if (error) {
+                                return conn.rollback(() => {
+                                    conn.release();
+                                    console.error('Error al insertar nueva relación:', error);
+                                    res.status(500).json({
+                                        success: false,
+                                        mensaje: 'Error al asociar la rúbrica con la nueva evaluación'
+                                    });
+                                });
+                            }
+
+                            // 3. Eliminar criterios y niveles existentes
+                            // Primero obtener los IDs de criterios actuales para eliminar niveles
+                            const querySelectCriterios = 'SELECT id FROM criterio_rubrica WHERE rubrica_id = ?';
+                            conn.query(querySelectCriterios, [id], (error, criteriosExistentes) => {
+                                if (error) {
+                                    return conn.rollback(() => {
+                                        conn.release();
+                                        console.error('Error al obtener criterios existentes:', error);
+                                        res.status(500).json({
+                                            success: false,
+                                            mensaje: 'Error al preparar actualización de criterios'
+                                        });
+                                    });
+                                }
+
+                                // Si hay criterios, eliminar sus niveles primero
+                                const eliminarNivelesPromises = [];
+                                if (criteriosExistentes.length > 0) {
+                                    const criteriosIds = criteriosExistentes.map(c => c.id);
+                                    const queryDeleteNiveles = `DELETE FROM nivel_desempeno WHERE criterio_id IN (?)`;
+                                    conn.query(queryDeleteNiveles, [criteriosIds], (error) => {
+                                        if (error) {
+                                            return conn.rollback(() => {
+                                                conn.release();
+                                                console.error('Error al eliminar niveles:', error);
+                                                res.status(500).json({
+                                                    success: false,
+                                                    mensaje: 'Error al eliminar niveles existentes'
+                                                });
+                                            });
+                                        }
+
+                                        // Luego eliminar criterios
+                                        const queryDeleteCriterios = `DELETE FROM criterio_rubrica WHERE rubrica_id = ?`;
+                                        conn.query(queryDeleteCriterios, [id], (error) => {
+                                            if (error) {
+                                                return conn.rollback(() => {
+                                                    conn.release();
+                                                    console.error('Error al eliminar criterios:', error);
+                                                    res.status(500).json({
+                                                        success: false,
+                                                        mensaje: 'Error al eliminar criterios existentes'
+                                                    });
+                                            });
+                                        }
+
+                                        // Ahora insertar nuevos criterios y niveles
+                                        insertarNuevosCriterios();
+                                    });
+                                });
+                                } else {
+                                    // No hay criterios previos, directamente insertar nuevos
+                                    insertarNuevosCriterios();
+                                }
+
+                                function insertarNuevosCriterios() {
+                                    let criteriosCompletados = 0;
+                                    const totalCriterios = criteriosParsed.length;
+                                    let hayError = false;
+
+                                    criteriosParsed.forEach((criterio, indexCriterio) => {
+                                        if (hayError) return;
+
+                                        const queryInsertCriterio = `
+                                            INSERT INTO criterio_rubrica
+                                            (rubrica_id, descripcion, puntaje_maximo, orden) 
+                                            VALUES (?, ?, ?, ?)
+                                        `;
+                                        const valuesCriterio = [
+                                            id,
+                                            criterio.descripcion.trim(),
+                                            parseFloat(criterio.puntaje_maximo),
+                                            parseInt(criterio.orden) || (indexCriterio + 1)
+                                        ];
+
+                                        conn.query(queryInsertCriterio, valuesCriterio, (error, resultCriterio) => {
+                                            if (error) {
+                                                hayError = true;
+                                                return conn.rollback(() => {
+                                                    conn.release();
+                                                    console.error('Error al insertar criterio:', error);
+                                                    res.status(500).json({
+                                                        success: false,
+                                                        mensaje: `Error al guardar el criterio: ${criterio.descripcion}`
+                                                    });
+                                                });
+                                            }
+
+                                            const criterioId = resultCriterio.insertId;
+
+                                            if (criterio.niveles && criterio.niveles.length > 0) {
+                                                let nivelesCompletados = 0;
+                                                const totalNiveles = criterio.niveles.length;
+
+                                                criterio.niveles.forEach((nivel, indexNivel) => {
+                                                    if (hayError) return;
+
+                                                    const queryInsertNivel = `
+                                                        INSERT INTO nivel_desempeno 
+                                                        (criterio_id, nombre_nivel, descripcion, puntaje_maximo, orden) 
+                                                        VALUES (?, ?, ?, ?, ?)
+                                                    `;
+                                                    const valuesNivel = [
+                                                        criterioId,
+                                                        nivel.nombre_nivel.trim(),
+                                                        nivel.descripcion.trim(),
+                                                        parseFloat(nivel.puntaje),
+                                                        parseInt(nivel.orden) || (indexNivel + 1)
+                                                    ];
+
+                                                    conn.query(queryInsertNivel, valuesNivel, (error) => {
+                                                        if (error) {
+                                                            hayError = true;
+                                                            return conn.rollback(() => {
+                                                                conn.release();
+                                                                console.error('Error al insertar nivel:', error);
+                                                                res.status(500).json({
+                                                                    success: false,
+                                                                    mensaje: `Error al guardar el nivel: ${nivel.nombre_nivel}`
+                                                                });
+                                                            });
+                                                        }
+
+                                                        nivelesCompletados++;
+                                                        if (nivelesCompletados === totalNiveles) {
+                                                            criteriosCompletados++;
+                                                            if (criteriosCompletados === totalCriterios && !hayError) {
+                                                                finalizarTransaccion();
+                                                            }
+                                                        }
+                                                    });
+                                                });
+                                            } else {
+                                                criteriosCompletados++;
+                                                if (criteriosCompletados === totalCriterios && !hayError) {
+                                                    finalizarTransaccion();
+                                                }
+                                            }
+                                        });
+                                    });
+
+                                    function finalizarTransaccion() {
+                                        conn.commit((err) => {
+                                            if (err) {
+                                                return conn.rollback(() => {
+                                                    conn.release();
+                                                    console.error('Error al confirmar transacción:', err);
+                                                    res.status(500).json({
+                                                        success: false,
+                                                        mensaje: 'Error al confirmar la transacción en la base de datos'
+                                                    });
+                                                });
+                                            }
+
+                                            conn.release();
+                                            res.json({
+                                                success: true,
+                                                mensaje: '¡Rúbrica actualizada exitosamente!',
+                                                rubricaId: id,
+                                                datos: {
+                                                    criterios: totalCriterios,
+                                                    sumaPuntajes: sumaPuntajes.toFixed(2),
+                                                    porcentaje: porcentaje
+                                                }
+                                            });
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
+            });
+        }
+    });
+});
 // ============================================================
 // OBTENER DATOS PARA EDITAR RÚBRICA
 // ============================================================
