@@ -189,6 +189,7 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
                 r.id,
                 e.id AS evaluacion_id,
                 r.nombre_rubrica AS nombre_rubrica,
+                tr.id AS id_tipo,
                 IFNULL(tr.nombre, 'Tipo no asignado') AS tipo_rubrica,
                 u.cedula as docente_cedula,
             	m.codigo AS materia_codigo,
@@ -609,6 +610,27 @@ router.get("/admin/rubricas/profesores", function(req, res) {
     });
 });
 
+router.get("/admin/tipos_rubrica/", (req, res) => {
+    if(!req.session || !req.session.cedula) {
+        return res.status(401).json({error: 'No autorizado'})
+    }
+    const queryTipoRubricas = `
+        SELECT 
+            id,
+            nombre
+        FROM tipo_rubrica
+        GROUP BY nombre
+        ORDER BY nombre
+        `
+    connection.query(queryTipoRubricas, (error, tipos_r) => {
+            if (error) {
+                console.error('Error al obtener tipos de rubrica:', error);
+                return res.status(500).json({error: 'Error al obtener tipos de rubrica'})
+            } else {
+                return res.json(tipos_r);
+            }
+        })
+    });
 // ============================================================
 // APIs PARA SELECCIÓN JERÁRQUICA
 // ============================================================

@@ -771,7 +771,39 @@ function cargarEvaluacionesEdit(seccionId, callback, valorSeleccionar = null) {
             if (callback) callback();
         });
 }
-
+function cargarTiposRubrica(valorSeleccionar = null) {
+    const tipo_r_select = document.getElementById('tipoRubrica');
+    if (!tipo_r_select) {
+        return;
+    }
+    tipo_r_select.innerHTML = '<option value="">Cargando...</option>';
+    tipo_r_select.disabled = true;
+    console.log(valorSeleccionar)
+    fetch(`/admin/tipos_rubrica/`)
+        .then(response => response.json())
+        .then(tipos_r => {
+            if (tipos_r && tipos_r.length > 0) {
+                tipo_r_select.innerHTML = '<option value="">Seleccione el tipo de rubrica</option>';
+                tipos_r.forEach(tipo_r => {
+                    const info = `${tipo_r.nombre}`;
+                    tipo_r_select.innerHTML += `<option value="${tipo_r.id}">${info}</option>`;
+                });
+                tipo_r_select.disabled = false;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    tipo_r_select.value = valorSeleccionar;
+                }
+            } else {
+                tipo_r_select.innerHTML = '<option value="">No hay tipos de rubrica</option>';
+                Swal.fire('Sin tipos de rubrica', 'No se encontraron ciertos datos para el formulario, ¡vuelva  a intentarlo!', 'info');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            tipo_r_select.innerHTML = '<option value="">Error al cargar</option>';
+        });
+}
 // ============================================================
 // POPULATE MODAL EDIT - VERSIÓN CORREGIDA CON CARGA DE EVALUACIONES
 // ============================================================
@@ -787,7 +819,8 @@ function populateModalEdit(data) {
     document.getElementById('docenteCreadorEdit').value = rubrica.docente_nombre || '';
     document.getElementById('competenciasEdit').value = rubrica.competencias || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
-    porcentajeEvaluacionEdit = parseFloat(rubrica.porcentaje_evaluacion) || 10;
+    cargarTiposRubrica(rubrica.id_tipo)
+    porcentajeEvaluacionEdit = parseFloat(rubrica.porcentaje_evaluacion);
 
     // 1. Primero cargar carreras (sin valor a seleccionar aún porque no tenemos carreraData)
     cargarCarrerasEdit(() => {
