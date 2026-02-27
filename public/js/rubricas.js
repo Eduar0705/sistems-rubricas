@@ -8,7 +8,42 @@ let carrerasDataEdit = [];
 // ============================================================
 // BÚSQUEDA Y FILTROS
 // ============================================================
+async function cargarEstrategias() {
+    try {
+        const response = await fetch('/api/estrategias_eval');
+        const data = await response.json();
 
+        if (data.success) {
+            const div = document.getElementById('estrategias_eval');
+            div.innerHTML = ''
+            const labelHTML = ``;
+            let checkboxesHTML = '';
+            data.estrategias_eval.forEach(estrategia => {
+                checkboxesHTML += `
+                    <div class="estrategia-item">
+                        <input type="checkbox" 
+                               class="form-check-input" 
+                               id="estrategia_${estrategia.id}" 
+                               value="${estrategia.id}"
+                               name="estrategias[]"
+                               ${estrategia.ponderable == 0 ? `onclick="verificarPonderacion(${estrategia.id})"` : 'onclick="verificarFormularioCompleto()"'}
+                               disabled>
+                        <label class="form-check-label" 
+                               for="estrategia_${estrategia.id}">
+                            ${estrategia.nombre}
+                        </label>
+                    </div>
+                `;
+            });
+
+            div.innerHTML = labelHTML + checkboxesHTML;
+            return data.estrategias_eval
+        }
+    } catch (error) {
+        console.error('Error al cargar carreras:', error);
+        Swal.fire('Error', 'No se pudieron cargar las carreras', 'error');
+    }
+}
 function aplicarFiltros() {
     try {
         const searchTerm = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
@@ -510,7 +545,7 @@ if (modalOverlay) {
 // CARGAR DATOS DE LA RÚBRICA
 // ============================================================
 
-function loadRubricData(rubricId) {
+async function loadRubricData(rubricId) {
     Swal.fire({
         title: 'Cargando...',
         text: 'Por favor espere',
@@ -521,25 +556,225 @@ function loadRubricData(rubricId) {
         }
     });
 
-    fetch(`/admin/rubricas/editar/${rubricId}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar');
-            return response.json();
-        })
+    try {
+        const response = await fetch(`/admin/rubricas/editar/${rubricId}`);
+        if (!response.ok) throw new Error('Error al cargar');
+        
+        const data = await response.json();
+        Swal.close();
+        
+        if (data.success) {
+            populateModalEdit(data);
+            const estrategias_eval = await cargarEstrategias();
+            cargarEstrategiasEdit(estrategias_eval, data.rubrica.estrategias);
+        } else {
+            Swal.fire('Error', data.message || 'Error al cargar la rúbrica', 'error');
+        }
+    } catch (error) {
+        Swal.close();
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+    }
+}
+
+// ============================================================
+// SISTEMA DE SELECCIÓN JERÁRQUICO PARA EDICIÓN (MODIFICADO CON PROMESAS)
+// ============================================================
+function cargarEstrategiasEdit(listaEstrategias, seleccionadas = []) {
+    const container = document.getElementById('estrategias_eval');
+    seleccionadas = seleccionadas.map(selecc => selecc.id)
+    container.innerHTML = '';
+    listaEstrategias.forEach(est => {
+        const label = document.createElement('label');
+        label.className = 'estrategia-item';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.disabled = false;
+        checkbox.value = est.id;
+        checkbox.checked = seleccionadas.includes(est.id);
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(`  ${est.nombre}`));
+        container.appendChild(label);
+    });
+}
+function cargarCarrerasEdit(callback, valorSeleccionar = null) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+
+    fetch(`/${rubroute}/carreras`)
+        .then(response => response.json())
         .then(data => {
-            Swal.close();
             if (data.success) {
-                populateModalEdit(data);
+                const carreraSelect = document.getElementById('carreraEdit');
+                if (!carreraSelect) {
+                    if (callback) callback();
+                    return;
+                }
+                carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+
+                data.carreras.forEach(carrera => {
+                    carreraSelect.innerHTML += `<option value="${carrera.codigo}">${carrera.nombre}</option>`;
+                });
+
+                carrerasDataEdit = data.carreras;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    carreraSelect.value = valorSeleccionar;
+                }
+                
+                if (callback) callback();
             } else {
-                Swal.fire('Error', data.message || 'Error al cargar la rúbrica', 'error');
+                if (callback) callback();
             }
         })
         .catch(error => {
-            Swal.close();
             console.error('Error:', error);
-            Swal.fire('Error', 'No se pudo cargar la rúbrica', 'error');
+            if (callback) callback();
         });
 }
+
+function cargarSemestresEdit(carreraCode, callback, valorSeleccionar = null) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const semestreSelect = document.getElementById('semestreEdit');
+    semestreSelect.innerHTML = '<option value="">Cargando...</option>';
+    semestreSelect.disabled = true;
+
+    fetch(`/api/${rubroute}/semestres/${carreraCode}`)
+        .then(response => response.json())
+        .then(semestres => {
+            semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
+            if (semestres && semestres.length > 0) {
+                semestres.forEach(sem => {
+                    semestreSelect.innerHTML += `<option value="${sem}">Semestre ${sem}</option>`;
+                });
+                semestreSelect.disabled = false;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    semestreSelect.value = valorSeleccionar;
+                }
+            } else {
+                semestreSelect.innerHTML = '<option value="">No hay semestres</option>';
+            }
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            semestreSelect.innerHTML = '<option value="">Error al cargar</option>';
+            if (callback) callback();
+        });
+}
+
+function cargarMateriasEdit(carreraCode, semestre, callback, valorSeleccionar = null) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const materiaSelect = document.getElementById('materiaEdit');
+    materiaSelect.innerHTML = '<option value="">Cargando...</option>';
+    materiaSelect.disabled = true;
+
+    fetch(`/api/${rubroute}/materias/${carreraCode}/${semestre}`)
+        .then(response => response.json())
+        .then(materias => {
+            materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
+            if (materias && materias.length > 0) {
+                materias.forEach(mat => {
+                    materiaSelect.innerHTML += `<option value="${mat.codigo}">${mat.nombre}</option>`;
+                });
+                materiaSelect.disabled = false;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    materiaSelect.value = valorSeleccionar;
+                }
+            } else {
+                materiaSelect.innerHTML = '<option value="">No hay materias</option>';
+            }
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            materiaSelect.innerHTML = '<option value="">Error al cargar</option>';
+            if (callback) callback();
+        });
+}
+
+function cargarSeccionesEdit(materiaCode, callback, valorSeleccionar = null) {
+    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
+    
+    const seccionSelect = document.getElementById('seccionEdit');
+    seccionSelect.innerHTML = '<option value="">Cargando...</option>';
+    seccionSelect.disabled = true;
+
+    fetch(`/api/${rubroute}/secciones/${materiaCode}`)
+        .then(response => response.json())
+        .then(secciones => {
+            seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+            if (secciones && secciones.length > 0) {
+                secciones.forEach(sec => {
+                    const info = `${sec.codigo} - ${sec.lapso_academico}${sec.horario ? ' - ' + sec.horario : ''}`;
+                    seccionSelect.innerHTML += `<option value="${sec.id}">${info}</option>`;
+                });
+                seccionSelect.disabled = false;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    seccionSelect.value = valorSeleccionar;
+                }
+            } else {
+                seccionSelect.innerHTML = '<option value="">No hay secciones</option>';
+            }
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            seccionSelect.innerHTML = '<option value="">Error al cargar</option>';
+            if (callback) callback();
+        });
+}
+
+// NUEVA FUNCIÓN: Cargar evaluaciones
+function cargarEvaluacionesEdit(seccionId, callback, valorSeleccionar = null) {
+    const evalSelect = document.getElementById('evaluacionEdit');
+    if (!evalSelect) {
+        if (callback) callback();
+        return;
+    }
+    
+    evalSelect.innerHTML = '<option value="">Cargando...</option>';
+    evalSelect.disabled = true;
+
+    fetch(`/admin/evaluaciones/${seccionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.evaluaciones && data.evaluaciones.length > 0) {
+                evalSelect.innerHTML = '<option value="">Seleccione una evaluación</option>';
+                data.evaluaciones.forEach(evalu => {
+                    const info = `${evalu.contenido_evaluacion} ${evalu.tipo_evaluacion ? '- ' + evalu.tipo_evaluacion : ''}`;
+                    evalSelect.innerHTML += `<option value="${evalu.evaluacion_id}">${info}</option>`;
+                });
+                evalSelect.disabled = false;
+                
+                // Si hay valor a seleccionar, asignarlo
+                if (valorSeleccionar) {
+                    evalSelect.value = valorSeleccionar;
+                }
+            } else {
+                evalSelect.innerHTML = '<option value="">No hay evaluaciones</option>';
+                Swal.fire('Sin evaluaciones', 'No se encontraron evaluaciones sin rúbrica para esta sección.', 'info');
+            }
+            if (callback) callback();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            evalSelect.innerHTML = '<option value="">Error al cargar</option>';
+            if (callback) callback();
+        });
+}
+
+// ============================================================
+// POPULATE MODAL EDIT - VERSIÓN CORREGIDA CON CARGA DE EVALUACIONES
+// ============================================================
 
 function populateModalEdit(data) {
     const rubrica = data.rubrica;
@@ -549,37 +784,48 @@ function populateModalEdit(data) {
     document.getElementById('nombreRubricaEdit').value = rubrica.nombre_rubrica;
     document.getElementById('fechaEvaluacionEdit').value = rubrica.fecha_evaluacion ? rubrica.fecha_evaluacion.split('T')[0] : '';
     document.getElementById('porcentajeEdit').value = rubrica.porcentaje_evaluacion;
-    document.getElementById('tipoEvaluacionEdit').value = rubrica.tipo_evaluacion;
     document.getElementById('docenteCreadorEdit').value = rubrica.docente_nombre || '';
     document.getElementById('competenciasEdit').value = rubrica.competencias || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
-
     porcentajeEvaluacionEdit = parseFloat(rubrica.porcentaje_evaluacion) || 10;
 
-    // Cargar carreras y luego seleccionar los valores
+    // 1. Primero cargar carreras (sin valor a seleccionar aún porque no tenemos carreraData)
     cargarCarrerasEdit(() => {
-        // Buscar la carrera correspondiente a la materia
+        // 2. Buscar la carrera correspondiente a la materia
         fetch(`/admin/rubricas/carrera-materia/${rubrica.materia_codigo}`)
             .then(response => response.json())
             .then(carreraData => {
                 if (carreraData.success) {
+                    // 3. Seleccionar la carrera
                     const carreraSelect = document.getElementById('carreraEdit');
                     carreraSelect.value = carreraData.carrera_codigo;
                     
-                    // Cargar semestres de esa carrera
+                    // 4. Cargar semestres y seleccionar el correcto
                     cargarSemestresEdit(carreraData.carrera_codigo, () => {
                         const semestreSelect = document.getElementById('semestreEdit');
                         semestreSelect.value = carreraData.semestre;
                         
-                        // Cargar materias de ese semestre
+                        // 5. Cargar materias y seleccionar la correcta
                         cargarMateriasEdit(carreraData.carrera_codigo, carreraData.semestre, () => {
                             const materiaSelect = document.getElementById('materiaEdit');
                             materiaSelect.value = rubrica.materia_codigo;
                             
-                            // Cargar secciones de esa materia
+                            // 6. Cargar secciones y seleccionar la correcta
                             cargarSeccionesEdit(rubrica.materia_codigo, () => {
                                 const seccionSelect = document.getElementById('seccionEdit');
                                 seccionSelect.value = rubrica.seccion_id;
+                                
+                                // 7. FINALMENTE: Cargar evaluaciones de la sección seleccionada
+                                //    y seleccionar la evaluación correspondiente si existe
+                                if (rubrica.evaluacion_id) {
+                                    cargarEvaluacionesEdit(rubrica.seccion_id, () => {
+                                        const evalSelect = document.getElementById('evaluacionEdit');
+                                        evalSelect.value = rubrica.evaluacion_id;
+                                    }, rubrica.evaluacion_id);
+                                } else {
+                                    // Si no hay evaluación asociada, cargar las disponibles sin seleccionar
+                                    cargarEvaluacionesEdit(rubrica.seccion_id);
+                                }
                             });
                         });
                     });
@@ -599,109 +845,6 @@ function populateModalEdit(data) {
             criterio.niveles
         );
     });
-}
-
-// ============================================================
-// SISTEMA DE SELECCIÓN JERÁRQUICO PARA EDICIÓN
-// ============================================================
-
-function cargarCarrerasEdit(callback) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-
-    fetch(`/${rubroute}/carreras`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const carreraSelect = document.getElementById('carreraEdit');
-                if (!carreraSelect) {
-                    return;
-                }
-                carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
-
-                data.carreras.forEach(carrera => {
-                    carreraSelect.innerHTML += `<option value="${carrera.codigo}">${carrera.nombre}</option>`;
-                });
-
-                carrerasDataEdit = data.carreras;
-                if (callback) callback();
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-
-// En rubricas.js, actualiza estas funciones para usar las rutas correctas:
-
-function cargarSemestresEdit(carreraCode, callback) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
-    const semestreSelect = document.getElementById('semestreEdit');
-    semestreSelect.innerHTML = '<option value="">Cargando...</option>';
-    semestreSelect.disabled = true;
-
-    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
-    fetch(`/api/${rubroute}/semestres/${carreraCode}`)
-        .then(response => response.json())
-        .then(semestres => {
-            semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
-            semestres.forEach(sem => {
-                semestreSelect.innerHTML += `<option value="${sem}">Semestre ${sem}</option>`;
-            });
-            semestreSelect.disabled = false;
-            if (callback) callback();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            semestreSelect.innerHTML = '<option value="">Error al cargar</option>';
-        });
-}
-
-function cargarMateriasEdit(carreraCode, semestre, callback) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
-    const materiaSelect = document.getElementById('materiaEdit');
-    materiaSelect.innerHTML = '<option value="">Cargando...</option>';
-    materiaSelect.disabled = true;
-
-    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
-    fetch(`/api/${rubroute}/materias/${carreraCode}/${semestre}`)
-        .then(response => response.json())
-        .then(materias => {
-            materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
-            materias.forEach(mat => {
-                materiaSelect.innerHTML += `<option value="${mat.codigo}">${mat.nombre}</option>`;
-            });
-            materiaSelect.disabled = false;
-            if (callback) callback();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            materiaSelect.innerHTML = '<option value="">Error al cargar</option>';
-        });
-}
-
-function cargarSeccionesEdit(materiaCode, callback) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
-    const seccionSelect = document.getElementById('seccionEdit');
-    seccionSelect.innerHTML = '<option value="">Cargando...</option>';
-    seccionSelect.disabled = true;
-
-    // CAMBIO AQUÍ: Agregar /admin/ o /teacher/ a la ruta
-    fetch(`/api/${rubroute}/secciones/${materiaCode}`)
-        .then(response => response.json())
-        .then(secciones => {
-            seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
-            secciones.forEach(sec => {
-                const info = `${sec.codigo} - ${sec.lapso_academico}${sec.horario ? ' - ' + sec.horario : ''}`;
-                seccionSelect.innerHTML += `<option value="${sec.id}">${info}</option>`;
-            });
-            seccionSelect.disabled = false;
-            if (callback) callback();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            seccionSelect.innerHTML = '<option value="">Error al cargar</option>';
-        });
 }
 
 // ============================================================
@@ -852,7 +995,7 @@ function eliminarCriterioEdit(id) {
     }).then((result) => {
         if (result.isConfirmed) {
             criterioCard.remove();
-            calcularDistribucionAutomaticaEdit(); //Tal vez a eliminar...
+            calcularDistribucionAutomaticaEdit();
             Swal.fire('Eliminado', 'El criterio ha sido eliminado', 'success');
         }
     });

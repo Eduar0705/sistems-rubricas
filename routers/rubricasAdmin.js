@@ -185,91 +185,123 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
     
     if(esAdmin) {
         queryRubrica = `
-        SELECT
-            r.id,
-            r.nombre_rubrica,
-            r.cedula_docente AS docente_cedula,
-            m.codigo AS materia_id,
-            s.letra AS seccion_id,
-            pp.codigo_periodo AS lapso_academico,
-            e.fecha_evaluacion,
-            (SELECT SUM(puntaje_maximo) 
-            FROM criterio_rubrica cr_sub 
-            WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
-            GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
-            e.competencias,
-            r.instrucciones,
-            CASE
-                WHEN cantidad_personas=1 THEN 'Individual'
-                WHEN cantidad_personas=2 THEN 'En Pareja'
-                ELSE 'Grupal'
-            END AS modalidad,
-            e.cantidad_personas,
-            r.activo,
-            r.fecha_creacion AS created_at,
-            r.fecha_actualizacion AS updated_at,
-            m.nombre AS materia_nombre,
-            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-            CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
-        FROM evaluacion e
-        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
-        INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_seccion = s.id
-        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-        INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
-        INNER JOIN usuario_docente ud ON ud.cedula_usuario = r.cedula_docente
-        INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
-        LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
-        LEFT JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
-        WHERE r.id = ? AND r.activo = 1
-        GROUP BY r.id;
+            SELECT 
+                r.id,
+                e.id AS evaluacion_id,
+                r.nombre_rubrica AS nombre_rubrica,
+                IFNULL(tr.nombre, 'Tipo no asignado') AS tipo_rubrica,
+                u.cedula as docente_cedula,
+            	m.codigo AS materia_codigo,
+            	s.id AS seccion_id,
+            	pp.codigo_periodo AS lapso_academico,
+                e.fecha_evaluacion,
+                (SELECT 
+                 	SUM(puntaje_maximo) 
+                FROM criterio_rubrica cr_sub 
+                WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
+                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+            	e.contenido AS contenido_evaluacion,
+                e.competencias,
+            	e.instrumentos,
+                r.instrucciones,
+                CASE
+                    WHEN cantidad_personas=1 THEN 'Individual'
+                    WHEN cantidad_personas=2 THEN 'En Pareja'
+                    ELSE 'Grupal'
+                END AS modalidad,
+                e.cantidad_personas,
+                r.activo,
+                r.fecha_creacion AS created_at,
+                r.fecha_actualizacion AS updated_at,
+                m.nombre AS materia_nombre,
+            	s.id AS id_seccion,
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
+            FROM evaluacion e
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica r ON ru.id_rubrica = r.id
+            LEFT JOIN (
+                SELECT 
+                    COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                    ins.id_seccion
+                FROM inscripcion_seccion ins
+                GROUP BY ins.id_seccion
+            ) AS estud_sec ON s.id = estud_sec.id_seccion
+            LEFT JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            LEFT JOIN horario_eval he ON e.id = he.id_eval
+            LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
+            LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+        	LEFT JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
+            WHERE r.id = ? AND r.activo = 1
+            GROUP BY r.id
+            ORDER BY fecha_evaluacion DESC;
         `;
         paramsRubrica = [id];
     } else {
         queryRubrica = `
-        SELECT
-            r.id,
-            r.nombre_rubrica,
-            r.cedula_docente AS docente_cedula,
-            m.codigo AS materia_id,
-            s.letra AS seccion_id,
-            pp.codigo_periodo AS lapso_academico,
-            e.fecha_evaluacion,
-            (SELECT SUM(puntaje_maximo) 
-            FROM criterio_rubrica cr_sub 
-            WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
-            GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
-            e.competencias,
-            r.instrucciones,
-            CASE
-                WHEN cantidad_personas=1 THEN 'Individual'
-                WHEN cantidad_personas=2 THEN 'En Pareja'
-                ELSE 'Grupal'
-            END AS modalidad,
-            e.cantidad_personas,
-            r.activo,
-            r.fecha_creacion AS created_at,
-            r.fecha_actualizacion AS updated_at,
-            m.nombre AS materia_nombre,
-            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-            CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
-        FROM evaluacion e
-        INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
-        INNER JOIN rubrica r ON r.id = ru.id_rubrica
-        INNER JOIN seccion s ON e.id_seccion = s.id        
-        INNER JOIN permiso_docente pd ON pd.id_seccion = s.id
-        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
-        INNER JOIN materia m ON pp.codigo_materia = m.codigo
-        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
-        INNER JOIN usuario_docente ud ON ud.cedula_usuario = r.cedula_docente
-        INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
-        LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
-        LEFT JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
-        WHERE r.id = ?
-        AND pd.docente_cedula = ?
-        AND r.activo = 1
-        GROUP BY r.id;
+        SELECT 
+                r.id,
+                e.id AS evaluacion_id,
+                r.nombre_rubrica AS nombre_rubrica,
+                u.cedula as docente_cedula,
+            	m.codigo AS materia_id,
+            	s.id AS seccion_id,
+            	pp.codigo_periodo AS lapso_academico,
+                e.fecha_evaluacion,
+                (SELECT 
+                 	SUM(puntaje_maximo) 
+                FROM criterio_rubrica cr_sub 
+                WHERE cr_sub.rubrica_id = r.id) AS porcentaje_evaluacion,
+                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+            	e.contenido AS contenido_evaluacion,
+                e.competencias,
+            	e.instrumentos,
+                r.instrucciones,
+                CASE
+                    WHEN cantidad_personas=1 THEN 'Individual'
+                    WHEN cantidad_personas=2 THEN 'En Pareja'
+                    ELSE 'Grupal'
+                END AS modalidad,
+                e.cantidad_personas,
+                r.activo,
+                r.fecha_creacion AS created_at,
+                r.fecha_actualizacion AS updated_at,
+                m.nombre AS materia_nombre,
+            	s.id AS id_seccion,
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                CONCAT(u.nombre, ' ', u.apeliido) AS docente_nombre
+            FROM evaluacion e
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN usuario_docente ud ON ud.cedula_usuario = pd.docente_cedula
+            INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica r ON ru.id_rubrica = r.id
+            LEFT JOIN (
+                SELECT 
+                    COUNT(DISTINCT ins.cedula_estudiante) AS cantidad_en_seccion, 
+                    ins.id_seccion
+                FROM inscripcion_seccion ins
+                GROUP BY ins.id_seccion
+            ) AS estud_sec ON s.id = estud_sec.id_seccion
+            LEFT JOIN horario_eval he ON e.id = he.id_eval
+            LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
+            LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+        	LEFT JOIN estrategia_eval eeval ON eeval.id = eemp.id_estrategia
+            WHERE r.id = ? AND r.activo = 1
+            AND pd.docente_cedula = ?
+            GROUP BY r.id
+            ORDER BY fecha_evaluacion DESC;
         `;
         paramsRubrica = [id, req.session.cedula];
     }
@@ -286,61 +318,79 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
 
         const rubrica = rubricaResult[0];
 
-        const queryCriterios = `
-            SELECT
-                cr.id,
-                cr.descripcion,
-                cr.puntaje_maximo,
-                cr.orden
-            FROM criterio_rubrica cr
-            WHERE cr.rubrica_id = ?
-            ORDER BY cr.orden
+        // Consulta para obtener las estrategias de la evaluación
+        const queryEstrategias = `
+            SELECT eeval.* 
+            FROM estrategia_eval eeval
+            INNER JOIN estrategia_empleada eemp ON eeval.id = eemp.id_estrategia
+            WHERE eemp.id_eval = ?
         `;
 
-        connection.query(queryCriterios, [id], (error, criterios) => {
+        connection.query(queryEstrategias, [rubrica.evaluacion_id], (error, estrategias) => {
             if(error) {
-                console.error('Error al obtener criterios:', error);
-                return res.json({ success: false, message: 'Error al obtener criterios' });
+                console.error('Error al obtener estrategias:', error);
+                return res.json({ success: false, message: 'Error al obtener estrategias' });
             }
 
-            const queryNiveles = `
+            // Añadir las estrategias a la rúbrica
+            rubrica.estrategias = estrategias;
+
+            const queryCriterios = `
                 SELECT
-                    n.criterio_id,
-                    n.nombre_nivel,
-                    n.descripcion,
-                    n.puntaje_maximo AS puntaje,
-                    n.orden
-                FROM nivel_desempeno n
-                INNER JOIN criterio_rubrica cr ON n.criterio_id = cr.id
-                WHERE n.criterio_id IN (?)
-                ORDER BY cr.orden, n.orden DESC;
+                    cr.id,
+                    cr.descripcion,
+                    cr.puntaje_maximo,
+                    cr.orden
+                FROM criterio_rubrica cr
+                WHERE cr.rubrica_id = ?
+                ORDER BY cr.orden
             `;
 
-            const criteriosIds = criterios.map(c => c.id);
-
-            if(criteriosIds.length === 0) {
-                return res.json({
-                    success: true,
-                    rubrica: rubrica,
-                    criterios: []
-                });
-            }
-
-            connection.query(queryNiveles, [criteriosIds], (error, niveles) => {
+            connection.query(queryCriterios, [id], (error, criterios) => {
                 if(error) {
-                    console.error('Error al obtener niveles:', error);
-                    return res.json({ success: false, message: 'Error al obtener niveles' });
+                    console.error('Error al obtener criterios:', error);
+                    return res.json({ success: false, message: 'Error al obtener criterios' });
                 }
 
-                const criteriosConNiveles = criterios.map(criterio => ({
-                    ...criterio,
-                    niveles: niveles.filter(n => n.criterio_id === criterio.id)
-                }));
+                const queryNiveles = `
+                    SELECT
+                        n.criterio_id,
+                        n.nombre_nivel,
+                        n.descripcion,
+                        n.puntaje_maximo AS puntaje,
+                        n.orden
+                    FROM nivel_desempeno n
+                    INNER JOIN criterio_rubrica cr ON n.criterio_id = cr.id
+                    WHERE n.criterio_id IN (?)
+                    ORDER BY cr.orden, n.orden DESC;
+                `;
 
-                res.json({
-                    success: true,
-                    rubrica: rubrica,
-                    criterios: criteriosConNiveles
+                const criteriosIds = criterios.map(c => c.id);
+
+                if(criteriosIds.length === 0) {
+                    return res.json({
+                        success: true,
+                        rubrica: rubrica,
+                        criterios: []
+                    });
+                }
+
+                connection.query(queryNiveles, [criteriosIds], (error, niveles) => {
+                    if(error) {
+                        console.error('Error al obtener niveles:', error);
+                        return res.json({ success: false, message: 'Error al obtener niveles' });
+                    }
+
+                    const criteriosConNiveles = criterios.map(criterio => ({
+                        ...criterio,
+                        niveles: niveles.filter(n => n.criterio_id === criterio.id)
+                    }));
+
+                    res.json({
+                        success: true,
+                        rubrica: rubrica,
+                        criterios: criteriosConNiveles
+                    });
                 });
             });
         });
@@ -364,8 +414,7 @@ router.get('/admin/rubricas/carrera-materia/:materia_codigo', (req, res) => {
         FROM materia m 
         INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
         INNER JOIN periodo_academico pa ON pp.codigo_periodo = pa.codigo
-        WHERE m.codigo = ?
-        AND pa.codigo = '2025-1';
+        WHERE m.codigo = ?;
     `;
     
     connection.query(query, [materia_codigo], (error, results) => {
