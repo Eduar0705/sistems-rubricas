@@ -19,67 +19,94 @@ router.get("/teacher/evaluacion", function(req, res) {
         // Admin puede ver todas las evaluaciones
         query = `
             SELECT
-                ee.id,
-                ee.puntaje_total,
-                ee.fecha_evaluacion,
-                ee.observaciones,
-                e.cedula as estudiante_cedula,
-                e.nombre as estudiante_nombre,
-                e.apellido as estudiante_apellido,
+                er.id,
+                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                er.fecha_evaluado as fecha_evaluacion,
+                er.observaciones,
+                er.cedula_evaluado as estudiante_cedula,
+                u.nombre AS estudiante_nombre,
+                u.apeliido AS estudiante_apellido,
                 r.nombre_rubrica,
-                r.porcentaje_evaluacion,
+                tr.nombre as tipo_evaluacion,
+                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                r.instrucciones,
+                e.competencias,
                 m.nombre as materia_nombre,
-                c.nombre as carrera_nombre,
-                s.codigo as seccion_codigo,
-                s.horario as seccion_horario,
-                s.aula as seccion_aula,
+                m.codigo as materia_codigo,
+                c.nombre AS carrera_nombre,
+                pp.codigo_periodo AS materia_semestre,
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                hs.aula AS seccion_aula,
                 CASE
-                    WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
+                    WHEN de.puntaje_obtenido IS NOT NULL THEN 'Completada'
                     ELSE 'Pendiente'
                 END as estado
-            FROM evaluacion_estudiante ee
-            INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
-            INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-            INNER JOIN materia m ON r.materia_codigo = m.codigo
-            INNER JOIN seccion s ON r.seccion_id = s.id
-            INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-            WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
-            ORDER BY c.nombre, s.codigo, ee.fecha_evaluacion DESC
+			FROM evaluacion e 
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+            INNER JOIN usuario_estudiante ue ON ins.cedula_estudiante = ue.cedula_usuario
+            INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
+            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+            LEFT JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            GROUP BY er.id
+            ORDER BY er.fecha_evaluado DESC;
         `;
     } else {
         // Docente solo ve evaluaciones de secciones donde tiene permisos
         query = `
             SELECT
-                ee.id,
-                ee.puntaje_total,
-                ee.fecha_evaluacion,
-                ee.observaciones,
-                e.cedula as estudiante_cedula,
-                e.nombre as estudiante_nombre,
-                e.apellido as estudiante_apellido,
+                er.id,
+                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                er.fecha_evaluado as fecha_evaluacion,
+                er.observaciones,
+                er.cedula_evaluado as estudiante_cedula,
+                u.nombre AS estudiante_nombre,
+                u.apeliido AS estudiante_apellido,
                 r.nombre_rubrica,
-                r.porcentaje_evaluacion,
+                tr.nombre as tipo_evaluacion,
+                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                r.instrucciones,
+                e.competencias,
                 m.nombre as materia_nombre,
-                m.semestre as materia_semestre,
-                c.nombre as carrera_nombre,
-                s.codigo as seccion_codigo,
-                s.horario as seccion_horario,
-                s.aula as seccion_aula,
+                m.codigo as materia_codigo,
+                c.nombre AS carrera_nombre,
+                pp.codigo_periodo AS materia_semestre,
+                CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                hs.aula AS seccion_aula,
                 CASE
-                    WHEN ee.puntaje_total IS NOT NULL THEN 'Completada'
+                    WHEN de.puntaje_obtenido IS NOT NULL THEN 'Completada'
                     ELSE 'Pendiente'
                 END as estado
-            FROM evaluacion_estudiante ee
-            INNER JOIN estudiante e ON ee.estudiante_cedula = e.cedula
-            INNER JOIN rubrica_evaluacion r ON ee.rubrica_id = r.id
-            INNER JOIN materia m ON r.materia_codigo = m.codigo
-            INNER JOIN seccion s ON r.seccion_id = s.id
-            INNER JOIN carrera c ON m.carrera_codigo = c.codigo
-            INNER JOIN permisos p ON p.seccion_id = s.id
-            WHERE e.activo = 1 AND r.activo = 1 AND s.activo = 1 AND c.activo = 1
-            AND p.docente_cedula = ?
-            AND p.activo = 1
-            ORDER BY c.nombre, m.semestre, m.nombre, s.codigo, r.nombre_rubrica, e.apellido
+			FROM evaluacion e 
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+            INNER JOIN usuario_estudiante ue ON ins.cedula_estudiante = ue.cedula_usuario
+            INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+            LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
+            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+            WHERE pd.docente_cedula = ?
+            GROUP BY er.id
+            ORDER BY er.fecha_evaluado DESC;
         `;
         queryParams = [docenteCedula];
     }
