@@ -12,31 +12,32 @@ router.get('/teacher/createrubricas', (req, res) => {
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
 
-    const esAdmin = req.session.id_rol === 1;
     const docenteCedula = req.session.cedula;
 
-    let queryCarreras;
     let queryParams = [];
 
-    if (esAdmin) {
-        queryCarreras = `
-            SELECT codigo, nombre, duracion_semestres 
-            FROM carrera 
-            WHERE activo = TRUE 
-            ORDER BY nombre
+    const queryCarreras = `
+            SELECT 
+            c.codigo, 
+            c.nombre, 
+            COUNT(DISTINCT pp.num_semestre) AS duracion_semestres
+        FROM carrera c
+        INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
+        INNER JOIN seccion s ON pp.id = s.id_materia_plan
+        INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+        WHERE pd.docente_cedula = ?
+        AND c.activo = 1
+        ORDER BY nombre
         `;
-    } else {
-        queryCarreras = `
-            SELECT DISTINCT c.codigo, c.nombre, c.duracion_semestres
-            FROM carrera c
-            INNER JOIN permisos p ON c.codigo = p.carrera_codigo
-            WHERE c.activo = TRUE
-            AND p.docente_cedula = ?
-            AND p.activo = TRUE
-            ORDER BY c.nombre
-        `;
-        queryParams = [docenteCedula];
-    }
+    queryParams = [docenteCedula];
+    const queryTipoRubricas = `
+        SELECT 
+            id,
+            nombre
+        FROM tipo_rubrica
+        GROUP BY nombre
+        ORDER BY nombre
+    `;
 
     connection.query(queryCarreras, queryParams, (error, carreras) => {
         if (error) {
@@ -49,13 +50,27 @@ router.get('/teacher/createrubricas', (req, res) => {
                 mensaje: req.query.mensaje
             });
         }
-
-        res.render("teacher/crearRubrica", {
-            datos: req.session,
-            title: 'Crear Rúbrica',
-            carreras: carreras,
-            currentPage: 'createrubricas',
-            mensaje: req.query.mensaje
+        connection.query(queryTipoRubricas, (error, tipos_r) => {
+            if (error) {
+                console.error('Error al obtener tipos de rubrica:', error);
+                return res.render("admin/createRubricas", {
+                    datos: req.session,
+                    title: 'Crear Rúbrica',
+                    carreras: carreras,
+                    tipos_r: [],
+                    currentPage: 'createrubricas',
+                    mensaje: req.query.mensaje
+                });
+            }
+            console.log(tipos_r);
+            res.render("teacher/crearRubrica", {
+                datos: req.session,
+                title: 'Crear Rúbrica',
+                carreras: carreras,
+                tipos_r: tipos_r,
+                currentPage: 'createrubricas',
+                mensaje: req.query.mensaje
+            });
         });
     });
 });

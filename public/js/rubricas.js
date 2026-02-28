@@ -584,9 +584,7 @@ function cargarEstrategiasEdit(listaEstrategias, seleccionadas = []) {
     });
 }
 function cargarCarrerasEdit(callback, valorSeleccionar = null) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-
-    fetch(`/${rubroute}/carreras`)
+    fetch(`/admin/carreras`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -681,12 +679,11 @@ function cargarMateriasEdit(carreraCode, semestre, callback, valorSeleccionar = 
         });
 }
 
-function cargarSeccionesEdit(materiaCode, callback, valorSeleccionar = null) {    
+function cargarSeccionesEdit(materiaCode, carreraCode, callback, valorSeleccionar = null) {    
     const seccionSelect = document.getElementById('seccionEdit');
     seccionSelect.innerHTML = '<option value="">Cargando...</option>';
     seccionSelect.disabled = true;
-
-    fetch(`/api/admin/secciones/${materiaCode}`)
+    fetch(`/api/admin/secciones/${materiaCode}/${carreraCode}`)
         .then(response => response.json())
         .then(secciones => {
             seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
@@ -819,7 +816,7 @@ function populateModalEdit(data) {
                             materiaSelect.value = rubrica.materia_codigo;
                             
                             // 6. Cargar secciones y seleccionar la correcta
-                            cargarSeccionesEdit(rubrica.materia_codigo, () => {
+                            cargarSeccionesEdit(rubrica.materia_codigo, carreraData.carrera_codigo, () => {
                                 const seccionSelect = document.getElementById('seccionEdit');
                                 seccionSelect.value = rubrica.seccion_id;
                                 

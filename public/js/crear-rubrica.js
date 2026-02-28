@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             try {
-                const response = await fetch(`/api/semestres/${carreraCode}`);
+                const response = await fetch(`/api/admin/semestres/${carreraCode}`);
                 const semestres = await response.json();
                 
                 semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             try {
-                const response = await fetch(`/api/materias/${carreraCode}/${semestre}`);
+                const response = await fetch(`/api/admin/materias/${carreraCode}/${semestre}`);
                 const materias = await response.json();
                 
                 materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             try {
-                const response = await fetch(`/api/secciones/${materiaCode}/${carreraSelect.value}`);
+                const response = await fetch(`/api/admin/secciones/${materiaCode}/${carreraSelect.value}`);
                 const secciones = await response.json();
                 
                 seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             try {
-                const response = await fetch(`/api/evaluacion/${evalId}`);
+                const response = await fetch(`/api/admin/evaluacion/${evalId}`);
                 const data = await response.json();
 
                 fechaInput.value = formatearFechaParaInput(new Date(data.evaluacion.fecha_evaluacion));

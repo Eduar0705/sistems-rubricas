@@ -887,23 +887,21 @@ router.get('/admin/carreras', (req, res) => {
     
     if(esAdmin) {
         query = `
-            SELECT
-                c.codigo,
-                c.nombre,
-                ROUND(AVG(PERIOD_DIFF(DATE_FORMAT(pa.fecha_fin, '%Y%m'),DATE_FORMAT(pa.fecha_inicio, '%Y%m')
-                ))) AS duracion_semestres
-            FROM carrera c 
-            INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
-            INNER JOIN periodo_academico pa ON pp.codigo_periodo = pa.codigo
-            GROUP BY c.codigo;
+                    SELECT 
+                        c.codigo, 
+                        c.nombre, 
+                        COUNT(DISTINCT pp.num_semestre) AS duracion_semestres
+                    FROM carrera c
+                    INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
+                    WHERE c.activo = 1
+                    ORDER BY nombre
         `;
     } else {
         query = `
             SELECT
                 c.codigo,
                 c.nombre,
-                ROUND(AVG(PERIOD_DIFF(DATE_FORMAT(pa.fecha_fin, '%Y%m'),DATE_FORMAT(pa.fecha_inicio, '%Y%m')
-                ))) AS duracion_semestres
+                COUNT(DISTINCT pp.num_semestre) AS duracion_semestres
             FROM carrera c 
             INNER JOIN plan_periodo pp ON c.codigo = pp.codigo_carrera
             INNER JOIN seccion s ON pp.id = s.id_materia_plan
@@ -1259,8 +1257,8 @@ router.get("/api/admin/materias/:carrera/:semestre", (req, res) => {
 });
 
 // Obtener secciones por materia
-router.get("/api/admin/secciones/:materia", (req, res) => {
-    const { materia } = req.params;
+router.get("/api/admin/secciones/:materia/:carreraCodigo", (req, res) => {
+    const { materia, carreraCodigo } = req.params;
     
     if(!req.session || !req.session.cedula) {
         return res.status(401).json({ error: 'No autorizado' });
@@ -1268,7 +1266,6 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
     
     const esAdmin = req.session.id_rol === 1;
     let query, params;
-    
     if(esAdmin) {
         query = `
             SELECT
@@ -1287,11 +1284,11 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
             LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
             INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
-            WHERE pp.codigo_materia = ?
+            WHERE pp.codigo_materia = ? AND pp.codigo_carrera = ?
             GROUP BY codigo, lapso_academico
             ORDER BY codigo;
         `;
-        params = [materia];
+        params = [materia, carreraCodigo];
     } else {
         query = `
             SELECT
@@ -1310,12 +1307,12 @@ router.get("/api/admin/secciones/:materia", (req, res) => {
             LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
             INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
             INNER JOIN usuario u ON u.cedula = ud.cedula_usuario
-            WHERE pp.codigo_materia = ?
+            WHERE pp.codigo_materia = ? AND pp.codigo_carrera = ?
             AND pd.docente_cedula = ?
             GROUP BY codigo, lapso_academico
             ORDER BY codigo;
         `;
-        params = [materia, req.session.cedula];
+        params = [materia, carreraCodigo, req.session.cedula];
     }
     
     connection.query(query, params, (error, results) => {

@@ -286,7 +286,6 @@ router.post('/api/evaluacion/:id/:cedulaEstudiante/guardar', (req, res) => {
                     // 3. Borrar detalles previos
                     // ========================
                     await new Promise((resolve, reject) => {
-                        console.log('hola')
                         conn.query(`DELETE FROM detalle_evaluacion WHERE evaluacion_r_id = ?`, [eval_r_id], (err, result) => {
                             if (err) reject(err);
                             else resolve(result);
