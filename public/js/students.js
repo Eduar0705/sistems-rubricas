@@ -127,7 +127,7 @@ function verDetallesEvaluacion(evaluacionId) {
   modalBody.innerHTML = '<div class="loading">Cargando detalles...</div>';
   modal.classList.add('active');
   
-  fetch(`/api/evaluacion/${evaluacionId}/detalles`)
+  fetch(`/student/evaluacion/${evaluacionId}/detalles`)
     .then(response => {
       if (!response.ok) {
         throw new Error('Error en la respuesta del servidor');
@@ -209,11 +209,29 @@ function verDetallesEvaluacion(evaluacionId) {
         `;
         
         modalBody.innerHTML = html;
-      } else {
+      } else if(data.holdup)
+      {
+        modalBody.innerHTML = `
+          <div class="holdup-message">
+            <i class="fas fa-lightbulb"></i>
+            <p>Esta evaluación aún está en curso. ¡Revisa más tarde!</p>
+          </div>
+        `;
+      }
+      else if (data.no_evaluada)
+      {
+        modalBody.innerHTML = `
+          <div class="holdup-message">
+            <i class="fas fa-clock"></i>
+            <p>No has sido evaluado aún. ¡Molesta al profesor!</p>
+          </div>
+        `;
+      }
+      else {
         modalBody.innerHTML = `
           <div class="error-message">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>Error: ${data.message}</p>
+            <i class="fas fa-lightbulb"></i>
+            <p>Error: "${data.message}. Por favor, intenta más tarde."</p>
           </div>
         `;
       }
