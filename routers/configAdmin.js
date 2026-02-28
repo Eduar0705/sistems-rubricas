@@ -18,7 +18,11 @@ router.get('/admin/config', (req, res) => {
             });
         }
 
-        conexion.query('SELECT * FROM docente', (erro, resul) => {
+        conexion.query(`SELECT 
+                            u.*, 
+                            ud.* 
+                        FROM usuario_docente ud 
+                        INNER JOIN usuario u ON ud.cedula_usuario = u.cedula`, (erro, resul) => {
             if(erro){
                 console.log('Error al obtener los docentes:', erro);
                 return res.status(500).render('error', {
