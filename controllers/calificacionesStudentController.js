@@ -8,36 +8,33 @@ const getCalificaciones = (req, res) => {
     const estudianteCedula = req.session.cedula;
 
     const query = `
-        SELECT 
+       SELECT 
             m.nombre AS materia_nombre,
             m.codigo AS materia_codigo,
-            s.codigo AS seccion_codigo,
-            s.lapso_academico,
-            re.id AS rubrica_id,
-            re.nombre_rubrica,
-            re.porcentaje_evaluacion,
-            ee.puntaje_total,
-            ee.observaciones,
-            ee.fecha_evaluacion,
-            (SELECT SUM(ce.puntaje_maximo) FROM criterio_evaluacion ce WHERE ce.rubrica_id = re.id) AS puntaje_maximo_rubrica
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
+            pp.codigo_periodo AS lapso_academico,
+            r.id AS rubrica_id,
+            r.nombre_rubrica,
+            e.ponderacion AS porcentaje_evaluacion,
+            SUM(DISTINCT de.puntaje_obtenido) AS puntaje_total,
+            er.observaciones,
+            er.fecha_evaluado AS fecha_evaluacion,
+            (SELECT SUM(cr.puntaje_maximo) FROM criterio_rubrica cr WHERE cr.rubrica_id = r.id) AS puntaje_maximo_rubrica
         FROM 
-            seccion s
-        JOIN 
-            materia m ON s.materia_codigo = m.codigo
-        JOIN (
-            SELECT seccion_id FROM inscripcion_seccion WHERE estudiante_cedula = ?
-            UNION
-            SELECT re.seccion_id 
-            FROM evaluacion_estudiante ee 
-            JOIN rubrica_evaluacion re ON ee.rubrica_id = re.id 
-            WHERE ee.estudiante_cedula = ?
-        ) student_sections ON s.id = student_sections.seccion_id
-        LEFT JOIN 
-            rubrica_evaluacion re ON s.id = re.seccion_id AND re.activo = 1
-        LEFT JOIN 
-            evaluacion_estudiante ee ON re.id = ee.rubrica_id AND ee.estudiante_cedula = ?
+            evaluacion e 
+            INNER JOIN rubrica_uso ru ON e.id = ru.id_eval
+            INNER JOIN rubrica r ON ru.id_rubrica = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON pp.id = s.id_materia_plan
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+            LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+            LEFT JOIN detalle_evaluacion de ON er.id = de.evaluacion_r_id
+            WHERE ins.cedula_estudiante = ?
+        GROUP BY
+            m.codigo
         ORDER BY 
-            s.lapso_academico DESC, m.nombre, re.id
+            lapso_academico DESC, m.nombre, er.id;
     `;
 
     conexion.query(query, [estudianteCedula, estudianteCedula, estudianteCedula], (err, results) => {
