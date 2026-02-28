@@ -76,7 +76,7 @@
                             <% usuarios.forEach(function(usuario) { %>
                                 <tr>
                                     <td><%= usuario.cedula %></td>
-                                    <td><%= usuario.username %></td>
+                                    <td><%= usuario.nombre + ' ' + usuario.apeliido %></td>
                                     <td><%= usuario.email %></td>
                                     <td><%= (usuario.id_rol === 1) ? 'Administrador' : (usuario.id_rol === 2) ? 'Docente' : 'Estudiante' %></td>
                                     <td>
@@ -138,7 +138,7 @@
                             <option value="">-- Seleccione un profesor --</option>
                             <% docentes.forEach(function(docente) { %>
                                 <option value="<%= docente.cedula %>" data-email="<%= docente.email || '' %>">
-                                    <%= docente.nombre + ' ' + docente.apellido %>
+                                    <%= docente.nombre + ' ' + docente.apeliido %>
                                 </option>
                             <% }); %>
                         </select>
