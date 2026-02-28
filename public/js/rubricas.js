@@ -263,28 +263,6 @@ if (btnSiguiente) {
     });
 }
 
-// ============================================================
-// CARGAR PROFESORES
-// ============================================================
-
-function loadProfesores() {
-    fetch('/admin/rubricas/profesores')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const professorFilter = document.getElementById('professorFilter');
-                if (professorFilter) {
-                    data.profesores.forEach(profesor => {
-                        const option = document.createElement('option');
-                        option.value = profesor.docente_nombre;
-                        option.textContent = profesor.docente_nombre;
-                        professorFilter.appendChild(option);
-                    });
-                }
-            }
-        })
-        .catch(error => console.error('Error cargando profesores:', error));
-}
 
 // ============================================================
 // VER E IMPRIMIR RÚBRICA
@@ -565,6 +543,7 @@ async function loadRubricData(rubricId) {
         Swal.close();
         
         if (data.success) {
+            console.log(data)
             populateModalEdit(data);
             // Cargar estrategias y guardarlas globalmente
             const estrategias = await cargarEstrategias();
@@ -642,13 +621,11 @@ function cargarCarrerasEdit(callback, valorSeleccionar = null) {
 }
 
 function cargarSemestresEdit(carreraCode, callback, valorSeleccionar = null) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
     const semestreSelect = document.getElementById('semestreEdit');
     semestreSelect.innerHTML = '<option value="">Cargando...</option>';
     semestreSelect.disabled = true;
 
-    fetch(`/api/${rubroute}/semestres/${carreraCode}`)
+    fetch(`/api/admin/semestres/${carreraCode}`)
         .then(response => response.json())
         .then(semestres => {
             semestreSelect.innerHTML = '<option value="">Seleccione un semestre</option>';
@@ -675,13 +652,11 @@ function cargarSemestresEdit(carreraCode, callback, valorSeleccionar = null) {
 }
 
 function cargarMateriasEdit(carreraCode, semestre, callback, valorSeleccionar = null) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
     const materiaSelect = document.getElementById('materiaEdit');
     materiaSelect.innerHTML = '<option value="">Cargando...</option>';
     materiaSelect.disabled = true;
 
-    fetch(`/api/${rubroute}/materias/${carreraCode}/${semestre}`)
+    fetch(`/api/admin/materias/${carreraCode}/${semestre}`)
         .then(response => response.json())
         .then(materias => {
             materiaSelect.innerHTML = '<option value="">Seleccione una materia</option>';
@@ -707,14 +682,12 @@ function cargarMateriasEdit(carreraCode, semestre, callback, valorSeleccionar = 
         });
 }
 
-function cargarSeccionesEdit(materiaCode, callback, valorSeleccionar = null) {
-    const rubroute = window.location.pathname.includes('/teacher/') ? 'teacher' : 'admin';
-    
+function cargarSeccionesEdit(materiaCode, callback, valorSeleccionar = null) {    
     const seccionSelect = document.getElementById('seccionEdit');
     seccionSelect.innerHTML = '<option value="">Cargando...</option>';
     seccionSelect.disabled = true;
 
-    fetch(`/api/${rubroute}/secciones/${materiaCode}`)
+    fetch(`/api/admin/secciones/${materiaCode}`)
         .then(response => response.json())
         .then(secciones => {
             seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
@@ -826,31 +799,38 @@ function populateModalEdit(data) {
     document.getElementById('instrumentosEdit').value = rubrica.instrumentos || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
     cargarTiposRubrica(rubrica.id_tipo)
-
+    console.log('apunto')
     // 1. Primero cargar carreras (sin valor a seleccionar aún porque no tenemos carreraData)
     cargarCarrerasEdit(() => {
+        console.log('entrando', rubrica)
         // 2. Buscar la carrera correspondiente a la materia
         fetch(`/admin/rubricas/carrera-materia/${rubrica.materia_codigo}`)
             .then(response => response.json())
             .then(carreraData => {
+                console.log('hey')
                 if (carreraData.success) {
+                    console.log('murio jk')
                     // 3. Seleccionar la carrera
                     const carreraSelect = document.getElementById('carreraEdit');
+                    console.log(carreraData.carrera_codigo)
                     carreraSelect.value = carreraData.carrera_codigo;
                     
                     // 4. Cargar semestres y seleccionar el correcto
                     cargarSemestresEdit(carreraData.carrera_codigo, () => {
                         const semestreSelect = document.getElementById('semestreEdit');
+                        console.log(carreraData.semestre)
                         semestreSelect.value = carreraData.semestre;
                         
                         // 5. Cargar materias y seleccionar la correcta
                         cargarMateriasEdit(carreraData.carrera_codigo, carreraData.semestre, () => {
                             const materiaSelect = document.getElementById('materiaEdit');
+                            console.log(rubrica.materia_codigo)
                             materiaSelect.value = rubrica.materia_codigo;
                             
                             // 6. Cargar secciones y seleccionar la correcta
                             cargarSeccionesEdit(rubrica.materia_codigo, () => {
                                 const seccionSelect = document.getElementById('seccionEdit');
+                                console.log(rubrica.seccion_id)
                                 seccionSelect.value = rubrica.seccion_id;
                                 
                                 // 7. FINALMENTE: Cargar evaluaciones de la sección seleccionada
@@ -1445,7 +1425,7 @@ if (rubricaFormEdit) {
                         <small>Criterios: ${result.datos?.criterios || rubricaData.criterios.length} | Puntaje total: ${result.datos?.sumaPuntajes || sumaPuntajes.toFixed(2)}/${porcentaje}</small>
                     `
                 }).then(() => {
-                    window.location.href = '/admin/rubricas'; // Redirige a la lista
+                    window.location.href = '/teacher/rubricas'; // Redirige a la lista
                 });
             } else {
                 // Error controlado del servidor
@@ -1585,7 +1565,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const competenciasTextAreaEdit = document.getElementById('competenciasEdit');
     const instrumentosTextAreaEdit = document.getElementById('instrumentosEdit');
 
-    // Función para limpiar todos los campos de evaluación
     // Función para limpiar todos los campos de evaluación y actualizar checkboxes
 function limpiarCamposEvaluacion(estrategiasSeleccionadas = []) {
     fechaInputEdit.value = '';
@@ -1844,7 +1823,6 @@ if (evalEditSelect) {
 
     // Inicializar paginación y cargar datos
     try {
-        loadProfesores();
         initializePagination();
     } catch (error) {
         console.error('Error en inicialización:', error);

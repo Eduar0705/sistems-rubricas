@@ -686,8 +686,9 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
                 r.id,
                 e.id AS evaluacion_id,
                 r.nombre_rubrica AS nombre_rubrica,
+                tr.id AS id_tipo,
                 u.cedula as docente_cedula,
-            	m.codigo AS materia_id,
+            	m.codigo AS materia_codigo,
             	s.id AS seccion_id,
             	pp.codigo_periodo AS lapso_academico,
                 e.fecha_evaluacion,
@@ -730,6 +731,7 @@ router.get('/admin/rubricas/editar/:id', (req, res) => {
                 FROM inscripcion_seccion ins
                 GROUP BY ins.id_seccion
             ) AS estud_sec ON s.id = estud_sec.id_seccion
+            LEFT JOIN tipo_rubrica tr ON r.id_tipo = tr.id
             LEFT JOIN horario_eval he ON e.id = he.id_eval
             LEFT JOIN horario_eval_clandestina hec ON e.id = hec.id_eval
             LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
