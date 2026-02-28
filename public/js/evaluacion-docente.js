@@ -4,7 +4,7 @@
 let evaluacionActual = null;
 let criteriosData = [];
 let seleccionesNiveles = {};
-
+const seleccionesPorEvaluacion = {};
 // =============================================
 // MÓDULO DE EVALUACIÓN - MODAL
 // =============================================
@@ -154,13 +154,13 @@ const EvaluacionModule = {
                             <input 
                                 type="radio" 
                                 name="criterio-${criterio.id}" 
-                                id="nivel-${nivel.id}"
+                                id="crit-${criterio.id}_nivel-${nivel.id}"
                                 value="${nivel.id}"
                                 data-puntaje="${nivel.puntaje}"
                                 data-criterio="${criterio.id}"
                                 ${nivel.seleccionado ? 'checked' : ''}
                                 onchange="seleccionarNivel(${criterio.id}, ${nivel.id}, ${nivel.puntaje})">
-                            <label for="nivel-${nivel.id}" class="nivel-label">
+                            <label for="crit-${criterio.id}_nivel-${nivel.id}" class="nivel-label">
                                 <div class="nivel-nombre">
                                     <strong>${nivel.nombre}</strong>
                                     <span class="nivel-puntaje">${nivel.puntaje} pts</span>
