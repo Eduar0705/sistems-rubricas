@@ -80,6 +80,7 @@ router.get("/teacher/evaluacion", function (req, res) {
             LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
             LEFT JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
             LEFT JOIN usuario u ON ue.cedula_usuario = u.cedula
+            WHERE er.id IS NOT NULL
             GROUP BY er.id
             ORDER BY er.fecha_evaluado DESC;
         `;
@@ -138,6 +139,7 @@ router.get("/teacher/evaluacion", function (req, res) {
             LEFT JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
             LEFT JOIN usuario u ON ue.cedula_usuario = u.cedula
             WHERE pd.docente_cedula = ?
+            AND er.id IS NOT NULL
             GROUP BY er.id
             ORDER BY er.fecha_evaluado DESC;
         `;
