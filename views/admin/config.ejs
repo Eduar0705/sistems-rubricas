@@ -62,6 +62,7 @@
                         <tr>
                             <th>Cedula</th>
                             <th>Nombre</th>
+                            <th>Apellido</th>
                             <th>Correo</th>
                             <th>Rol</th>
                             <th>Acciones</th>
@@ -76,7 +77,8 @@
                             <% usuarios.forEach(function(usuario) { %>
                                 <tr>
                                     <td><%= usuario.cedula %></td>
-                                    <td><%= usuario.nombre + ' ' + usuario.apeliido %></td>
+                                    <td><%= usuario.nombre %></td>
+                                    <td><%= usuario.apeliido %></td>
                                     <td><%= usuario.email %></td>
                                     <td><%= (usuario.id_rol === 1) ? 'Administrador' : (usuario.id_rol === 2) ? 'Docente' : 'Estudiante' %></td>
                                     <td>
@@ -116,68 +118,19 @@
             <h2>Agregar Nuevo Usuario</h2>
 
             <form id="formAgregarUsuario" method="post" action="/envioUser">
-                <div class="form-group">
-                    <label>Seleccione una opción:</label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="radioRegistrado" name="tipoRegistro" value="registrado" checked>
-                            <label for="radioRegistrado">Profesor registrado</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="radioNuevo" name="tipoRegistro" value="nuevo">
-                            <label for="radioNuevo">Registro nuevo</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Campos para profesor registrado -->
-                <div id="camposRegistrado">
-                    <div class="form-group">
-                        <label for="profesorSelect">Seleccione un profesor:</label>
-                        <select id="profesorSelect" name="profesorSelect">
-                            <option value="">-- Seleccione un profesor --</option>
-                            <% docentes.forEach(function(docente) { %>
-                                <option value="<%= docente.cedula %>" data-email="<%= docente.email || '' %>">
-                                    <%= docente.nombre + ' ' + docente.apeliido %>
-                                </option>
-                            <% }); %>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="cedulaRegistrado">Cédula:</label>
-                        <input type="text" id="cedulaRegistrado" name="cedula" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="nombreRegistrado">Nombre:</label>
-                        <input type="text" id="nombreRegistrado" name="nombre" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="emailRegistrado">Correo:</label>
-                        <input type="email" id="emailRegistrado" name="email" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="clave">Clave:</label>
-                        <input type="password" id="clave" name="password">
-                    </div>
-                    <div class="form-group">
-                        <label for="rol">Rol:</label>
-                        <select id="rol" name="rol">
-                            <option value="">Seleccione un rol</option>
-                            <option value="1">Administrador</option>
-                            <option value="2">Docente</option>
-                        </select>
-                    </div>
-                </div>
-
                 <!-- Campos para nuevo registro -->
-                <div id="camposNuevo" class="hidden">
+                <div id="camposNuevo">
                     <div class="form-group">
                         <label for="cedulaNuevo">Cédula:</label>
                         <input type="text" id="cedulaNuevo" name="cedula" placeholder="Ingrese la cédula">
                     </div>
                     <div class="form-group">
                         <label for="nombreNuevo">Nombre:</label>
-                        <input type="text" id="nombreNuevo" name="nombre" placeholder="Ingrese el nombre completo">
+                        <input type="text" id="nombreNuevo" name="nombre" placeholder="Ingrese el nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="apellidoNuevo">Apellido:</label>
+                        <input type="text" id="apellidoNuevo" name="apellido" placeholder="Ingrese el apellido">
                     </div>
                     <div class="form-group">
                         <label for="emailNuevo">Correo:</label>
@@ -193,6 +146,7 @@
                             <option value="">Seleccione un rol</option>
                             <option value="1">Administrador</option>
                             <option value="2">Docente</option>
+                            <option value="3">Estudiante</option>
                         </select>
                     </div>
                 </div>
@@ -222,6 +176,10 @@
                     <input type="text" id="nombreEdit" name="nombre" required>
                 </div>
                 <div class="form-group">
+                    <label for="apellidoEdit">Apellido:</label>
+                    <input type="text" id="apellidoEdit" name="apellido" required>
+                </div>
+                <div class="form-group">
                     <label for="emailEdit">Correo:</label>
                     <input type="email" id="emailEdit" name="email" required>
                 </div>
@@ -234,6 +192,7 @@
                     <select id="rolEdit" name="rol" required>
                         <option value="1">Administrador</option>
                         <option value="2">Docente</option>
+                        <option value="3">Estudiante</option>
                     </select>
                 </div>
 
