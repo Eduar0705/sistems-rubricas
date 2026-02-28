@@ -543,7 +543,6 @@ async function loadRubricData(rubricId) {
         Swal.close();
         
         if (data.success) {
-            console.log(data)
             populateModalEdit(data);
             // Cargar estrategias y guardarlas globalmente
             const estrategias = await cargarEstrategias();
@@ -759,7 +758,6 @@ function cargarTiposRubrica(valorSeleccionar = null) {
     }
     tipo_r_select.innerHTML = '<option value="">Cargando...</option>';
     tipo_r_select.disabled = true;
-    console.log(valorSeleccionar)
     fetch(`/admin/tipos_rubrica/`)
         .then(response => response.json())
         .then(tipos_r => {
@@ -799,38 +797,30 @@ function populateModalEdit(data) {
     document.getElementById('instrumentosEdit').value = rubrica.instrumentos || '';
     document.getElementById('instruccionesEdit').value = rubrica.instrucciones || '';
     cargarTiposRubrica(rubrica.id_tipo)
-    console.log('apunto')
     // 1. Primero cargar carreras (sin valor a seleccionar aún porque no tenemos carreraData)
     cargarCarrerasEdit(() => {
-        console.log('entrando', rubrica)
         // 2. Buscar la carrera correspondiente a la materia
         fetch(`/admin/rubricas/carrera-materia/${rubrica.materia_codigo}`)
             .then(response => response.json())
             .then(carreraData => {
-                console.log('hey')
                 if (carreraData.success) {
-                    console.log('murio jk')
                     // 3. Seleccionar la carrera
                     const carreraSelect = document.getElementById('carreraEdit');
-                    console.log(carreraData.carrera_codigo)
                     carreraSelect.value = carreraData.carrera_codigo;
                     
                     // 4. Cargar semestres y seleccionar el correcto
                     cargarSemestresEdit(carreraData.carrera_codigo, () => {
                         const semestreSelect = document.getElementById('semestreEdit');
-                        console.log(carreraData.semestre)
                         semestreSelect.value = carreraData.semestre;
                         
                         // 5. Cargar materias y seleccionar la correcta
                         cargarMateriasEdit(carreraData.carrera_codigo, carreraData.semestre, () => {
                             const materiaSelect = document.getElementById('materiaEdit');
-                            console.log(rubrica.materia_codigo)
                             materiaSelect.value = rubrica.materia_codigo;
                             
                             // 6. Cargar secciones y seleccionar la correcta
                             cargarSeccionesEdit(rubrica.materia_codigo, () => {
                                 const seccionSelect = document.getElementById('seccionEdit');
-                                console.log(rubrica.seccion_id)
                                 seccionSelect.value = rubrica.seccion_id;
                                 
                                 // 7. FINALMENTE: Cargar evaluaciones de la sección seleccionada
