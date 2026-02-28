@@ -46,7 +46,8 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
                 SUM(DISTINCT de.puntaje_obtenido) as puntaje_total,
                 er.fecha_evaluado as fecha_evaluacion,
                 r.nombre_rubrica,
-                tr.nombre as tipo_evaluacion,
+                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                tr.nombre as tipo_rubrica,
                 SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
                 r.instrucciones,
                 e.competencias,
@@ -65,6 +66,8 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            LEFT JOIN estrategia_empleada eemp ON er.id_evaluacion = eemp.id_eval
+            LEFT JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
             WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
             GROUP BY e.id
             ORDER BY er.fecha_evaluado DESC;
@@ -217,13 +220,14 @@ router.get('/api/evaluacion/:id/detalles', async (req, res) => {
 // =====================================================================
 // 🔹 POST — Guardar evaluación
 // =====================================================================
-router.post('/api/evaluacion/:id/guardar', (req, res) => {
+router.post('/api/evaluacion/:id/:cedulaEstudiante/guardar', (req, res) => {
     // Validar sesión
     if (!req.session.login) {
         return res.status(401).json({ success: false, message: 'Por favor, inicia sesión para acceder a esta página.' });
     }
 
     const evaluacionId = req.params.id;
+    const cedulaEstudiante = req.params.cedulaEstudiante;
     const { observaciones, puntaje_total, detalles } = req.body;
 
     if (!detalles || detalles.length === 0) {
@@ -239,42 +243,81 @@ router.post('/api/evaluacion/:id/guardar', (req, res) => {
         // Iniciar transacción en la conexión obtenida
         conn.beginTransaction(async err => {
             if (err) {
-                conn.release(); // Liberar la conexión
+                conn.release();
                 return sendError(res, 'Error al iniciar transacción', err);
             }
 
             try {
+                let eval_r_id = null;
+                
                 // ========================
-                // 1. Actualizar evaluación
+                // 1. Verificar si ya existe la evaluación
                 // ========================
-                await new Promise((resolve, reject) => {
+                const existeEvaluacion = await new Promise((resolve, reject) => {
                     conn.query(`
-                        UPDATE evaluacion_estudiante 
-                        SET observaciones = ?, puntaje_total = ?
-                        WHERE id = ?
-                    `, [observaciones, puntaje_total, evaluacionId], (err, result) => {
+                        SELECT id FROM evaluacion_realizada 
+                        WHERE id_evaluacion = ? AND cedula_evaluado = ?
+                    `, [evaluacionId, cedulaEstudiante], (err, results) => {
                         if (err) reject(err);
-                        else resolve(result);
+                        else resolve(results.length > 0 ? results[0].id : null);
                     });
                 });
 
-
-                // ========================
-                // 2. Borrar detalles previos
-                // ========================
-                await new Promise((resolve, reject) => {
-                    conn.query(`DELETE FROM detalle_evaluacion WHERE evaluacion_id = ?`, [evaluacionId], (err, result) => {
-                        if (err) reject(err);
-                        else resolve(result);
+                if (existeEvaluacion) {
+                    // ========================
+                    // 2. ACTUALIZAR evaluación existente
+                    // ========================
+                    eval_r_id = existeEvaluacion;
+                    
+                    await new Promise((resolve, reject) => {
+                        conn.query(`
+                            UPDATE evaluacion_realizada 
+                            SET observaciones = ?, cedula_evaluador = ?, fecha_evaluado = NOW()
+                            WHERE id = ?
+                        `, [observaciones, req.session.cedula, eval_r_id], (err, result) => {
+                            if (err) reject(err);
+                            else resolve(result);
+                        });
                     });
-                });
-
+                    
+                    console.log('Evaluación actualizada, ID:', eval_r_id);
+                    
+                    // ========================
+                    // 3. Borrar detalles previos
+                    // ========================
+                    await new Promise((resolve, reject) => {
+                        console.log('hola')
+                        conn.query(`DELETE FROM detalle_evaluacion WHERE evaluacion_r_id = ?`, [eval_r_id], (err, result) => {
+                            if (err) reject(err);
+                            else resolve(result);
+                        });
+                    });
+                    
+                } else {
+                    // ========================
+                    // 2. INSERTAR nueva evaluación
+                    // ========================
+                    await new Promise((resolve, reject) => {
+                        conn.query(`
+                            INSERT INTO evaluacion_realizada (observaciones, cedula_evaluador, id_evaluacion, cedula_evaluado, fecha_evaluado) 
+                            VALUES (?, ?, ?, ?, NOW())
+                        `, [observaciones, req.session.cedula, evaluacionId, cedulaEstudiante], (err, result) => {
+                            if (err) reject(err);
+                            else {
+                                eval_r_id = result.insertId;
+                                resolve(result);
+                            }
+                        });
+                    });
+                    
+                    console.log('Nueva evaluación insertada, ID:', eval_r_id);
+                }
 
                 // ========================
-                // 3. Insertar nuevos
+                // 4. Insertar nuevos detalles
                 // ========================
                 const values = detalles.map(d => [
-                    evaluacionId,
+                    eval_r_id,
                     d.criterio_id,
                     d.nivel_id,
                     d.puntaje_obtenido
@@ -283,7 +326,7 @@ router.post('/api/evaluacion/:id/guardar', (req, res) => {
                 await new Promise((resolve, reject) => {
                     conn.query(`
                         INSERT INTO detalle_evaluacion 
-                        (evaluacion_id, criterio_id, nivel_seleccionado, puntaje_obtenido)
+                        (evaluacion_r_id, id_criterio_detalle, orden_detalle, puntaje_obtenido)
                         VALUES ?
                     `, [values], (err, result) => {
                         if (err) reject(err);
@@ -291,26 +334,29 @@ router.post('/api/evaluacion/:id/guardar', (req, res) => {
                     });
                 });
 
-
+                // ========================
+                // 5. Confirmar transacción
+                // ========================
                 conn.commit(err => {
                     if (err) {
                         return conn.rollback(() => {
-                            conn.release(); // Liberar la conexión
+                            conn.release();
                             sendError(res, 'Error al finalizar el guardado', err);
                         });
                     }
 
-                    conn.release(); // Liberar la conexión exitosamente
+                    conn.release();
                     return res.json({
                         success: true,
-                        message: 'Evaluación guardada correctamente',
-                        puntaje_total
+                        message: existeEvaluacion ? 'Evaluación actualizada correctamente' : 'Evaluación guardada correctamente',
+                        puntaje_total,
+                        actualizado: existeEvaluacion ? true : false
                     });
                 });
 
             } catch (error) {
                 conn.rollback(() => {
-                    conn.release(); // Liberar la conexión
+                    conn.release();
                     sendError(res, 'Error al guardar evaluación', error);
                 });
             }

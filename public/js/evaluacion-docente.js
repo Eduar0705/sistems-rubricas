@@ -221,7 +221,7 @@ const EvaluacionModule = {
             title: '¿Reprobar estudiante?',
             html: `
                 <p><strong>Esta acción marcará al estudiante como reprobado</strong></p>
-                <p>Calificación: <strong>0.25/100</strong></p>
+                <p>Calificación: <strong>0.025/100</strong></p>
                 <p>Todos los criterios se marcarán como "Insuficiente"</p>
                 <p><small class="text-muted">Esta evaluación podrá ser editada posteriormente</small></p>
             `,
@@ -298,7 +298,7 @@ const EvaluacionModule = {
                     title: 'Estudiante Reprobado',
                     html: `
                         <p>La evaluación ha sido guardada correctamente</p>
-                        <p>Calificación: <strong>0.25/100</strong></p>
+                        <p>Calificación: <strong>0.025/100</strong></p>
                     `,
                     confirmButtonColor: '#667eea'
                 }).then(() => {
@@ -401,7 +401,7 @@ const EvaluacionModule = {
 
             console.log('Enviando datos:', payload);
 
-            const response = await fetch(`/api/evaluacion/${evaluacionActual.id}/guardar`, {
+            const response = await fetch(`/api/evaluacion/${evaluacionActual.id_evaluacion}/${evaluacionActual.estudiante_cedula}/guardar`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

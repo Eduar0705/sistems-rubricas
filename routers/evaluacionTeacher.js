@@ -11,8 +11,8 @@ function query(sql, params = []) {
     });
 }
 // Ruta principal de evaluaciones
-router.get("/teacher/evaluacion", function(req, res) {
-    if(!req.session.login){
+router.get("/teacher/evaluacion", function (req, res) {
+    if (!req.session.login) {
         const mensaje = 'Por favor, inicia sesión para acceder a esta página.';
         return res.redirect('/login?mensaje=' + encodeURIComponent(mensaje));
     }
@@ -29,7 +29,14 @@ router.get("/teacher/evaluacion", function(req, res) {
             SELECT
                 er.id,
                 er.id_evaluacion,
-                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                -- Calcular puntaje total en subconsulta
+                (SELECT COALESCE(SUM(de2.puntaje_obtenido), 0)
+                FROM detalle_evaluacion de2
+                WHERE de2.evaluacion_r_id = er.id) as puntaje_total,
+                (SELECT SUM(cr2.puntaje_maximo)
+                FROM criterio_rubrica cr2
+                INNER JOIN rubrica r2 ON cr2.rubrica_id = r2.id
+                WHERE r2.id = r.id) as porcentaje_evaluacion
                 er.fecha_evaluado as fecha_evaluacion,
                 er.observaciones,
                 er.cedula_evaluado as estudiante_cedula,
@@ -37,7 +44,10 @@ router.get("/teacher/evaluacion", function(req, res) {
                 u.apeliido AS estudiante_apellido,
                 r.nombre_rubrica,
                 tr.nombre as tipo_evaluacion,
-                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                -- Calcular porcentaje máximo en subconsulta
+                (SELECT SUM(cr2.puntaje_maximo)
+                FROM criterio_rubrica cr2
+                WHERE cr2.rubrica_id = r.id) as porcentaje_evaluacion,
                 r.instrucciones,
                 e.competencias,
                 m.nombre as materia_nombre,
@@ -45,28 +55,31 @@ router.get("/teacher/evaluacion", function(req, res) {
                 c.nombre AS carrera_nombre,
                 pp.codigo_periodo AS materia_semestre,
                 CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                -- Horarios en subconsulta
+                (SELECT GROUP_CONCAT(DISTINCT CONCAT(hs2.dia, ' (', hs2.hora_inicio, '-', hs2.hora_cierre, ')') SEPARATOR ', ')
+                FROM horario_seccion hs2
+                WHERE hs2.id_seccion = s.id) AS seccion_horario,
                 hs.aula AS seccion_aula,
                 CASE
-                    WHEN de.puntaje_obtenido IS NOT NULL THEN 'Completada'
+                    WHEN er.id IS NOT NULL AND EXISTS (
+                        SELECT 1 FROM detalle_evaluacion de3 
+                        WHERE de3.evaluacion_r_id = er.id LIMIT 1
+                    ) THEN 'Completada'
                     ELSE 'Pendiente'
                 END as estado
-			FROM evaluacion e 
+            FROM evaluacion e 
             INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
             INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
-            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
             INNER JOIN seccion s ON e.id_seccion = s.id
-            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
-            INNER JOIN usuario_estudiante ue ON ins.cedula_estudiante = ue.cedula_usuario
-            INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
+            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
-            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
             LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
-            LEFT JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            LEFT JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
+            LEFT JOIN usuario u ON ue.cedula_usuario = u.cedula
             GROUP BY er.id
             ORDER BY er.fecha_evaluado DESC;
         `;
@@ -75,8 +88,12 @@ router.get("/teacher/evaluacion", function(req, res) {
         query = `
             SELECT
                 er.id,
+                s.id AS id_seccion,
                 er.id_evaluacion,
-                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                -- Calcular puntaje total en subconsulta
+                (SELECT COALESCE(SUM(de2.puntaje_obtenido), 0)
+                FROM detalle_evaluacion de2
+                WHERE de2.evaluacion_r_id = er.id) as puntaje_total,
                 er.fecha_evaluado as fecha_evaluacion,
                 er.observaciones,
                 er.cedula_evaluado as estudiante_cedula,
@@ -84,7 +101,10 @@ router.get("/teacher/evaluacion", function(req, res) {
                 u.apeliido AS estudiante_apellido,
                 r.nombre_rubrica,
                 tr.nombre as tipo_evaluacion,
-                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                -- Calcular porcentaje máximo en subconsulta
+                (SELECT SUM(cr2.puntaje_maximo)
+                FROM criterio_rubrica cr2
+                WHERE cr2.rubrica_id = r.id) as porcentaje_evaluacion,
                 r.instrucciones,
                 e.competencias,
                 m.nombre as materia_nombre,
@@ -92,28 +112,31 @@ router.get("/teacher/evaluacion", function(req, res) {
                 c.nombre AS carrera_nombre,
                 pp.codigo_periodo AS materia_semestre,
                 CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo,
-                IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ')') SEPARATOR ', '), 'No encontrado') AS seccion_horario,
+                -- Horarios en subconsulta
+                (SELECT GROUP_CONCAT(DISTINCT CONCAT(hs2.dia, ' (', hs2.hora_inicio, '-', hs2.hora_cierre, ')') SEPARATOR ', ')
+                FROM horario_seccion hs2
+                WHERE hs2.id_seccion = s.id) AS seccion_horario,
                 hs.aula AS seccion_aula,
                 CASE
-                    WHEN de.puntaje_obtenido IS NOT NULL THEN 'Completada'
+                    WHEN er.id IS NOT NULL AND EXISTS (
+                        SELECT 1 FROM detalle_evaluacion de3 
+                        WHERE de3.evaluacion_r_id = er.id LIMIT 1
+                    ) THEN 'Completada'
                     ELSE 'Pendiente'
                 END as estado
-			FROM evaluacion e 
+            FROM evaluacion e 
             INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
             INNER JOIN rubrica r ON r.id = ru.id_rubrica
             INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
-            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
             INNER JOIN seccion s ON e.id_seccion = s.id
             INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
-            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
-            INNER JOIN usuario_estudiante ue ON ins.cedula_estudiante = ue.cedula_usuario
-            INNER JOIN usuario u ON ue.cedula_usuario = u.cedula
             INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
             INNER JOIN materia m ON pp.codigo_materia = m.codigo
             INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
-            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id  
             LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+            LEFT JOIN usuario_estudiante ue ON er.cedula_evaluado = ue.cedula_usuario
+            LEFT JOIN usuario u ON ue.cedula_usuario = u.cedula
             WHERE pd.docente_cedula = ?
             GROUP BY er.id
             ORDER BY er.fecha_evaluado DESC;
@@ -125,8 +148,8 @@ router.get("/teacher/evaluacion", function(req, res) {
         if (error) {
             console.error('Error al obtener evaluaciones:', error);
             return res.render("teacher/evaluaciones", {
-                datos: req.session, 
-                title: 'SGR - Evaluaciones', 
+                datos: req.session,
+                title: 'SGR - Evaluaciones',
                 currentPage: 'evaluaciones',
                 evaluaciones: [],
                 error: 'Error al cargar las evaluaciones'
@@ -135,27 +158,27 @@ router.get("/teacher/evaluacion", function(req, res) {
 
         const evaluacionesFormateadas = evaluaciones.map(ev => {
             const iniciales = (ev.estudiante_nombre.charAt(0) + ev.estudiante_apellido.charAt(0)).toUpperCase();
-            const fecha = ev.fecha_evaluacion ? 
+            const fecha = ev.fecha_evaluacion ?
                 new Date(ev.fecha_evaluacion).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
                 }) : 'Pendiente';
-            
+
             return {
                 ...ev,
                 iniciales,
                 fecha_formateada: fecha,
-                calificacion: ev.puntaje_total ? 
-                    `${parseFloat(ev.puntaje_total).toFixed(1)}/100 (${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/20)` : 
+                calificacion: ev.puntaje_total ?
+                    `${parseFloat(ev.puntaje_total).toFixed(1)}/${ev.porcentaje_evaluacion} (${(parseFloat(ev.puntaje_total) / 5).toFixed(1)}/${ev.porcentaje_evaluacion/5})` :
                     '-/-'
             };
         });
 
         if (esAdmin) {
-             res.render("teacher/evaluaciones", {
-                datos: req.session, 
-                title: 'SGR - Evaluaciones', 
+            res.render("teacher/evaluaciones", {
+                datos: req.session,
+                title: 'SGR - Evaluaciones',
                 currentPage: 'evaluaciones',
                 evaluaciones: evaluacionesFormateadas
             });
@@ -202,8 +225,8 @@ router.get("/teacher/evaluacion", function(req, res) {
             });
 
             res.render("teacher/evaluaciones_docente", {
-                datos: req.session, 
-                title: 'SGR - Mis Evaluaciones', 
+                datos: req.session,
+                title: 'SGR - Mis Evaluaciones',
                 currentPage: 'evaluaciones',
                 evaluacionesGrouped: evaluacionesAgrupadas
             });
@@ -213,7 +236,7 @@ router.get("/teacher/evaluacion", function(req, res) {
 
 // API: Obtener carreras activas
 router.get('/api/carreras', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -236,7 +259,7 @@ router.get('/api/carreras', (req, res) => {
 
 // API: Obtener materias por carrera
 router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -268,7 +291,7 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
 
 // API: Obtener secciones por materia y carrera
 router.get('/api/materia/:materiaCodigo/:carreraCodigo/secciones', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -304,7 +327,7 @@ router.get('/api/materia/:materiaCodigo/:carreraCodigo/secciones', (req, res) =>
 
 // API: Obtener estudiantes de una sección
 router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -337,7 +360,7 @@ router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
 
 // API: Obtener rúbricas activas
 router.get('/api/rubricas/activas', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -387,7 +410,7 @@ router.get('/api/rubricas/activas', (req, res) => {
 
 // API: Crear evaluaciones
 router.post('/api/evaluaciones/crear', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -395,9 +418,9 @@ router.post('/api/evaluaciones/crear', (req, res) => {
 
     // Validaciones
     if (!rubrica_id || !estudiantes || estudiantes.length === 0) {
-        return res.json({ 
-            success: false, 
-            message: 'Datos incompletos' 
+        return res.json({
+            success: false,
+            message: 'Datos incompletos'
         });
     }
 
@@ -408,20 +431,20 @@ router.post('/api/evaluaciones/crear', (req, res) => {
                             FROM rubrica r
                             INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
                             WHERE r.id = ? AND r.activo = 1`;
-    
+
     conexion.query(queryVerificar, [rubrica_id], (error, results) => {
         if (error) {
             console.error('Error al verificar rúbrica:', error);
-            return res.json({ 
-                success: false, 
-                message: 'Error al verificar rúbrica' 
+            return res.json({
+                success: false,
+                message: 'Error al verificar rúbrica'
             });
         }
 
         if (results.length === 0) {
-            return res.json({ 
-                success: false, 
-                message: 'La rúbrica no existe o no está activa' 
+            return res.json({
+                success: false,
+                message: 'La rúbrica no existe o no está activa'
             });
         }
         const id_eval = results.id_eval
@@ -436,17 +459,17 @@ router.post('/api/evaluaciones/crear', (req, res) => {
         conexion.query(queryDuplicados, [id_eval, estudiantes], (error, duplicados) => {
             if (error) {
                 console.error('Error al verificar duplicados:', error);
-                return res.json({ 
-                    success: false, 
-                    message: 'Error al verificar duplicados' 
+                return res.json({
+                    success: false,
+                    message: 'Error al verificar duplicados'
                 });
             }
 
             if (duplicados.length > 0) {
                 const cedulasDuplicadas = duplicados.map(d => d.cedula_evaluado);
-                return res.json({ 
-                    success: false, 
-                    message: `Ya existen evaluaciones para algunos estudiantes. Cédulas: ${cedulasDuplicadas.join(', ')}` 
+                return res.json({
+                    success: false,
+                    message: `Ya existen evaluaciones para algunos estudiantes. Cédulas: ${cedulasDuplicadas.join(', ')}`
                 });
             }
 
@@ -466,14 +489,14 @@ router.post('/api/evaluaciones/crear', (req, res) => {
             conexion.query(queryInsertar, [values], (error, result) => {
                 if (error) {
                     console.error('Error al crear evaluaciones:', error);
-                    return res.json({ 
-                        success: false, 
-                        message: 'Error al crear las evaluaciones' 
+                    return res.json({
+                        success: false,
+                        message: 'Error al crear las evaluaciones'
                     });
                 }
 
-                res.json({ 
-                    success: true, 
+                res.json({
+                    success: true,
                     message: 'Evaluaciones creadas exitosamente',
                     cantidad: result.affectedRows
                 });
@@ -484,7 +507,7 @@ router.post('/api/evaluaciones/crear', (req, res) => {
 
 // API: Obtener secciones por carrera
 router.get('/api/carrera/:carreraCodigo/secciones', (req, res) => {
-    if(!req.session.login){
+    if (!req.session.login) {
         return res.json({ success: false, message: 'No autorizado' });
     }
 
@@ -702,7 +725,6 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
     }
 
     const { evaluacionId, estudianteCedula } = req.params;
-    console.log(evaluacionId, estudianteCedula)
 
     try {
         // =====================
@@ -711,13 +733,17 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
         const evalSQL = `
             SELECT
                 er.id,
+                er.id_evaluacion,
                 r.id as rubrica_id,
                 er.cedula_evaluado as estudiante_cedula,
                 er.observaciones,
-                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                (SELECT COALESCE(SUM(de2.puntaje_obtenido), 0)
+                FROM detalle_evaluacion de2
+                WHERE de2.evaluacion_r_id = er.id) as puntaje_total,
                 er.fecha_evaluado as fecha_evaluacion,
                 r.nombre_rubrica,
-                tr.nombre as tipo_evaluacion,
+                GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                tr.nombre as tipo_rubrica,
                 SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
                 r.instrucciones,
                 e.competencias,
@@ -736,6 +762,8 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
             LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
             LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id 
 			LEFT JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            LEFT JOIN estrategia_empleada eemp ON er.id_evaluacion = eemp.id_eval
+            LEFT JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
             WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
             GROUP BY e.id
             ORDER BY er.fecha_evaluado DESC;
@@ -811,8 +839,8 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
             WHERE e.id = ? AND er.cedula_evaluado = ?
         `;
 
-        const detalles = await query(detallesSQL, [evaluacionId, estudianteCedula]); 
-        
+        const detalles = await query(detallesSQL, [evaluacionId, estudianteCedula]);
+
         const detallesMap = {};
         detalles.forEach(d => {
             detallesMap[d.id_criterio_detalle] = {
@@ -855,6 +883,7 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
             success: true,
             evaluacion: {
                 id: evaluacion.id,
+                id_evaluacion: evaluacion.id_evaluacion,
                 rubrica_id: evaluacion.rubrica_id,
                 estudiante_cedula: evaluacion.estudiante_cedula,
                 observaciones: evaluacion.observaciones,
@@ -875,7 +904,7 @@ router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles'
         });
 
     } catch (err) {
-        return res.json({success: false, message: 'Error al obtener la evaluación', err});
+        return res.json({ success: false, message: 'Error al obtener la evaluación', err });
     }
 });
 // Crear evaluaciones solo para rúbricas/secciones donde el docente tiene permisos

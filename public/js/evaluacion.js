@@ -598,7 +598,7 @@ function mostrarDetallesEvaluacion(data) {
             <div class="calificacion-resumen-detalles">
                 <div class="calificacion-item-detalles">
                     <span class="calificacion-label-detalles">Puntuación Total:</span>
-                    <span class="calificacion-value-detalles">${evaluacion.puntaje_total} / ${totalPosible} puntos</span>
+                    <span class="calificacion-value-detalles">${evaluacion.puntaje_total} /${totalPosible} puntos</span>
                 </div>
                 <div class="calificacion-total-detalles">
                     <span class="calificacion-label-detalles">Calificación Final:</span>
