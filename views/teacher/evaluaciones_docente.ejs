@@ -181,15 +181,15 @@
                                                                                         <% if(ev.estado==='Completada' )
                                                                                             { %>
                                                                                             <button class="btn-text"
-                                                                                                onclick="verDetalles('<%= ev.id %>')">Ver
+                                                                                                onclick="verDetalles('<%= ev.id_evaluacion %>', '<%= ev.estudiante_cedula %>')">Ver
                                                                                                 Detalles</button>
                                                                                             <button class="btn-text"
-                                                                                                onclick="evaluar('<%= ev.id %>')"><i
+                                                                                                onclick="evaluar('<%= ev.id_evaluacion %>', '<%= ev.estudiante_cedula %>')"><i
                                                                                                     class="fas fa-edit"></i>
                                                                                                 Editar</button>
                                                                                             <% } else { %>
                                                                                                 <button class="btn-text"
-                                                                                                    onclick="evaluar('<%= ev.id %>')">Evaluar</button>
+                                                                                                    onclick="evaluar('<%= ev.id_evaluacion %>', '<%= ev.estudiante_cedula %>')">Evaluar</button>
                                                                                                 <% } %>
                                                                                     </div>
                                                                                 </div>

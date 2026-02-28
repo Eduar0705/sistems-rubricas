@@ -725,15 +725,15 @@ function cargarMateriasYSeleccionarEdit(carreraCodigo, materiaCodigo, seccionId,
                     selectMateria.appendChild(option);
                 });
                 if (materiaCodigo) {
-                    cargarSeccionesYSeleccionarEdit(materiaCodigo, seccionId, evaluacion);
+                    cargarSeccionesYSeleccionarEdit(materiaCodigo, carreraCodigo, seccionId, evaluacion);
                 }
             }
         });
 }
 
-async function cargarSeccionesYSeleccionarEdit(materiaCodigo, seccionId, evaluacion) {
+async function cargarSeccionesYSeleccionarEdit(materiaCodigo, carreraCodigo, seccionId, evaluacion) {
     try {
-        const response = await fetch(`/api/materia/${materiaCodigo}/secciones`);
+        const response = await fetch(`/api/materia/${materiaCodigo}/${carreraCodigo}/secciones`);
         const data = await response.json();
 
         if (data.success) {

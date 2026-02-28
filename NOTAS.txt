@@ -1,15 +1,8 @@
-La logica de correccion y asignacion de notas estaba previamente asociado a registros existentes con o sin nota en 
-"evaluacion_estudiante". Ahora, sera una seleccion donde los registros pueden o no existir, relevada con LEFT JOIN para
-aun asi mostrar a todos los estudiantes. Si algun dato es NULL, no ha sido corredi
-
-
 Controladores:
 Luego de la primera consulta, evaluacionStudents.js no vuelve a usarse, sino que Evaluar.js toma la batuta. Ambos archivos
 tienen casi los mismos contenidos
 
 Detalle global:
-		- CAMPO DE EVALUACION: semana. Sinceramente creo que lo podemos borrar. No haria daño y otros datos llegan al
-		mismo propósito.
 		- PENDIENTE: Nuevo estandar de horario_seccion. Presente en la query de seccion de evaluacionAdmin.js, 
 		eliminamos el aula como campo y lo agregamos directamente a horario. Implementar en otras querys con horario y aula.
 Refactorizados:
@@ -39,4 +32,8 @@ Refactorizados:
 									CHECK
 		- student.js				CHECK
 		- teacher.js				CHECK
-	js: evaluaciones.js
+	js: 
+		- evaluacion-Admin.js
+		- evaluaciones.js
+		- crear-rubrica.js
+		-rubricas.js

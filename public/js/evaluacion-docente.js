@@ -10,9 +10,9 @@ let seleccionesNiveles = {};
 // =============================================
 const EvaluacionModule = {
     // Abrir modal de evaluación
-    async open(evaluacionId) {
+    async open(evaluacionId, cedulaEstudiante) {
         try {
-            console.log('Abriendo modal para evaluación ID:', evaluacionId);
+            console.log('Abriendo modal para evaluación ID y Cedula:', evaluacionId, cedulaEstudiante);
 
             // Mostrar loading
             Swal.fire({
@@ -22,7 +22,7 @@ const EvaluacionModule = {
             });
 
             // Obtener datos de la evaluación
-            const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+            const response = await fetch(`/api/evaluacion_estudiante/${evaluacionId}/${cedulaEstudiante}/detalles`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -454,14 +454,14 @@ const EvaluacionModule = {
 // =============================================
 // FUNCIONES GLOBALES (Compatibilidad con HTML)
 // =============================================
-function openModalEvaluar(evaluacionId) {
-    console.log('openModalEvaluar llamado con ID:', evaluacionId);
-    EvaluacionModule.open(evaluacionId);
+function openModalEvaluar(evaluacionId, cedulaEstudiante) {
+    console.log('openModalEvaluar llamado con ID y Cedula:', evaluacionId, cedulaEstudiante);
+    EvaluacionModule.open(evaluacionId, cedulaEstudiante);
 }
 
-function evaluar(evaluacionId) {
-    console.log('evaluar llamado con ID:', evaluacionId);
-    EvaluacionModule.open(evaluacionId);
+function evaluar(evaluacionId, cedulaEstudiante) {
+    console.log('evaluar llamado con ID:', evaluacionId, cedulaEstudiante);
+    EvaluacionModule.open(evaluacionId, cedulaEstudiante);
 }
 
 function closeModalEvaluar() {
@@ -480,14 +480,14 @@ function reprobarEstudiante() {
     EvaluacionModule.reprobar();
 }
 
-function verDetalles(evaluacionId) {
-    openModalDetalles(evaluacionId);
+function verDetalles(evaluacionId, cedulaEstudiante) {
+    openModalDetalles(evaluacionId, cedulaEstudiante);
 }
 
 // =============================================
 // MODAL DE VER DETALLES
 // =============================================
-async function openModalDetalles(evaluacionId) {
+async function openModalDetalles(evaluacionId, cedulaEstudiante) {
     const modal = document.getElementById('modalVerDetalles');
     const modalBody = modal.querySelector('.modal-body-detalles');
 
@@ -504,7 +504,7 @@ async function openModalDetalles(evaluacionId) {
     document.body.style.overflow = 'hidden';
 
     try {
-        const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+        const response = await fetch(`/api/evaluacion_estudiante/${evaluacionId}/${cedulaEstudiante}/detalles`);
         const data = await response.json();
 
         if (data.success) {

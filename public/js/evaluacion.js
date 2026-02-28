@@ -442,12 +442,12 @@ const ModalAddEvaluacionModule = {
 // =============================================
 // FUNCIONES GLOBALES (Legacy Support)
 // =============================================
-function verDetalles(evaluacionId) {
-    openModalDetalles(evaluacionId);
+function verDetalles(evaluacionId, estudianteCedula) {
+    openModalDetalles(evaluacionId, estudianteCedula);
 }
 
 // Funciones del modal de detalles
-async function openModalDetalles(evaluacionId) {
+async function openModalDetalles(evaluacionId, estudianteCedula) {
     const modal = document.getElementById('modalVerDetalles');
     const modalBody = modal.querySelector('.modal-body-detalles');
 
@@ -469,7 +469,7 @@ async function openModalDetalles(evaluacionId) {
     document.body.style.overflow = 'hidden';
 
     try {
-        const response = await fetch(`/api/evaluacion/${evaluacionId}/detalles`);
+        const response = await fetch(`/api/evaluacion_estudiante/${evaluacionId}/${estudianteCedula}/detalles`);
         const data = await response.json();
 
         if (data.success) {
@@ -640,8 +640,8 @@ function mostrarDetallesEvaluacion(data) {
     modalBody.innerHTML = html;
 }
 
-function evaluar(evaluacionId) {
-    openModalEvaluar(evaluacionId);
+function evaluar(evaluacionId, cedulaEstudiante) {
+    openModalEvaluar(evaluacionId, cedulaEstudiante);
 }
 
 function openModalEvaluacion() {

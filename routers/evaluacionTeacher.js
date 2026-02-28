@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const conexion = require('../models/conetion');
 
+function query(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        conexion.query(sql, params, (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+        });
+    });
+}
 // Ruta principal de evaluaciones
 router.get("/teacher/evaluacion", function(req, res) {
     if(!req.session.login){
@@ -20,6 +28,7 @@ router.get("/teacher/evaluacion", function(req, res) {
         query = `
             SELECT
                 er.id,
+                er.id_evaluacion,
                 COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
                 er.fecha_evaluado as fecha_evaluacion,
                 er.observaciones,
@@ -66,6 +75,7 @@ router.get("/teacher/evaluacion", function(req, res) {
         query = `
             SELECT
                 er.id,
+                er.id_evaluacion,
                 COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
                 er.fecha_evaluado as fecha_evaluacion,
                 er.observaciones,
@@ -234,13 +244,15 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
 
     const query = `
         SELECT 
-            codigo,
-            nombre,
-            semestre,
-            creditos
-        FROM materia
-        WHERE carrera_codigo = ? 
-        AND activo = 1
+            m.codigo,
+            m.nombre,
+            pp.num_semestre AS semestre,
+            pp.unidades_credito AS creditos
+        FROM materia m
+        INNER JOIN plan_periodo pp ON m.codigo = pp.codigo_materia
+        INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+        WHERE pp.codigo_carrera = ?
+        AND c.activo = 1
         ORDER BY semestre, nombre
     `;
 
@@ -254,31 +266,33 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
     });
 });
 
-// API: Obtener secciones por materia
-router.get('/api/materia/:materiaCodigo/secciones', (req, res) => {
+// API: Obtener secciones por materia y carrera
+router.get('/api/materia/:materiaCodigo/:carreraCodigo/secciones', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
     }
 
-    const { materiaCodigo } = req.params;
+    const { materiaCodigo, carreraCodigo } = req.params;
 
     const query = `
         SELECT 
-            s.id,
-            s.codigo,
-            s.horario,
-            s.aula,
+            s.id, 
+            CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS codigo,
+            IFNULL(GROUP_CONCAT(DISTINCT CONCAT(hs.dia, ' (', hs.hora_inicio, '-', hs.hora_cierre, ' (', hs.aula, ')', ')') SEPARATOR ', '), 'No encontrado') AS horario,
             s.capacidad_maxima,
-            COUNT(ins.id) as estudiantes_inscritos
+            COUNT(ins.cedula_estudiante) AS estudiantes_inscritos
         FROM seccion s
-        LEFT JOIN inscripcion_seccion ins ON s.id = ins.seccion_id AND ins.estado = 'Inscrito'
-        WHERE s.materia_codigo = ? 
+        INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+        LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+        LEFT JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        WHERE pp.codigo_materia = ? 
+        AND pp.codigo_carrera = ? 
         AND s.activo = 1
-        GROUP BY s.id, s.codigo, s.horario, s.aula, s.capacidad_maxima
-        ORDER BY s.codigo
+        GROUP BY s.id
+        ORDER BY codigo;
     `;
 
-    conexion.query(query, [materiaCodigo], (error, secciones) => {
+    conexion.query(query, [materiaCodigo, carreraCodigo], (error, secciones) => {
         if (error) {
             console.error('Error al obtener secciones:', error);
             return res.json({ success: false, message: 'Error al obtener secciones' });
@@ -298,16 +312,17 @@ router.get('/api/seccion/:seccionId/estudiantes', (req, res) => {
 
     const query = `
         SELECT 
-            e.cedula,
-            e.nombre,
-            e.apellido,
-            e.email
-        FROM estudiante e
-        INNER JOIN inscripcion_seccion ins ON e.cedula = ins.estudiante_cedula
-        WHERE ins.seccion_id = ? 
-        AND e.activo = 1 
-        AND ins.estado = 'Inscrito'
-        ORDER BY e.apellido, e.nombre
+            u.cedula,
+            u.nombre,
+            u.apeliido AS apellido,
+            u.email
+        FROM seccion s
+        INNER JOIN inscripcion_seccion ins ON s.id = ins.id_seccion
+        INNER JOIN usuario_estudiante ud ON ins.cedula_estudiante = ud.cedula_usuario
+        INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+        WHERE ins.id_seccion = ?
+        AND u.activo = 1 
+        ORDER BY apellido, u.nombre;
     `;
 
     conexion.query(query, [seccionId], (error, estudiantes) => {
@@ -327,22 +342,37 @@ router.get('/api/rubricas/activas', (req, res) => {
     }
 
     const query = `
-        SELECT 
-            r.id,
-            r.nombre_rubrica,
-            r.tipo_evaluacion,
-            r.porcentaje_evaluacion,
-            r.modalidad,
-            r.cantidad_personas,
-            r.seccion_id,
-            m.nombre as materia_nombre,
-            m.codigo as materia_codigo,
-            s.codigo as seccion_codigo
-        FROM rubrica_evaluacion r
-        INNER JOIN materia m ON r.materia_codigo = m.codigo
-        INNER JOIN seccion s ON r.seccion_id = s.id
-        WHERE r.activo = 1
-        ORDER BY r.nombre_rubrica
+        SELECT
+                				r.id,
+                                r.nombre_rubrica,
+                				e.ponderacion AS porcentaje_evaluacion,
+                                CASE
+                                    WHEN e.cantidad_personas=1 THEN 'Individual'
+                                    WHEN e.cantidad_personas=2 THEN 'En Pareja'
+                                    ELSE 'Grupal'
+                                END AS modalidad,
+	               				GROUP_CONCAT(DISTINCT eeval.nombre SEPARATOR ', ') AS tipo_evaluacion,
+                                e.cantidad_personas,
+                                s.id AS seccion_id,
+                                m.nombre AS materia_nombre,
+                				m.codigo AS materia_codigo,
+                				CONCAT(pp.codigo_carrera, '-', pp.codigo_materia, ' ', s.letra) AS seccion_codigo
+                            FROM rubrica r
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                            INNER JOIN evaluacion e ON ru.id_eval = e.id
+                			LEFT JOIN estrategia_empleada eemp ON e.id = eemp.id_eval
+                            LEFT JOIN estrategia_eval eeval ON eemp.id_estrategia = eeval.id
+                            INNER JOIN seccion s ON e.id_seccion = s.id
+                            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+                            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+                            INNER JOIN carrera c ON pp.codigo_carrera = c.codigo
+                            INNER JOIN permiso_docente pd ON s.id = pd.id_seccion
+                			INNER JOIN usuario_docente ud ON pd.docente_cedula = ud.cedula_usuario
+                			INNER JOIN usuario u ON ud.cedula_usuario = u.cedula
+                            LEFT JOIN horario_seccion hs ON s.id = hs.id_seccion
+                            WHERE r.activo = 1 AND u.activo = 1
+                            GROUP BY r.id
+                            ORDER BY nombre_rubrica DESC;
     `;
 
     conexion.query(query, (error, rubricas) => {
@@ -372,7 +402,12 @@ router.post('/api/evaluaciones/crear', (req, res) => {
     }
 
     // Verificar que la rúbrica existe y está activa
-    const queryVerificar = 'SELECT id FROM rubrica_evaluacion WHERE id = ? AND activo = 1';
+    const queryVerificar = `SELECT 
+                                r.id,
+                                ru.id_eval
+                            FROM rubrica r
+                            INNER JOIN rubrica_uso ru ON r.id = ru.id_rubrica
+                            WHERE r.id = ? AND r.activo = 1`;
     
     conexion.query(queryVerificar, [rubrica_id], (error, results) => {
         if (error) {
@@ -389,16 +424,16 @@ router.post('/api/evaluaciones/crear', (req, res) => {
                 message: 'La rúbrica no existe o no está activa' 
             });
         }
-
+        const id_eval = results.id_eval
         // Verificar que no existan evaluaciones duplicadas
         const queryDuplicados = `
-            SELECT estudiante_cedula 
-            FROM evaluacion_estudiante 
-            WHERE rubrica_id = ? 
-            AND estudiante_cedula IN (?)
+            SELECT cedula_evaluado
+            FROM evaluacion_realizada 
+            WHERE id_evaluacion = ?
+            AND cedula_evaluado IN (?)
         `;
 
-        conexion.query(queryDuplicados, [rubrica_id, estudiantes], (error, duplicados) => {
+        conexion.query(queryDuplicados, [id_eval, estudiantes], (error, duplicados) => {
             if (error) {
                 console.error('Error al verificar duplicados:', error);
                 return res.json({ 
@@ -408,7 +443,7 @@ router.post('/api/evaluaciones/crear', (req, res) => {
             }
 
             if (duplicados.length > 0) {
-                const cedulasDuplicadas = duplicados.map(d => d.estudiante_cedula);
+                const cedulasDuplicadas = duplicados.map(d => d.cedula_evaluado);
                 return res.json({ 
                     success: false, 
                     message: `Ya existen evaluaciones para algunos estudiantes. Cédulas: ${cedulasDuplicadas.join(', ')}` 
@@ -417,14 +452,14 @@ router.post('/api/evaluaciones/crear', (req, res) => {
 
             // Insertar las evaluaciones
             const values = estudiantes.map(cedula => [
-                rubrica_id,
+                id_eval,
                 cedula,
                 observaciones || null
             ]);
 
             const queryInsertar = `
-                INSERT INTO evaluacion_estudiante 
-                (rubrica_id, estudiante_cedula, observaciones) 
+                INSERT INTO evaluacion_realizada 
+                (id_evaluacion, cedula_evaluado, observaciones) 
                 VALUES ?
             `;
 
@@ -660,7 +695,189 @@ router.get('/api/teacher/rubricas/activas', (req, res) => {
         res.json({ success: true, rubricas });
     });
 });
+router.get('/api/evaluacion_estudiante/:evaluacionId/:estudianteCedula/detalles', async (req, res) => {
+    // Validar sesión
+    if (!req.session.login) {
+        return res.status(401).json({ success: false, message: 'Por favor, inicia sesión para acceder a esta página.' });
+    }
 
+    const { evaluacionId, estudianteCedula } = req.params;
+    console.log(evaluacionId, estudianteCedula)
+
+    try {
+        // =====================
+        // 1. Obtener evaluación
+        // =====================
+        const evalSQL = `
+            SELECT
+                er.id,
+                r.id as rubrica_id,
+                er.cedula_evaluado as estudiante_cedula,
+                er.observaciones,
+                COALESCE(SUM(DISTINCT de.puntaje_obtenido),0) as puntaje_total,
+                er.fecha_evaluado as fecha_evaluacion,
+                r.nombre_rubrica,
+                tr.nombre as tipo_evaluacion,
+                SUM(DISTINCT cr.puntaje_maximo) as porcentaje_evaluacion,
+                r.instrucciones,
+                e.competencias,
+                m.nombre as materia_nombre,
+                m.codigo as materia_codigo,
+                CONCAT(ud.nombre, ' ', ud.apeliido) as profesor
+            FROM evaluacion e
+            INNER JOIN rubrica_uso ru ON ru.id_eval = e.id
+            INNER JOIN rubrica r ON r.id = ru.id_rubrica
+            INNER JOIN tipo_rubrica tr ON r.id_tipo = tr.id
+            INNER JOIN criterio_rubrica cr ON cr.rubrica_id = r.id
+            INNER JOIN seccion s ON e.id_seccion = s.id
+            INNER JOIN inscripcion_seccion ins ON ins.id_seccion = s.id
+            INNER JOIN plan_periodo pp ON s.id_materia_plan = pp.id
+            INNER JOIN materia m ON pp.codigo_materia = m.codigo
+            LEFT JOIN evaluacion_realizada er ON e.id = er.id_evaluacion
+            LEFT JOIN detalle_evaluacion de ON de.evaluacion_r_id = er.id 
+			LEFT JOIN usuario ud ON ud.cedula = er.cedula_evaluador
+            WHERE er.cedula_evaluado = ? AND er.id_evaluacion = ?
+            GROUP BY e.id
+            ORDER BY er.fecha_evaluado DESC;
+        `;
+        const evalData = await query(evalSQL, [estudianteCedula, evaluacionId]);
+        if (evalData.length === 0) {
+            return sendError(res, 'Evaluación no encontrada');
+        }
+
+        const evaluacion = evalData[0];
+        // =====================
+        // 2. Obtener estudiante
+        // =====================
+        const estSQL = `
+            SELECT 
+                u.cedula,
+                u.nombre,
+                u.apeliido as apellido,
+                u.email,
+                c.nombre AS carrera
+            FROM usuario u
+            INNER JOIN usuario_estudiante ue ON u.cedula = ue.cedula_usuario
+            INNER JOIN carrera c ON ue.codigo_carrera = c.codigo
+            WHERE u.cedula = ?
+        `;
+
+        const estudiantes = await query(estSQL, [evaluacion.estudiante_cedula]);
+        if (estudiantes.length === 0) return sendError(res, 'Estudiante no encontrado');
+
+        const estudiante = estudiantes[0];
+
+        // =====================
+        // 3. Obtener criterios
+        // =====================
+        const criteriosSQL = `
+            SELECT id, descripcion, puntaje_maximo, orden
+            FROM criterio_rubrica
+            WHERE rubrica_id = ?
+            ORDER BY orden
+        `;
+
+        const criterios = await query(criteriosSQL, [evaluacion.rubrica_id]);
+        if (criterios.length === 0) return sendError(res, 'No hay criterios configurados');
+
+
+        // =====================
+        // 4. Obtener niveles
+        // =====================
+        const criteriosIds = criterios.map(c => c.id);
+
+        const nivelesSQL = `
+            SELECT
+                criterio_id, nombre_nivel,
+                descripcion, puntaje_maximo AS puntaje, orden
+            FROM nivel_desempeno
+            WHERE criterio_id IN (?)
+            ORDER BY criterio_id, orden
+        `;
+        const niveles = await query(nivelesSQL, [criteriosIds]);
+
+
+        // =====================
+        // 5. Obtener detalles guardados
+        // =====================
+        const detallesSQL = `
+            SELECT
+                de.id_criterio_detalle,
+                de.orden_detalle AS nivel_seleccionado,
+                de.puntaje_obtenido
+            FROM detalle_evaluacion de 
+            INNER JOIN evaluacion_realizada er ON de.evaluacion_r_id = er.id
+            INNER JOIN evaluacion e ON er.id_evaluacion = e.id
+            WHERE e.id = ? AND er.cedula_evaluado = ?
+        `;
+
+        const detalles = await query(detallesSQL, [evaluacionId, estudianteCedula]); 
+        
+        const detallesMap = {};
+        detalles.forEach(d => {
+            detallesMap[d.id_criterio_detalle] = {
+                nivel_seleccionado: d.nivel_seleccionado,
+                puntaje_obtenido: d.puntaje_obtenido
+            };
+        });
+
+        // =====================
+        // 6. Unir criterios + niveles + selección
+        // =====================
+        const criteriosFinal = criterios.map(c => {
+            const nivelesCriterio = niveles
+                .filter(n => n.criterio_id === c.id)
+                .map(n => ({
+                    id: n.orden,
+                    nombre: n.nombre_nivel,
+                    descripcion: n.descripcion,
+                    puntaje: detallesMap[c.id]?.nivel_seleccionado === n.orden ? detallesMap[c.id]?.puntaje_obtenido : n.puntaje,
+                    puntaje_maximo: n.puntaje,
+                    orden: n.orden,
+                    seleccionado: detallesMap[c.id]?.nivel_seleccionado === n.orden
+                }));
+
+            return {
+                id: c.id,
+                nombre: c.descripcion,
+                descripcion: c.descripcion,
+                puntaje_maximo: c.puntaje_maximo,
+                orden: c.orden,
+                niveles: nivelesCriterio
+            };
+        });
+
+
+        // =====================
+        // 7. Respuesta final
+        // =====================
+        return res.json({
+            success: true,
+            evaluacion: {
+                id: evaluacion.id,
+                rubrica_id: evaluacion.rubrica_id,
+                estudiante_cedula: evaluacion.estudiante_cedula,
+                observaciones: evaluacion.observaciones,
+                puntaje_total: evaluacion.puntaje_total,
+                fecha_evaluacion: evaluacion.fecha_evaluacion
+            },
+            estudiante,
+            rubrica: {
+                nombre_rubrica: evaluacion.nombre_rubrica,
+                tipo_evaluacion: evaluacion.tipo_evaluacion,
+                porcentaje_evaluacion: evaluacion.porcentaje_evaluacion,
+                instrucciones: evaluacion.instrucciones,
+                competencias: evaluacion.competencias,
+                materia: evaluacion.materia_nombre,
+                materia_codigo: evaluacion.materia_codigo
+            },
+            criterios: criteriosFinal
+        });
+
+    } catch (err) {
+        return res.json({success: false, message: 'Error al obtener la evaluación', err});
+    }
+});
 // Crear evaluaciones solo para rúbricas/secciones donde el docente tiene permisos
 router.post('/api/teacher/evaluaciones/crear', (req, res) => {
     if (!req.session.login) {

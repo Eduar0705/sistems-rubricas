@@ -207,7 +207,7 @@ router.get('/api/carrera/:carreraCodigo/materias', (req, res) => {
     });
 });
 
-// API: Obtener secciones por materia
+// API: Obtener secciones por materia y carrera
 router.get('/api/materia/:materiaCodigo/:carreraCodigo/secciones', (req, res) => {
     if(!req.session.login){
         return res.json({ success: false, message: 'No autorizado' });
